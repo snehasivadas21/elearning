@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from .models import ChatRoom, Message, MessageReadStatus, UserOnlineStatus
 
+User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     is_online = serializers.SerializerMethodField()

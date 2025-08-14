@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import axiosInstance from '../../api/axiosInstance';
 import { Users, Star, Clock, BookOpen } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const MyCourses = () => {
   const [courses, setCourses] = useState([]);
+  const navigate = useNavigate()
 
   const discountPercent = (original, current) => {
     if (!original || !current || original <= current) return 0;
@@ -29,6 +30,10 @@ const MyCourses = () => {
       You haven't enrolled in any courses yet.
     </div>
   );
+
+  const handleChatClick = () =>{
+    navigate(`/chat/${courses.id}`)
+  }
 
   return (
     <div>
@@ -95,6 +100,17 @@ const MyCourses = () => {
                 <BookOpen className="w-4 h-4" />
                 Continue Learning
               </button>
+              <button className='bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700' onClick={handleChatClick}>
+                Chat with Instructor
+              </button>
+              {course.live_session?.join_url && (
+                <Link
+                  to={`/live-session/${course.live_session.join_url}`}
+                  className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                >
+                  Join Now
+                </Link>
+              )}
             </div>
           </Link>
         ))}

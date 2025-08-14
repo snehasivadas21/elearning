@@ -2,12 +2,14 @@ import json
 from datetime import datetime
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.serializers import serialize
 from .models import ChatRoom, Message, MessageReadStatus, UserOnlineStatus
 from .serializers import MessageSerializer
 import logging
 
+
+User  = get_user_model()
 logger = logging.getLogger(__name__)
 
 class ChatConsumer(AsyncWebsocketConsumer):

@@ -1,7 +1,10 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from django.conf import settings
 from courses.models import Course  
 import uuid
+
+User=get_user_model()
 
 class ChatRoom(models.Model):
     ROOM_TYPES = (
@@ -13,12 +16,12 @@ class ChatRoom(models.Model):
     name = models.CharField(max_length=255)
     room_type = models.CharField(max_length=10, choices=ROOM_TYPES)
     course = models.OneToOneField(Course, on_delete=models.CASCADE, null=True, blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_rooms')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_rooms')
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     
     # For direct messages - store the two participants
-    participants = models.ManyToManyField(User, related_name='chat_rooms', blank=True)
+    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='chat_rooms', blank=True)
     
     class Meta:
         db_table = 'chat_rooms'
@@ -50,7 +53,7 @@ class Message(models.Model):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
     message_type = models.CharField(max_length=10, choices=MESSAGE_TYPES, default='text')
     content = models.TextField(blank=True)
     file_url = models.URLField(blank=True, null=True)
@@ -75,7 +78,7 @@ class Message(models.Model):
 class MessageReadStatus(models.Model):
     """Track which messages have been read by which users"""
     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='read_statuses')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_read_statuses')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='message_read_statuses')
     read_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -87,7 +90,7 @@ class MessageReadStatus(models.Model):
 
 class UserOnlineStatus(models.Model):
     """Track user online/offline status"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='online_status')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='online_status')
     is_online = models.BooleanField(default=False)
     last_seen = models.DateTimeField(auto_now=True)
     current_room = models.ForeignKey(ChatRoom, on_delete=models.SET_NULL, null=True, blank=True)

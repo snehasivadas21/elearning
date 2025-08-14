@@ -17,6 +17,8 @@ import About from "./pages/user/About"
 import MyCourse from "./pages/student/MyCourses"
 import StudentProfile from "./pages/student/StudentProfile"
 import StudentQuiz from "./pages/student/StudentQuiz"
+import ChatPage from "./pages/user/ChatPage"
+import LiveSessionPage from "./pages/tutor/LiveSessionPage";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
@@ -61,6 +63,8 @@ function App() {
           <Route path="courses" element={<MyCourse/>}/>
           <Route path="profile" element={<StudentProfile/>} />
           <Route path="quizzes" element={<StudentQuiz/>} />
+          <Route path="chat/:courseId" element={<ChatPage/>}/>
+          <Route path="live-session/:sessionId" element={<LiveSessionPage />} />
         </Route>
       </Route>
 

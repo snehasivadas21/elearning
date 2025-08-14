@@ -1,43 +1,50 @@
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import ChatMessage, LiveSession
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
+from django.shortcuts import get_object_or_404
+from .models import LiveSession
+from courses.models import Course
 
-class LiveSessionConsumer(AsyncWebsocketConsumer):
+class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
-        self.session_id = self.scope['url_route']['kwargs']['session_id']
-        self.group_name = f'live_session_{self.session_id}'
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        self.user = self.scope["user"]
+        self.session_id = self.scope["url_route"]["kwargs"]["session_id"]
+        self.room_group = f"webrtc_{self.session_id}"
+
+        if not self.user or not self.user.is_authenticated:
+            return await self.close()
+
+        if not await self.can_join(self.session_id, self.user.id):
+            return await self.close()
+
+        await self.channel_layer.group_add(self.room_group, self.channel_name)
         await self.accept()
 
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(self.room_group, self.channel_name)
 
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        message = data['message']
-        user = self.scope['user']
+    async def receive_json(self, content, **kwargs):
+        t = content.get("type")
+        if t in ("offer","answer","ice-candidate"):
+            await self.channel_layer.group_send(self.room_group, {
+                "type":"signal.forward",
+                "from": self.user.id,
+                "to": content.get("to"),
+                "signal_type": t,
+                "payload": {k:v for k,v in content.items() if k != "type"}
+            })
 
-        # Save message to DB
-        await self.save_message(user, self.session_id, message)
-
-        # Broadcast to group
-        await self.channel_layer.group_send(
-            self.group_name,
-            {
-                'type': 'session_message',
-                'message': message,
-                'user': user.username,
-            }
-        )
-
-    async def session_message(self, event):
-        await self.send(text_data=json.dumps({
-            'message': event['message'],
-            'user': event['user'],
-        }))
+    async def signal_forward(self, event):
+        await self.send_json({
+            "type":"signal",
+            "from": event["from"],
+            "to": event["to"],
+            "signal_type": event["signal_type"],
+            **event["payload"]
+        })
 
     @database_sync_to_async
-    def save_message(self, user, session_id, message):
-        session = LiveSession.objects.get(unique_room_id=session_id)
-        ChatMessage.objects.create(session=session, user=user, content=message)
+    def can_join(self, sid, uid):
+        s = get_object_or_404(LiveSession, id=sid)
+        c = s.course
+        return (c.instructor_id == uid) or c.enrolled_students.filter(id=uid).exists()

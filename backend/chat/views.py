@@ -2,13 +2,14 @@ from rest_framework import generics, status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.db.models import Q, Count, Max
 from django.shortcuts import get_object_or_404
 from courses.models import Course
 from .models import ChatRoom, Message, MessageReadStatus, UserOnlineStatus
 from .serializers import ChatRoomSerializer, MessageSerializer, UserSerializer
 
+User = get_user_model()
 class MessagePagination(PageNumberPagination):
     page_size = 50
     page_size_query_param = 'page_size'

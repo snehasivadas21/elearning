@@ -1,32 +1,29 @@
+import uuid
 from django.db import models
 from django.conf import settings
-import uuid
 from courses.models import Course
-from django.utils import timezone
 
 class LiveSession(models.Model):
-    course = models.ForeignKey(Course,on_delete=models.CASCADE,related_name="live_session")
-    instructor = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="hosted_sessions")
+    STATUS = (("scheduled","Scheduled"), ("ongoing","Ongoing"), ("ended","Ended"))
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="live_sessions")
     title = models.CharField(max_length=255)
-    scheduled_datetime = models.DateTimeField()
-    duration_minutes = models.PositiveIntegerField(default=60)
-    meeting_link = models.URLField()
-    unique_room_id = models.CharField(max_length=255,unique=True,default=uuid.uuid4)
-    is_recurring = models.BooleanField(default=True)
-    created_at= models.DateTimeField(auto_now_add=True)
+    description = models.TextField(blank=True)
+    scheduled_at = models.DateTimeField(null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS, default="scheduled")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_live_sessions")
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.title} ({self.course.title})"
+class LiveParticipant(models.Model):
+    session = models.ForeignKey(LiveSession, on_delete=models.CASCADE, related_name="participants")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, default="student")  # "instructor"/"student"
+    joined_at = models.DateTimeField(null=True, blank=True)
+    left_at = models.DateTimeField(null=True, blank=True)
+    is_muted = models.BooleanField(default=False)
+    hand_raised = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['scheduled_datetime']
-
-
-class ChatMessage(models.Model):
-    session = models.ForeignKey(LiveSession,on_delete=models.CASCADE,related_name='messages')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE) 
-    content = models.TextField()
-    timestamp = models.DateTimeField(default=timezone.now)    
-
-    def __str__(self):
-        return f"{self.user.username} : {self.content[:30]}"
+        unique_together = ("session","user")

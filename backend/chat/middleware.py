@@ -10,8 +10,7 @@ class TokenAuthMiddleware:
     ASGI middleware that attaches `scope['user']` based on:
       1) query string `?token=...`
       2) Authorization header "Bearer <token>"
-    Falls back to AnonymousUser — note AuthMiddlewareStack can still be used
-    to enable session/cookie auth as well.
+    Falls back to AnonymousUser.
     """
     def __init__(self, inner):
         self.inner = inner
@@ -22,21 +21,27 @@ class TokenAuthMiddleware:
 
 class TokenAuthMiddlewareInstance:
     def __init__(self, scope, inner):
-        self.scope = dict(scope)
+        self.scope = scope  # Use original scope
         self.inner = inner
 
     async def __call__(self, receive, send):
         token = None
-        # 1) try query string
-        qs = self.scope.get("query_string", b"").decode()
-        if qs:
-            params = urllib.parse.parse_qs(qs)
-            if "token" in params:
-                token = params["token"][0]
 
-        # 2) try Authorization header
+        # 1) Try query string
+        qs = self.scope.get("query_string", b"")
+        if isinstance(qs, bytes):
+            qs = qs.decode()
+        params = urllib.parse.parse_qs(qs)
+        if "token" in params:
+            token = params["token"][0]
+
+        # 2) Try Authorization header
         if not token:
-            headers = {k.decode(): v.decode() for k, v in self.scope.get("headers", [])}
+            headers = {
+                k.decode() if isinstance(k, bytes) else k:
+                v.decode() if isinstance(v, bytes) else v
+                for k, v in self.scope.get("headers", [])
+            }
             auth = headers.get("authorization") or headers.get("Authorization")
             if auth and auth.lower().startswith("bearer "):
                 token = auth.split(" ", 1)[1]
@@ -49,20 +54,22 @@ class TokenAuthMiddlewareInstance:
 
     @database_sync_to_async
     def get_user_from_token(self, token):
-        # Try DRF Token first
         try:
+            # DRF Token
             from rest_framework.authtoken.models import Token as DRFToken
             t = DRFToken.objects.select_related("user").get(key=token)
             return t.user
         except Exception:
             pass
 
-        # Try SimpleJWT
         try:
+            # SimpleJWT
             from rest_framework_simplejwt.backends import TokenBackend
             from django.conf import settings
-            backend = TokenBackend(algorithm=getattr(settings, "SIMPLE_JWT", {}).get("ALGORITHM", "HS256"),
-                                   signing_key=settings.SECRET_KEY)
+            backend = TokenBackend(
+                algorithm=getattr(settings, "SIMPLE_JWT", {}).get("ALGORITHM", "HS256"),
+                signing_key=settings.SECRET_KEY
+            )
             data = backend.decode(token, verify=True)
             user_id = data.get("user_id") or data.get("user")
             if user_id:

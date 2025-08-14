@@ -71,7 +71,7 @@ const QuizStart = () => {
             await axiosInstance.post('/submit/',payload);
             navigate(`/quiz/${quizId}/result`);
         } catch (error) {
-            console.error('Submission error:',err);
+            console.error('Submission error:',error);
         }
     }
 
