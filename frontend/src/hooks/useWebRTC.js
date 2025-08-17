@@ -1,12 +1,5 @@
-// src/hooks/useWebRTC.js
 import { useEffect, useRef, useState } from "react";
 
-/**
- * useWebRTC
- * - Connects to Django Channels at:  ws(s)://<WS_BASE>/ws/live/<session_id>/?token=<jwt or drf token>
- * - Minimal P2P mesh: join -> receive "peers" -> make offers -> exchange ICE
- * - Chat via same WS ("chat" events)
- */
 export default function useWebRTC({ sessionId, token, wsBase }) {
   const [chat, setChat] = useState([]);                 // {from, text, ts}
   const [ready, setReady] = useState(false);

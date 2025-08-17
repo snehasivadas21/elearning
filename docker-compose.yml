@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile
     container_name: pytech-backend
     command: >
-      sh -c "python manage.py migrate &&
-             daphne -b 0.0.0.0 -p 8000 pytech.asgi:application"
+      sh -c "python manage.py migrate --noinput; daphne -b 0.0.0.0 -p 8000 pytech.asgi:application"
+
     volumes:
       - ./backend:/app
     ports:

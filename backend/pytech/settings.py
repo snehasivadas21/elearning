@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken', 
     'channels',
     'django_filters',
+    'daphne',
 
     'users',
     'adminpanel',
@@ -93,7 +94,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [('redis', 6379)],
         },
     },
 }

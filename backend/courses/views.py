@@ -33,7 +33,8 @@ class InstructorCourseViewSet(viewsets.ModelViewSet):
 class CourseCategoryViewSet(viewsets.ModelViewSet):
     queryset = CourseCategory.objects.filter(is_active=True).order_by('name')
     serializer_class = CourseCategorySerializer
-    permission_classes = [permissions.AllowAny]        
+    permission_classes = [permissions.AllowAny]  
+    pagination_class = None      
 
 class ModuleViewSet(viewsets.ModelViewSet):
     queryset = Module.objects.all()

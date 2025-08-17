@@ -1,17 +1,14 @@
 import urllib.parse
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
 from channels.db import database_sync_to_async
-
-User = get_user_model()
 
 class TokenAuthMiddleware:
     """
     ASGI middleware that attaches `scope['user']` based on:
-      1) query string `?token=...`
+      1) query string ?token=...
       2) Authorization header "Bearer <token>"
-    Falls back to AnonymousUser.
+    Falls back to AnonymousUser if invalid.
     """
+
     def __init__(self, inner):
         self.inner = inner
 
@@ -21,13 +18,13 @@ class TokenAuthMiddleware:
 
 class TokenAuthMiddlewareInstance:
     def __init__(self, scope, inner):
-        self.scope = scope  # Use original scope
+        self.scope = scope
         self.inner = inner
 
     async def __call__(self, receive, send):
         token = None
 
-        # 1) Try query string
+        # 1) Query string
         qs = self.scope.get("query_string", b"")
         if isinstance(qs, bytes):
             qs = qs.decode()
@@ -35,7 +32,7 @@ class TokenAuthMiddlewareInstance:
         if "token" in params:
             token = params["token"][0]
 
-        # 2) Try Authorization header
+        # 2) Authorization header
         if not token:
             headers = {
                 k.decode() if isinstance(k, bytes) else k:
@@ -46,7 +43,8 @@ class TokenAuthMiddlewareInstance:
             if auth and auth.lower().startswith("bearer "):
                 token = auth.split(" ", 1)[1]
 
-        user = await self.get_user_from_token(token) if token else AnonymousUser()
+        # Resolve user
+        user = await self.get_user_from_token(token) if token else self.get_anonymous_user()
         self.scope["user"] = user
 
         inner = self.inner(self.scope)
@@ -54,20 +52,31 @@ class TokenAuthMiddlewareInstance:
 
     @database_sync_to_async
     def get_user_from_token(self, token):
+        """
+        Try DRF Token first, then SimpleJWT.
+        Returns a user or AnonymousUser.
+        """
+        from django.contrib.auth import get_user_model
+        from django.contrib.auth.models import AnonymousUser
+
+        User = get_user_model()
+
+        # --- DRF Token ---
         try:
-            # DRF Token
             from rest_framework.authtoken.models import Token as DRFToken
             t = DRFToken.objects.select_related("user").get(key=token)
             return t.user
         except Exception:
             pass
 
+        # --- SimpleJWT ---
         try:
-            # SimpleJWT
             from rest_framework_simplejwt.backends import TokenBackend
             from django.conf import settings
+
+            algorithm = getattr(settings, "SIMPLE_JWT", {}).get("ALGORITHM", "HS256")
             backend = TokenBackend(
-                algorithm=getattr(settings, "SIMPLE_JWT", {}).get("ALGORITHM", "HS256"),
+                algorithm=algorithm,
                 signing_key=settings.SECRET_KEY
             )
             data = backend.decode(token, verify=True)
@@ -77,4 +86,9 @@ class TokenAuthMiddlewareInstance:
         except Exception:
             pass
 
+        return AnonymousUser()
+
+    def get_anonymous_user(self):
+        """Safe import for AnonymousUser."""
+        from django.contrib.auth.models import AnonymousUser
         return AnonymousUser()

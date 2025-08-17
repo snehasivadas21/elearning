@@ -8,7 +8,7 @@ const MyQuizzes = () => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const res = await axiosInstance.get('/quiz-progress/');
+        const res = await axiosInstance.get('/quiz/quiz-progress/');
         setQuizzes(res.data);
       } catch (err) {
         console.error('Error fetching quiz progress:', err);

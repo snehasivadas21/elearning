@@ -17,7 +17,7 @@ import About from "./pages/user/About"
 import MyCourse from "./pages/student/MyCourses"
 import StudentProfile from "./pages/student/StudentProfile"
 import StudentQuiz from "./pages/student/StudentQuiz"
-import ChatPage from "./pages/user/ChatPage"
+import ChatPage from "./pages/student/ChatPage"
 import LiveSessionPage from "./pages/tutor/LiveSessionPage";
 
 // Admin
@@ -99,6 +99,7 @@ function App() {
         <Route path="dashboard" element={<TutorDashboard />} />
         <Route path="courses" element={<TutorCourses />} />
         <Route path="courses/:id/content" element={<TutorCoursesContent/>}/>
+        <Route path="chat/:courseId" element={<ChatPage/>}/>
       </Route>
 
       {/* Catch All */}

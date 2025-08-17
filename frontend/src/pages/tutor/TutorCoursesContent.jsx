@@ -5,6 +5,7 @@ import axiosInstance from "../../api/axiosInstance";
 import ModuleModal from "../../components/tutor/ModuleModal";
 import LessonModal from "../../components/tutor/LessonModal";
 import QuizModal from "../../components/tutor/QuizModal";
+import { extractResults } from "../../api/api";
 
 
 const InstructorCourseContent = () => {
@@ -31,17 +32,18 @@ const InstructorCourseContent = () => {
 
   const fetchModules = async () => {
     try {
-      const res = await axiosInstance.get(`/courses/modules/?course=${id}`, {
+      const modRes = await axiosInstance.get(`/courses/modules/?course=${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setModules(res.data);
+      const moduleData = extractResults(modRes)
+      setModules(moduleData);
 
       const lessonMap = {};
-      for (let mod of res.data) {
-        const lres = await axiosInstance.get(`/courses/lessons/?module=${mod.id}`, {
+      for (let mod of moduleData) {
+        const lessonRes = await axiosInstance.get(`/courses/lessons/?module=${mod.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        lessonMap[mod.id] = lres.data;
+        lessonMap[mod.id] = extractResults(lessonRes)
       }
       setLessonsMap(lessonMap);
     } catch (error) {
@@ -152,7 +154,7 @@ const InstructorCourseContent = () => {
         + Add Module
       </button>
 
-      {modules.map((mod) => (
+      {Array.isArray(modules) && modules.map((mod) => (
         <div key={mod.id} className="mb-6 border p-4 rounded shadow">
           <div className="flex justify-between items-center mb-2">
             <div>

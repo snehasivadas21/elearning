@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axiosPublic from "../../api/axiosPublic";
 import { Link } from "react-router-dom";
 import { Search, Users, Star, Clock, BookOpen, Filter } from "lucide-react";
+import { extractResults } from "../../api/api";
 
 const CourseListPage = () => {
   const [courses, setCourses] = useState([]);
@@ -21,7 +22,7 @@ const CourseListPage = () => {
   const fetchCategories = async () => {
     try {
       const res = await axiosPublic.get("/courses/categories/");
-      setCategories(res.data.map((c) => c.name));
+      setCategories(extractResults(res));
     } catch (err) {
       console.error("Category fetch failed", err);
     }
@@ -33,7 +34,7 @@ const CourseListPage = () => {
       if (searchTerm) url += `&search=${searchTerm}`;
       if (selectedCategory !== "All") url += `&category=${selectedCategory}`;
       const res = await axiosPublic.get(url);
-      setCourses(res.data);
+      setCourses(extractResults(res));
     } catch (err) {
       console.error("Course fetch error", err);
     }
@@ -77,15 +78,15 @@ const CourseListPage = () => {
             </button>
             {categories.map((cat) => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.name)}
                 className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-                  selectedCategory === cat
+                  selectedCategory === cat.name
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 hover:bg-gray-100"
                 }`}
               >
-                {cat}
+                {cat.name}
               </button>
             ))}
           </div>

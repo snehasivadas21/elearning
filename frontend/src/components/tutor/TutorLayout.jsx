@@ -6,6 +6,7 @@ import TutorSidebar from "./TutorSidebar";
 const getTitleFromPath = (path) => {
   if (path.includes("courses")) return "Course Management";
   if (path.includes("content")) return "CourseContent Management"
+  if (path.includes("chat")) return "Chat Management"
   return "Tutor Overview";
 };
 

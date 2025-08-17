@@ -16,7 +16,7 @@ const MyCourses = () => {
     const fetchEnrolledCourses = async () => {
       try {
         const res = await axiosInstance.get("/payments/purchase/");
-        const courseList = res.data.map((enrollment) => enrollment.course);
+        const courseList = res.data.results.map((enrollment) => enrollment.course);
         setCourses(courseList);
       } catch (err) {
         console.error("Failed to fetch enrolled courses", err);
@@ -31,8 +31,20 @@ const MyCourses = () => {
     </div>
   );
 
-  const handleChatClick = () =>{
-    navigate(`/chat/${courses.id}`)
+  const handleChatClick = (courseId, e) => {
+    e.preventDefault(); // Prevent the Link navigation
+    e.stopPropagation(); // Stop event bubbling
+    navigate(`/student/chat/${courseId}`,{state:{role:"student"}});
+  }
+
+  const handleContinueLearning = (courseId, e) => {
+    e.preventDefault(); // Prevent the Link navigation
+    e.stopPropagation(); // Stop event bubbling
+    navigate(`/courses/${courseId}`);
+  }
+
+  const handleLiveSessionClick = (e) => {
+    e.stopPropagation(); // Stop event bubbling to prevent Link navigation
   }
 
   return (
@@ -45,7 +57,7 @@ const MyCourses = () => {
           <Link
             to={`/courses/${course.id}`}
             key={course.id}
-            className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition"
+            className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition block"
           >
             <div className="relative">
               <img
@@ -96,17 +108,26 @@ const MyCourses = () => {
                 </div>
               </div>
 
-              <button className="mt-4 w-full bg-blue-600 text-white py-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-700 transition">
+              <button 
+                className="mt-4 w-full bg-blue-600 text-white py-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-700 transition"
+                onClick={(e) => handleContinueLearning(course.id, e)}
+              >
                 <BookOpen className="w-4 h-4" />
                 Continue Learning
               </button>
-              <button className='bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700' onClick={handleChatClick}>
+              
+              <button 
+                className='mt-2 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2' 
+                onClick={(e) => handleChatClick(course.id, e)}
+              >
                 Chat with Instructor
               </button>
+              
               {course.live_session?.join_url && (
                 <Link
                   to={`/live-session/${course.live_session.join_url}`}
-                  className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                  className="mt-2 block w-full bg-green-500 text-white py-2 rounded text-center hover:bg-green-600"
+                  onClick={handleLiveSessionClick}
                 >
                   Join Now
                 </Link>

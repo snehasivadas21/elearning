@@ -12,7 +12,7 @@ const QuizResult = () => {
   useEffect(() => {
     const fetchResult = async () => {
       try {
-        const res = await axiosInstance.get('/quiz-progress/');
+        const res = await axiosInstance.get('/quiz/quiz-progress/');
         const filtered = res.data.find(sub => sub.quiz_title && sub.quiz === parseInt(quizId));
         setResult(filtered);
       } catch (err) {
