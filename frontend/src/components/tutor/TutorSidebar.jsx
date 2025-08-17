@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Layers, Layers2 } from "lucide-react";
+import { LayoutDashboard, Layers, CalendarCheck } from "lucide-react";
 
 const navLinks = [
   { name: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/tutor/dashboard" },
   { name: "Courses", icon: <Layers size={18} />, path: "/tutor/courses" },
+  { name: "Interview", icon: <CalendarCheck size={18} />, path: "/tutor/interview" },
 ];
 
 const TutorSidebar = () => {

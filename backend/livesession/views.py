@@ -1,4 +1,3 @@
-# livesession/views.py
 from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -11,7 +10,6 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from courses.models import Course
 
-# Create session (instructor)
 class LiveSessionCreateView(generics.CreateAPIView):
     serializer_class = LiveSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -30,8 +28,6 @@ class LiveSessionCreateView(generics.CreateAPIView):
                 args=[str(session.id)],
                 eta=session.scheduled_at - timezone.timedelta(minutes=10)
             )
-
-# Detail (enrolled or instructor)
 class LiveSessionDetailView(generics.RetrieveAPIView):
     queryset = LiveSession.objects.all()
     serializer_class = LiveSessionSerializer
@@ -86,7 +82,6 @@ def end_session(request, id):
     )
     return Response({"message":"Session ended"})
 
-# (Optional) list participants of session
 class LiveSessionParticipantsView(generics.ListAPIView):
     serializer_class = LiveParticipantSerializer
     permission_classes = [permissions.IsAuthenticated, IsEnrolledOrInstructor]

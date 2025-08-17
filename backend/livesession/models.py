@@ -19,7 +19,7 @@ class LiveSession(models.Model):
 class LiveParticipant(models.Model):
     session = models.ForeignKey(LiveSession, on_delete=models.CASCADE, related_name="participants")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    role = models.CharField(max_length=20, default="student")  # "instructor"/"student"
+    role = models.CharField(max_length=20, default="student")  
     joined_at = models.DateTimeField(null=True, blank=True)
     left_at = models.DateTimeField(null=True, blank=True)
     is_muted = models.BooleanField(default=False)

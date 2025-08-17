@@ -19,6 +19,8 @@ class MockInterview(models.Model):
     score = models.DecimalField(max_digits=5,decimal_places=2,null=True,blank=True)
     rating = models.PositiveIntegerField(null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    reminder_sent = models.BooleanField(default=False)
+    feedback_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-scheduled_at']

@@ -1,4 +1,3 @@
-# livesession/routing.py
 from django.urls import re_path
 from .consumers import LiveSessionConsumer
 from .notify_consumer import CourseNotifyConsumer

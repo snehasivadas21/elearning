@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import CourseModal from "../../components/admin/CourseModal"; 
+import InstructorLiveSessionPanel from "../../components/tutor/InstructorLivePanel";
 
 const InstructorCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -173,6 +174,8 @@ const InstructorCourses = () => {
                     Manage Content
                   </button>
                 )}
+                <InstructorLiveSessionPanel course={course} />
+                
               </div>
             </div>
           ))

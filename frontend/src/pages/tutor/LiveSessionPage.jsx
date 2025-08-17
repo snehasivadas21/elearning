@@ -1,95 +1,31 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-
+import useWebRTC from "../../hooks/useWebRTC";
 
 export default function LiveSessionPage() {
-  const { sessionId } = useParams();
-  const localVideoRef = useRef(null);
-  const remoteVideosRef = useRef({});
-  const peerConnections = useRef({});
-  const [ws, setWs] = useState(null);
+  const { id: sessionId } = useParams();
+  const { localVideoRef, remoteVideosRef, peerConnections, localStreamRef, chat, sendChat } = useWebRTC(sessionId);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCamOn, setIsCamOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const localStreamRef = useRef(null);
 
-  // Connect to WebSocket signaling server
+  // Sync chat from hook with local state
   useEffect(() => {
-    const socket = new WebSocket(
-      `wss://your-backend-domain/ws/live/${sessionId}/`
-    );
+    setChatMessages(chat);
+  }, [chat]);
 
-    socket.onmessage = async (event) => {
-      const data = JSON.parse(event.data);
-      const { type, from, offer, answer, candidate, message } = data;
-
-      if (type === "offer") {
-        const pc = createPeerConnection(from);
-        await pc.setRemoteDescription(new RTCSessionDescription(offer));
-        const answerDesc = await pc.createAnswer();
-        await pc.setLocalDescription(answerDesc);
-        socket.send(
-          JSON.stringify({ type: "answer", to: from, answer: answerDesc })
-        );
-      }
-
-      if (type === "answer" && peerConnections.current[from]) {
-        await peerConnections.current[from].setRemoteDescription(
-          new RTCSessionDescription(answer)
-        );
-      }
-
-      if (type === "candidate" && peerConnections.current[from]) {
-        try {
-          await peerConnections.current[from].addIceCandidate(
-            new RTCIceCandidate(candidate)
-          );
-        } catch (e) {
-          console.error("Error adding received ICE candidate", e);
-        }
-      }
-
-      if (type === "chat") {
-        setChatMessages((prev) => [...prev, { from, text: message }]);
-      }
-    };
-
-    socket.onopen = () => {
-      console.log("Connected to signaling server");
-    };
-
-    setWs(socket);
-    return () => socket.close();
-  }, [sessionId]);
-
-  // Get user media
-  useEffect(() => {
-    (async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
-        localStreamRef.current = stream;
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
-      } catch (err) {
-        console.error("Error accessing media devices", err);
-      }
-    })();
-  }, []);
-
+  // Use the createPeerConnection from the hook context
   const createPeerConnection = (peerId) => {
     const pc = new RTCPeerConnection();
-
     peerConnections.current[peerId] = pc;
 
-    localStreamRef.current.getTracks().forEach((track) => {
-      pc.addTrack(track, localStreamRef.current);
-    });
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => {
+        pc.addTrack(track, localStreamRef.current);
+      });
+    }
 
     pc.ontrack = (event) => {
       if (!remoteVideosRef.current[peerId]) {
@@ -98,20 +34,19 @@ export default function LiveSessionPage() {
         video.playsInline = true;
         video.className = "w-48 h-36 bg-black rounded";
         video.srcObject = event.streams[0];
-        document.getElementById("remote-videos").appendChild(video);
+        
+        const remoteContainer = document.getElementById("remote-videos");
+        if (remoteContainer) {
+          remoteContainer.appendChild(video);
+        }
         remoteVideosRef.current[peerId] = video;
       }
     };
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        ws.send(
-          JSON.stringify({
-            type: "candidate",
-            to: peerId,
-            candidate: event.candidate,
-          })
-        );
+        // WebSocket should be managed by the hook, but keeping this for compatibility
+        console.log("ICE candidate:", event.candidate);
       }
     };
 
@@ -119,17 +54,21 @@ export default function LiveSessionPage() {
   };
 
   const handleMicToggle = () => {
-    localStreamRef.current.getAudioTracks().forEach((track) => {
-      track.enabled = !track.enabled;
-    });
-    setIsMicOn((prev) => !prev);
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach((track) => {
+        track.enabled = !track.enabled;
+      });
+      setIsMicOn((prev) => !prev);
+    }
   };
 
   const handleCamToggle = () => {
-    localStreamRef.current.getVideoTracks().forEach((track) => {
-      track.enabled = !track.enabled;
-    });
-    setIsCamOn((prev) => !prev);
+    if (localStreamRef.current) {
+      localStreamRef.current.getVideoTracks().forEach((track) => {
+        track.enabled = !track.enabled;
+      });
+      setIsCamOn((prev) => !prev);
+    }
   };
 
   const handleScreenShare = async () => {
@@ -139,13 +78,28 @@ export default function LiveSessionPage() {
           video: true,
         });
         const screenTrack = screenStream.getVideoTracks()[0];
-        const sender = Object.values(peerConnections.current)[0]
-          ?.getSenders()
-          .find((s) => s.track.kind === "video");
-        sender.replaceTrack(screenTrack);
+        
+        // Replace video track for all peer connections
+        Object.values(peerConnections.current).forEach((pc) => {
+          const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
+          if (sender) {
+            sender.replaceTrack(screenTrack);
+          }
+        });
+        
         setIsScreenSharing(true);
+        
         screenTrack.onended = () => {
-          sender.replaceTrack(localStreamRef.current.getVideoTracks()[0]);
+          // Restore camera when screen sharing ends
+          if (localStreamRef.current) {
+            const videoTrack = localStreamRef.current.getVideoTracks()[0];
+            Object.values(peerConnections.current).forEach((pc) => {
+              const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
+              if (sender) {
+                sender.replaceTrack(videoTrack);
+              }
+            });
+          }
           setIsScreenSharing(false);
         };
       } catch (err) {
@@ -155,9 +109,8 @@ export default function LiveSessionPage() {
   };
 
   const handleSendChat = () => {
-    if (chatInput.trim() && ws) {
-      ws.send(JSON.stringify({ type: "chat", message: chatInput }));
-      setChatMessages((prev) => [...prev, { from: "Me", text: chatInput }]);
+    if (chatInput.trim()) {
+      sendChat(chatInput);
       setChatInput("");
     }
   };
@@ -174,7 +127,7 @@ export default function LiveSessionPage() {
             {isCamOn ? "Turn Off Cam" : "Turn On Cam"}
           </button>
           <button onClick={handleScreenShare} className="px-3 py-1 bg-green-600 rounded">
-            Share Screen
+            {isScreenSharing ? "Stop Sharing" : "Share Screen"}
           </button>
         </div>
 
@@ -199,6 +152,7 @@ export default function LiveSessionPage() {
             type="text"
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
             placeholder="Type a message..."
             className="flex-1 border rounded p-1"
           />

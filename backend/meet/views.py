@@ -6,6 +6,8 @@ from .serializers import MockInterviewSerializer
 from users.permissions import IsInstructorUser,IsStudentUser
 from .tasks import send_mock_interview_reminder
 from courses.utils import issue_certificate_if_eligible
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 class InstructorMockInterviewViewSet(viewsets.ModelViewSet):
     serializer_class = MockInterviewSerializer
@@ -21,10 +23,11 @@ class InstructorMockInterviewViewSet(viewsets.ModelViewSet):
         if reminder_time > now():
            send_mock_interview_reminder.apply_async(
                args = [
-                   interview.student.email,
-                   interview.course.title,
-                   str(interview.scheuled_at),
-                   interview.meet_link
+                #    interview.student.email,
+                #    interview.course.title,
+                #    str(interview.scheduled_at),
+                #    interview.meet_link
+                interview.id
                ],
                eta = reminder_time
            )
@@ -37,10 +40,16 @@ class InstructorMockInterviewViewSet(viewsets.ModelViewSet):
                 course=interview.course
             )    
 
-class StudentMockInterviewViewSet(viewsets.ModelViewSet):
+class StudentMockInterviewViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MockInterviewSerializer
     permission_classes =[permissions.IsAuthenticated,IsStudentUser]
 
     def get_queryset(self):
         return MockInterview.objects.filter(student = self.request.user)
+    
+    @action(detail=False)
+    def upcoming(self,request):
+        upcoming = self.get_queryset().filter(status='scheduled',scheduled_at__gte=now())
+        serializer = self.get_serializer(upcoming,many=True)
+        return Response(serializer.data)
     

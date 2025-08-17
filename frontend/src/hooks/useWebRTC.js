@@ -1,21 +1,37 @@
 import { useEffect, useRef, useState } from "react";
 
-export default function useWebRTC({ sessionId, token, wsBase }) {
-  const [chat, setChat] = useState([]);                 // {from, text, ts}
-  const [ready, setReady] = useState(false);
-  const [localStream, setLocalStream] = useState(null);
-  const [remoteStreams, setRemoteStreams] = useState([]); // [{peerId, stream}]
-  const wsRef = useRef(null);
-  const pcs = useRef({}); // peerId -> RTCPeerConnection
-  const streamsByPeer = useRef({}); // peerId -> MediaStream
+export default function useWebRTC(sessionId) {
+  // Return the interface that LiveSessionPage expects
+  const localVideoRef = useRef(null);
+  const remoteVideosRef = useRef({});
+  const peerConnections = useRef({});
+  const localStreamRef = useRef(null);
 
-  // --- helpers
+  // Internal state for the hook functionality
+  const [chat, setChat] = useState([]);                 
+  const [ready, setReady] = useState(false);
+  const [remoteStreams, setRemoteStreams] = useState([]); 
+  const wsRef = useRef(null);
+  const streamsByPeer = useRef({}); 
+
+  
   const sendWS = (msg) => wsRef.current?.readyState === 1 && wsRef.current.send(JSON.stringify(msg));
 
   const addRemoteTrackHandler = (peerId, pc) => {
     pc.ontrack = (e) => {
       const stream = e.streams[0];
       streamsByPeer.current[peerId] = stream;
+      
+      // Create video element and add to remoteVideosRef for compatibility
+      if (!remoteVideosRef.current[peerId]) {
+        const video = document.createElement("video");
+        video.autoplay = true;
+        video.playsInline = true;
+        video.className = "w-48 h-36 bg-black rounded";
+        video.srcObject = stream;
+        remoteVideosRef.current[peerId] = video;
+      }
+      
       setRemoteStreams((prev) => {
         const existing = prev.find((p) => p.peerId === peerId);
         if (existing) return prev.map((p) => (p.peerId === peerId ? { peerId, stream } : p));
@@ -26,18 +42,19 @@ export default function useWebRTC({ sessionId, token, wsBase }) {
 
   const createPC = (peerId) => {
     const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-    pcs.current[peerId] = pc;
+    peerConnections.current[peerId] = pc; // Use the expected reference
 
     // Add local tracks
-    localStream?.getTracks().forEach((t) => pc.addTrack(t, localStream));
+    localStreamRef.current?.getTracks().forEach((t) => pc.addTrack(t, localStreamRef.current));
     addRemoteTrackHandler(peerId, pc);
 
     pc.onicecandidate = (e) => {
-      if (e.candidate) sendWS({ type: "ice-candidate", to: peerId, candidate: e.candidate });
+      if (e.candidate) sendWS({ type: "candidate", to: peerId, candidate: e.candidate });
     };
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === "disconnected" || pc.connectionState === "failed" || pc.connectionState === "closed") {
-        delete pcs.current[peerId];
+        delete peerConnections.current[peerId];
+        delete remoteVideosRef.current[peerId];
         setRemoteStreams((prev) => prev.filter((p) => p.peerId !== peerId));
       }
     };
@@ -50,125 +67,124 @@ export default function useWebRTC({ sessionId, token, wsBase }) {
     let mounted = true;
 
     (async () => {
-      const media = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      if (!mounted) return;
-      setLocalStream(media);
-
-      const url = `${wsBase.replace(/\/$/, "")}/ws/live/${sessionId}/?token=${encodeURIComponent(token)}`;
-      const ws = new WebSocket(url);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        setReady(true);
-        sendWS({ type: "join" }); // tells server we’re in the room
-      };
-
-      ws.onmessage = async (evt) => {
-        const msg = JSON.parse(evt.data);
-
-        switch (msg.type) {
-          case "peers": {
-            // server sends current peer IDs; create offers to each
-            for (const peerId of msg.ids) {
-              if (pcs.current[peerId]) continue;
-              const pc = createPC(peerId);
-              const offer = await pc.createOffer();
-              await pc.setLocalDescription(offer);
-              sendWS({ type: "offer", to: peerId, offer });
-            }
-            break;
-          }
-
-          case "offer": {
-            const { from, offer } = msg;
-            const pc = pcs.current[from] || createPC(from);
-            await pc.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            sendWS({ type: "answer", to: from, answer });
-            break;
-          }
-
-          case "answer": {
-            const { from, answer } = msg;
-            const pc = pcs.current[from];
-            if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
-            break;
-          }
-
-          case "ice-candidate": {
-            const { from, candidate } = msg;
-            const pc = pcs.current[from];
-            if (pc && candidate) {
-              try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch {}
-            }
-            break;
-          }
-
-          case "chat": {
-            setChat((c) => [...c, { from: msg.from_name || msg.from, text: msg.message, ts: Date.now() }]);
-            break;
-          }
-
-          case "left": {
-            const { peerId } = msg;
-            pcs.current[peerId]?.close();
-            delete pcs.current[peerId];
-            setRemoteStreams((prev) => prev.filter((p) => p.peerId !== peerId));
-            break;
-          }
-
-          default:
-            break;
+      try {
+        const media = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        if (!mounted) return;
+        
+        localStreamRef.current = media;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = media;
         }
-      };
 
-      ws.onclose = () => {
-        Object.values(pcs.current).forEach((pc) => pc.close());
-        pcs.current = {};
-        streamsByPeer.current = {};
-      };
+        // Fixed WebSocket URL - removed duplicate protocol
+        const url = `ws://localhost:8000/ws/live/${sessionId}/`;
+        const ws = new WebSocket(url);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          console.log("Connected to signaling server");
+          setReady(true);
+        };
+
+        ws.onmessage = async (evt) => {
+          const msg = JSON.parse(evt.data);
+          const { type, from, offer, answer, candidate, message } = msg;
+
+          switch (type) {
+            case "offer": {
+              const pc = createPC(from);
+              await pc.setRemoteDescription(new RTCSessionDescription(offer));
+              const answerDesc = await pc.createAnswer();
+              await pc.setLocalDescription(answerDesc);
+              sendWS({ type: "answer", to: from, answer: answerDesc });
+              break;
+            }
+
+            case "answer": {
+              const pc = peerConnections.current[from];
+              if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+              break;
+            }
+
+            case "candidate": {
+              const pc = peerConnections.current[from];
+              if (pc && candidate) {
+                try { 
+                  await pc.addIceCandidate(new RTCIceCandidate(candidate)); 
+                } catch (e) {
+                  console.error("Error adding received ICE candidate", e);
+                }
+              }
+              break;
+            }
+
+            case "chat": {
+              setChat((c) => [...c, { from, text: message, ts: Date.now() }]);
+              break;
+            }
+
+            case "left": {
+              const { peerId } = msg;
+              peerConnections.current[peerId]?.close();
+              delete peerConnections.current[peerId];
+              delete remoteVideosRef.current[peerId];
+              setRemoteStreams((prev) => prev.filter((p) => p.peerId !== peerId));
+              break;
+            }
+
+            default:
+              break;
+          }
+        };
+
+        ws.onclose = () => {
+          Object.values(peerConnections.current).forEach((pc) => pc.close());
+          peerConnections.current = {};
+          remoteVideosRef.current = {};
+          streamsByPeer.current = {};
+        };
+      } catch (err) {
+        console.error("Error accessing media devices", err);
+      }
     })();
 
     return () => {
       mounted = false;
       wsRef.current?.close();
-      localStream?.getTracks().forEach((t) => t.stop());
-      Object.values(pcs.current).forEach((pc) => pc.close());
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      Object.values(peerConnections.current).forEach((pc) => pc.close());
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, token, wsBase]);
+   
+  }, [sessionId]);
 
-  // --- controls
+  // --- controls (keeping these for potential future use)
   const toggleMic = () => {
-    localStream?.getAudioTracks().forEach((t) => (t.enabled = !t.enabled));
+    localStreamRef.current?.getAudioTracks().forEach((t) => (t.enabled = !t.enabled));
   };
   const toggleCam = () => {
-    localStream?.getVideoTracks().forEach((t) => (t.enabled = !t.enabled));
+    localStreamRef.current?.getVideoTracks().forEach((t) => (t.enabled = !t.enabled));
   };
   const startScreenShare = async () => {
-    const screen = await navigator.mediaDevices.getDisplayMedia({ video: true });
-    const screenTrack = screen.getVideoTracks()[0];
-    // replace outgoing video track for all peers
-    Object.values(pcs.current).forEach((pc) => {
-      const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
-      if (sender) sender.replaceTrack(screenTrack);
-    });
-    // also replace local preview
-    const [old] = localStream.getVideoTracks();
-    old.stop();
-    localStream.removeTrack(old);
-    localStream.addTrack(screenTrack);
-    screenTrack.onended = async () => {
-      const cam = await navigator.mediaDevices.getUserMedia({ video: true });
-      const camTrack = cam.getVideoTracks()[0];
-      Object.values(pcs.current).forEach((pc) => {
+    try {
+      const screen = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenTrack = screen.getVideoTracks()[0];
+      
+      Object.values(peerConnections.current).forEach((pc) => {
         const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
-        if (sender) sender.replaceTrack(camTrack);
+        if (sender) sender.replaceTrack(screenTrack);
       });
-      localStream.removeTrack(screenTrack);
-      localStream.addTrack(camTrack);
-    };
+      
+      screenTrack.onended = async () => {
+        const cam = await navigator.mediaDevices.getUserMedia({ video: true });
+        const camTrack = cam.getVideoTracks()[0];
+        Object.values(peerConnections.current).forEach((pc) => {
+          const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
+          if (sender) sender.replaceTrack(camTrack);
+        });
+      };
+    } catch (err) {
+      console.error("Error sharing screen", err);
+    }
   };
   const sendChat = (text) => {
     if (!text?.trim()) return;
@@ -176,14 +192,18 @@ export default function useWebRTC({ sessionId, token, wsBase }) {
     setChat((c) => [...c, { from: "Me", text, ts: Date.now() }]);
   };
 
+  // Return the interface expected by LiveSessionPage
   return {
+    localVideoRef,
+    remoteVideosRef,
+    peerConnections,
+    localStreamRef,
+    // Additional utilities
     ready,
-    localStream,
-    remoteStreams, // array of {peerId, stream}
+    chat,
     toggleMic,
     toggleCam,
     startScreenShare,
-    chat,
     sendChat,
   };
 }

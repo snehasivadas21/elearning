@@ -19,6 +19,7 @@ import StudentProfile from "./pages/student/StudentProfile"
 import StudentQuiz from "./pages/student/StudentQuiz"
 import ChatPage from "./pages/student/ChatPage"
 import LiveSessionPage from "./pages/tutor/LiveSessionPage";
+import MockInterviewsPage from "./pages/student/MockInterviewsPage";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
@@ -34,12 +35,14 @@ import TutorLayout from "./components/tutor/TutorLayout";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import TutorCourses from "./pages/tutor/TutorCourses";
 import TutorCoursesContent from "./pages/tutor/TutorCoursesContent";
+import InstructorMockInterviews from "./pages/tutor/TutorMockInterviews";
 
 // Routes
 import PrivateRoute from "./routes/PrivateRoute";
 import AdminRoute from "./routes/AdminRoute";
 import TutorRoute from "./routes/TutorRoute";
 import StudentLayout from "./components/student/StudentLayout";
+
 
 
 
@@ -65,6 +68,7 @@ function App() {
           <Route path="quizzes" element={<StudentQuiz/>} />
           <Route path="chat/:courseId" element={<ChatPage/>}/>
           <Route path="live-session/:sessionId" element={<LiveSessionPage />} />
+          <Route path="interview" element={<MockInterviewsPage/>} />
         </Route>
       </Route>
 
@@ -100,6 +104,7 @@ function App() {
         <Route path="courses" element={<TutorCourses />} />
         <Route path="courses/:id/content" element={<TutorCoursesContent/>}/>
         <Route path="chat/:courseId" element={<ChatPage/>}/>
+        <Route path="interview" element={<InstructorMockInterviews/>}/>
       </Route>
 
       {/* Catch All */}

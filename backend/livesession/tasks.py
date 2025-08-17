@@ -1,4 +1,3 @@
-# livesession/tasks.py
 from celery import shared_task
 from django.utils import timezone
 from asgiref.sync import async_to_sync
@@ -27,4 +26,4 @@ def schedule_session_reminder(session_id):
             "join_url": f"/student/live/{s.id}"
         }}
     )
-    # (optional) also send email here
+    
