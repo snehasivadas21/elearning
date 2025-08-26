@@ -30,3 +30,13 @@ class Order(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.student.username} - {self.status}"
+
+class Invoice(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="invoices")
+    purchase = models.OneToOneField("CoursePurchase",on_delete=models.CASCADE,related_name="invoice")
+    invoice_number = models.CharField(max_length=20,unique=True)
+    pdf_file = models.FileField(upload_to="invoices/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Invoice {self.invoice_number} - {self.student.email}"

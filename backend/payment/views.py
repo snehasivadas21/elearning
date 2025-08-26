@@ -3,13 +3,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.conf import settings
-from .models import Order,CoursePurchase
+from .models import Order,CoursePurchase,Invoice
 from .serializers import OrderSerializer,CoursePurchaseSerializer
 from users.permissions import IsStudentUser
 from courses.models import Course
 import razorpay
 import hmac
 import hashlib
+from rest_framework.decorators import api_view
+from .utils import generate_invoice_number,create_invoice_pdf
+
 
 razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
@@ -103,3 +106,20 @@ class VerifyRazorpayPayment(APIView):
         )
 
         return Response({"status": "Payment verified and course unlocked"})
+
+@api_view(["POST"])
+def payment_success(request):
+    payment_id = request.data.get("payment_id")
+    purchase = CoursePurchase.objects.get(payment_id=payment_id)
+
+    invoice_number = generate_invoice_number()
+    invoice = Invoice.objects.create(
+        studnent = purchase.student,
+        purchase =  purchase,
+        invoice_number = invoice_number,
+    ) 
+    pdf = create_invoice_pdf(invoice)
+    invoice.pdf_file.save(f"{invoice_number}.pdf",pdf)
+    invoice.save()
+
+    return Response({"message":"Payment success & invoice generated"})   

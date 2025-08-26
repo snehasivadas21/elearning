@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from cloudinary.models import CloudinaryField
 from cloudinary_storage.storage import MediaCloudinaryStorage
@@ -12,7 +13,6 @@ class CourseCategory(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Course(models.Model):
     STATUS_CHOICES = [
@@ -92,6 +92,11 @@ class LessonProgress(models.Model):
 
     class Meta:
         unique_together = ('student','lesson')
+
+    def mark_completed(self):
+        self.completed = True
+        self.completed_at = timezone.now()
+        self.save()    
 
     def __str__(self):
         return f"{self.student.username} - {self.lesson.title} - {'YES' if self.completed else 'NO'}"    

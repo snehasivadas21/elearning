@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import axiosPublic from "../../api/axiosPublic";
 import axiosInstance from "../../api/axiosInstance";
 import { toast } from "react-toastify";
+import { Button } from "../../components/ui/Button";
+import { Download } from "lucide-react";
 
 const CourseDetailPage = () => {
   const { id } = useParams();
@@ -10,15 +12,18 @@ const CourseDetailPage = () => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [modules, setModules] = useState([]);
   const [enrollLoading,setEnrollLoading] = useState(true);
+  const [certificate,setCertificates] = useState(null);
 
   const isLoggedIn = !!localStorage.getItem("accessToken");
 
-  // ✅ Fetch course details
+
   useEffect(() => {
     const fetchCourse = async () => {
       try {
         const res = await axiosPublic.get(`/users/approved/${id}/`);
         setCourse(res.data);
+        const certRes = await axiosPublic.get(`/courses/certificate/${id}/`)
+        setCertificates(certRes.data);
       } catch (err) {
         console.error("Error fetching course detail", err);
       }
@@ -105,6 +110,26 @@ const CourseDetailPage = () => {
       toast.error("Payment failed or canceled.");
     }
   };
+
+  const handleDownloadInvoice = async () => {
+    try {
+      const response = await api.get(`/invoices/${orderId}/download/`, {
+        responseType: "blob", // Important for files
+      });
+
+      // Create blob link for download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `invoice-${orderId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Invoice download failed", error);
+    }
+  };
+
 
   useEffect(() => {
     const fetchCurriculum = async () => {
@@ -238,9 +263,22 @@ const CourseDetailPage = () => {
           </button>
         )}
 
-        <button className="mt-3 w-full border text-gray-700 py-2 rounded hover:bg-gray-50">
-          Add to Wishlist❤️
-        </button>
+        {certificate?.has_certificate ? (
+          <a href={certificate.download_url} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-green-600 text-white rounded">
+            Download Certifate
+          </a>
+        ) : (
+          <p className="text-gray-500">Complete all lessons + quizzes to unlock certificate</p>
+        )}
+
+        {purchaseSuccess && (
+          <button
+            onClick={handleDownloadInvoice}
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700"
+          >
+            Download Invoice
+          </button>
+        )}
 
         <div className="mt-6 text-sm text-gray-600 space-y-2">
           <div>📺 {course.duration || "15 hours"} on-demand video</div>

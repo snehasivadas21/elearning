@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import axios from "axios";
+import axiosInstance from "../../api/axiosInstance";
 
-export default function InstructorMockInterviews() {
+export default function TutorMockInterviews() {
   const [interviews, setInterviews] = useState([]);
   const [selected, setSelected] = useState(null);
 
@@ -15,23 +15,23 @@ export default function InstructorMockInterviews() {
   }, []);
 
   const fetchInterviews = async () => {
-    const res = await axios.get("/api/instructor/interviews/"); // your DRF endpoint
+    const res = await axiosInstance.get("/meets/instructor/mock-interviews/"); 
     setInterviews(res.data);
   };
 
   const updateStatus = async (id, status) => {
-    await axios.patch(`/api/instructor/interviews/${id}/`, { status });
+    await axiosInstance.patch(`/meets/instructor/mock-interviews/${id}/`, { status });
     fetchInterviews();
   };
 
   const sendReminder = async (id) => {
-    await axios.post(`/api/instructor/interviews/${id}/send-reminder/`);
+    await axiosInstance.post(`/meets/instructor/mock-interviews/${id}/send-reminder/`);
     alert("Reminder sent!");
   };
 
   const saveFeedback = async () => {
     if (!selected) return;
-    await axios.patch(`/api/instructor/interviews/${selected.id}/`, {
+    await axiosInstance.patch(`/meets/instructor/mock-interviews/${selected.id}/`, {
       feedback: selected.feedback,
       score: selected.score,
       rating: selected.rating,

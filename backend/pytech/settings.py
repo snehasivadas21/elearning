@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
 
     'rest_framework_simplejwt.token_blacklist', 
@@ -46,7 +47,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken', 
     'channels',
     'django_filters',
-    'daphne',
+    
 
     'users',
     'adminpanel',
@@ -58,6 +59,7 @@ INSTALLED_APPS = [
     'chat',
     'ai',
     'instrpanel',
+    'job',
 
     # 'dj_rest_auth',
     # 'dj_rest_auth.registration',

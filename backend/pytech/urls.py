@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/meets/',include('meet.urls')),
     path('api/livesession/',include('livesession.urls')),
     path('api/chat/',include('chat.urls')),
+    path('api/job/',include('job.urls')),
     # path('api/ai/', include('ai.urls')),
 
     # dj-rest-auth

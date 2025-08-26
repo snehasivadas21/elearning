@@ -47,6 +47,7 @@ python-engineio==4.12.2
 python-socketio==5.13.0
 razorpay==1.4.2
 redis==5.2.1
+reportlab==4.4.3
 requests==2.32.4
 service-identity==24.2.0
 setuptools==80.9.0

@@ -9,6 +9,8 @@ import Login from "./pages/user/Login";
 import Register from "./pages/user/Register";
 import VerifyOtp from "./pages/user/VerifyOtp";
 import GoogleCallback from "./pages/user/GoogleCallback";
+import ForgotPasswordPage from "./pages/user/ForgetPassowordPage";
+import ResetPasswordPage from "./pages/user/ResetPasswordPage";
 import Dashboard from "./pages/student/Dashboard";
 import NotFound from "./pages/user/NotFound";
 import CourseListPage from "./pages/user/Courses";
@@ -20,6 +22,7 @@ import StudentQuiz from "./pages/student/StudentQuiz"
 import ChatPage from "./pages/student/ChatPage"
 import LiveSessionPage from "./pages/tutor/LiveSessionPage";
 import MockInterviewsPage from "./pages/student/MockInterviewsPage";
+import CertificatePage from "./pages/student/CertificatePage";
 
 // Admin
 import AdminLayout from "./components/admin/AdminLayout";
@@ -35,16 +38,13 @@ import TutorLayout from "./components/tutor/TutorLayout";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import TutorCourses from "./pages/tutor/TutorCourses";
 import TutorCoursesContent from "./pages/tutor/TutorCoursesContent";
-import InstructorMockInterviews from "./pages/tutor/TutorMockInterviews";
+import TutorMockInterviews from "./pages/tutor/TutorMockInterviews";
 
 // Routes
 import PrivateRoute from "./routes/PrivateRoute";
 import AdminRoute from "./routes/AdminRoute";
 import TutorRoute from "./routes/TutorRoute";
 import StudentLayout from "./components/student/StudentLayout";
-
-
-
 
 function App() {
   return (
@@ -69,6 +69,7 @@ function App() {
           <Route path="chat/:courseId" element={<ChatPage/>}/>
           <Route path="live-session/:sessionId" element={<LiveSessionPage />} />
           <Route path="interview" element={<MockInterviewsPage/>} />
+          <Route path="certificate" element={<CertificatePage/>}/>
         </Route>
       </Route>
 
@@ -77,6 +78,8 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/verify-otp" element={<VerifyOtp />} />
       <Route path="/google/callback" element={<GoogleCallback />} />
+      <Route path="/forget-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage/>}/>
 
       {/* Admin Section */}
       <Route path="/admin" element={
@@ -104,7 +107,7 @@ function App() {
         <Route path="courses" element={<TutorCourses />} />
         <Route path="courses/:id/content" element={<TutorCoursesContent/>}/>
         <Route path="chat/:courseId" element={<ChatPage/>}/>
-        <Route path="interview" element={<InstructorMockInterviews/>}/>
+        <Route path="interview" element={<TutorMockInterviews/>}/>
       </Route>
 
       {/* Catch All */}

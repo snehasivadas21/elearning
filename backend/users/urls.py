@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     RegisterView, LoginView, VerifyOTPView, ResendOTPView,
     StudentDashboardView,CustomTokenObtainPairView, ApprovedCourseListView,
-    ApprovedCourseDetailView, StudentProfileViewSet
+    ApprovedCourseDetailView, StudentProfileViewSet , RequestPasswordResetView,PasswordResetConfirmView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -17,6 +17,8 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),  
     path('verify-otp/', VerifyOTPView.as_view(), name='verify_otp'),
     path('resend-otp/', ResendOTPView.as_view(),name='resend-otp'),
+    path('password-reset/',RequestPasswordResetView.as_view(),name="password-reset"),
+    path("password-reset-confirm/<uidb64>/<token>/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
 
     path('student/dashboard/', StudentDashboardView.as_view(), name='student-dashboard'),
     

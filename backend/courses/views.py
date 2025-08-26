@@ -1,4 +1,6 @@
 from rest_framework import viewsets,permissions,serializers
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from .models import (Course,CourseCategory,Module,Lesson,LessonProgress,CourseCertificate,LessonResource,CourseReview)
 from .serializers import (AdminCourseSerializer,InstructorCourseSerializer,CourseCategorySerializer,
 ModuleSerializer,LessonSerializer,LessonProgressSerializer,CertificateSerializer,LessonResourceSerializer,
@@ -7,7 +9,9 @@ CourseReviewSerializer)
 from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
 from django.utils import timezone
-from .utils import issue_certificate_if_eligible
+from .utils import issue_certificate_if_eligible,verify_certificate
+from .utils import get_course_progress
+
 
 class AdminCourseViewSet(viewsets.ModelViewSet):
     queryset=Course.objects.all().order_by('-created_at')
@@ -82,7 +86,31 @@ class LessonProgressViewSet(viewsets.ModelViewSet):
         issue_certificate_if_eligible(student = self.request.user,course=progress.lesson.module.course)
     
     def get_queryset(self):
-        return self.queryset.filter(student=self.request.user) 
+        return LessonProgress.objects.filter(student=self.request.user) 
+    
+    @action(detail=True,methods=["post"])
+    def complete(self,request,pk=None):
+        try:
+            lesson=Lesson.objects.get(pk=pk)
+        except Lesson.DoesNotExist:
+            return Response({"error":"Lesson not found"},status=404)
+        progress,created = LessonProgress.objects.get_or_create(
+            student = request.user,lesson = lesson
+        )  
+        progress.mark_completed()
+        return Response({"message":"Lesson marked completed"})  
+    
+class CourseProgressViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=True,method = ["get"])
+    def progress(self,request,pk=None):
+        try:
+            course = Course.objects.get(pk=pk)
+        except Course.DoesNotExist:
+            return Response({"error":"Course not found"},status=404)
+        progress_percent = get_course_progress(request.user,course)
+        return Response({"course_id":pk,"progress":progress_percent})    
     
 class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CertificateSerializer
@@ -90,6 +118,14 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return CourseCertificate.objects.filter(student=self.request.user)
+    
+    @action(detail=False,method = ["get"],permission_classes=[permissions.AllowAny])
+    def verify(self,request):
+        certificate_id = request.query_params.get("certificate_id")
+        result = verify_certificate(certificate_id)
+        if not result:
+            return Response({"error":"Certificate not found"},status=404)
+        return Response(result)
     
 class LessonResourceViewSet(viewsets.ModelViewSet):
     serializer_class = LessonResourceSerializer

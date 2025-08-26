@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { extractResults } from "../../api/api";
 
 export default function StudentMockInterviewsDashboard() {
   const [interviews, setInterviews] = useState([]);
@@ -10,8 +11,8 @@ export default function StudentMockInterviewsDashboard() {
   useEffect(() => {
     const fetchInterviews = async () => {
       try {
-        const res = await axiosInstance.get("/student/mock-interviews/");
-        const data = res.data;
+        const res = await axiosInstance.get("/meets/student/mock-interviews/");
+        const data = extractResults(res);
 
         setInterviews(data);
 
@@ -22,7 +23,9 @@ export default function StudentMockInterviewsDashboard() {
         });
         setUpcoming(upcomingInterviews);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching interviews:",err);
+        setInterviews([]);
+        setUpcoming([]);
       }
     };
 

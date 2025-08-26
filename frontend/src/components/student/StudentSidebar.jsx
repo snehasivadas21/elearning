@@ -1,12 +1,13 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, BookOpen, User, FileText, CalendarCheck } from "lucide-react";
+import { LayoutDashboard, BookOpen, User, FileText, CalendarCheck, Award } from "lucide-react";
 
 const navLinks = [
   { name: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/student/dashboard" },
   { name: "My Courses", icon: <BookOpen size={18} />, path: "/student/courses" },
   { name: "My Profile", icon: <User size={18} />, path: "/student/profile" },
   { name: "My Quizzes", icon: <FileText size={18} />, path: "/student/quizzes" },
-  { name: "Mock Interviews", icon: <CalendarCheck size={18} />, path: "student/interview" },
+  { name: "Mock Interviews", icon: <CalendarCheck size={18} />, path: "/student/interview" },
+  { name: "My Certificates", icon: <Award size={18} />, path: "/student/certificate" },
 ];
 const StudentSidebar = () =>{
     return (

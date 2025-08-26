@@ -75,7 +75,11 @@ class LessonProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonProgress 
         fields = ['id','student','lesson','completed','completed_at'] 
-        read_only_fields = ['id','student','completed_at']           
+        read_only_fields = ['id','student','completed_at']
+
+    def create(self,validated_data):
+        validated_data["student"] = self.context["request"].user
+        return super().create(validated_data)               
 
 class CertificateSerializer(serializers.ModelSerializer):
     course_title = serializers.CharField(source='course.title', read_only=True)

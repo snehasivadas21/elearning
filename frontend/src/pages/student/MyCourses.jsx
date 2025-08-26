@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 const MyCourses = () => {
   const [courses, setCourses] = useState([]);
+  const [invoices,setInvoices] = useState([]);
   const navigate = useNavigate()
 
   const discountPercent = (original, current) => {
@@ -30,6 +31,14 @@ const MyCourses = () => {
       You haven't enrolled in any courses yet.
     </div>
   );
+
+  useEffect(()=>{
+    const fetchInvoices = async () => {
+      const response = await axiosInstance.get("/invoice/");
+      setInvoices(response.data)
+    }
+    fetchInvoices();
+  },[]);
 
   const handleChatClick = (courseId, e) => {
     e.preventDefault(); // Prevent the Link navigation
@@ -115,6 +124,28 @@ const MyCourses = () => {
                 <BookOpen className="w-4 h-4" />
                 Continue Learning
               </button>
+
+              <div className="p-6">
+                <h2 className="text-xl font-bold mb-4">My Invoices</h2>
+                <ul className="space-y-3">
+                  {invoices.map((invoice) => (
+                    <li
+                      key={invoice.id}
+                      className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow"
+                    >
+                      <span>{invoice.course_title}</span>
+                      <a
+                        href={invoice.pdf_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                      >
+                        View / Download
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
               
               <button 
                 className='mt-2 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2' 
