@@ -10,10 +10,10 @@ const VerifyOTP = () => {
     e.preventDefault();
     try {
       await axiosPublic.post("/users/verify-otp/", form);
-      // alert("✅ Email verified! You can now log in.");
+      // alert(" Email verified! You can now log in.");
       navigate("/login");
     } catch (err) {
-      // alert("❌ Verification failed");
+      // alert(" Verification failed");
       console.error(err.response?.data);
     }
   };

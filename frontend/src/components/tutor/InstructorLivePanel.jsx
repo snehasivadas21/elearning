@@ -10,7 +10,6 @@ const InstructorLiveSessionPanel = ({ course }) => {
 
   
   const createSession = async () => {
-    // Add validation for course prop
     if (!course || !course.id) {
       console.error("Course is not available or missing ID");
       alert("Error: Course information is not available");
@@ -41,7 +40,7 @@ const InstructorLiveSessionPanel = ({ course }) => {
     try {
       setLoading(true);
       await axiosInstance.post(`/livesession/${session.id}/start/`);
-      alert("✅ Session started! Share link with students.");
+      alert(" Session started! Share link with students.");
       navigate(`/live-session/${session.id}`)
     } catch (err) {
       console.error("Error starting session", err);
@@ -60,7 +59,7 @@ const InstructorLiveSessionPanel = ({ course }) => {
     try {
       setLoading(true);
       await axiosInstance.post(`/livesession/${session.id}/end/`);
-      alert("❌ Session ended!");
+      alert("Session ended!");
       setSession(null); 
     } catch (err) {
       console.error("Error ending session", err);
@@ -103,8 +102,6 @@ const InstructorLiveSessionPanel = ({ course }) => {
   return (
     <div className="p-4 border rounded-lg shadow-sm bg-white">
       <h2 className="text-lg font-semibold mb-3">Live Session Management</h2>
-      <p className="text-sm text-gray-600 mb-3">Course: {course.title || course.name || `ID: ${course.id}`}</p>
-
       {!session ? (
         <Button onClick={createSession} disabled={loading}>
           {loading ? "Creating..." : "Create Live Session"}

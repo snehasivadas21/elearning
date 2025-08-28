@@ -12,7 +12,7 @@ const AdminCourseApproval = () => {
   const fetchCourses = async () => {
     const token = localStorage.getItem("accessToken");
     try {
-      const res = await axiosInstance.get("courses/admin/courses/?status=submitted", {
+      const res = await axiosInstance.get("/admin/courses/?status=submitted", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCourses(res.data);
@@ -25,11 +25,11 @@ const AdminCourseApproval = () => {
     const token = localStorage.getItem("accessToken");
     try {
       await axiosInstance.patch(
-        `courses/admin/courses/${id}/`,
+        `/admin/courses/${id}/`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      fetchCourses(); // refresh
+      fetchCourses(); 
     } catch (err) {
       console.error("Error updating course:", err);
     }

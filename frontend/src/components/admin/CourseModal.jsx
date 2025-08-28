@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from "../../api/axiosInstance";
 
-const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add",hideStatus= false, role = "instructor" }) => {
+const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add", role = "instructor" }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -20,7 +20,7 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add",hideStatus=
     const fetchCategories = async () => {
       const token = localStorage.getItem("accessToken");
       try {
-        const res = await axiosInstance.get("/courses/categories/", {
+        const res = await axiosInstance.get("/categories/", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCategories(res.data);
@@ -80,21 +80,19 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add",hideStatus=
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = (e,statusOverride = null) => {
+    if (e) e.preventDefault();
     const submitData = new FormData();
 
     Object.entries(formData).forEach(([key, value]) => {
-      if (key === "status" && hideStatus) return; 
+      if (key === "status") return; 
       if (value !== null && value !== undefined) {
         submitData.append(key, value);
       }
     });
+    submitData.set("status",statusOverride ?? formData.status)
     if (formData.is_free) {
       submitData.set("price", 0.00);
-    }
-    if (!formData.status && !hideStatus) {
-      submitData.set("status", "submitted");
     }
 
     onSubmit(submitData, course?.id);
@@ -217,24 +215,10 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add",hideStatus=
               <>
                 <button
                   type="button"
-                  onClick={() => {
-                    setFormData((prev) => ({ ...prev, status: "draft" }));
-                    handleSubmit(new Event('submit')); // simulate submit
-                  }}
+                  onClick={(e) => handleSubmit(e,"draft")}
                   className="px-4 py-2 bg-yellow-500 text-white rounded"
                 >
                   Save as Draft
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData((prev) => ({ ...prev, status: "submitted" }));
-                    handleSubmit(new Event('submit'));
-                  }}
-                  className="px-4 py-2 bg-green-600 text-white rounded"
-                >
-                  Submit for Review
                 </button>
               </>
             )}

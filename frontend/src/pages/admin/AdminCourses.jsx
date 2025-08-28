@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import CourseModal from "../../components/admin/CourseModal"; 
+import { useNavigate } from "react-router-dom";
+import { extractResults } from "../../api/api";
 
 const AdminCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -10,6 +12,8 @@ const AdminCourses = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
 
+  const navigate = useNavigate()
+
 
   useEffect(() => {
     fetchCourses();
@@ -18,10 +22,10 @@ const AdminCourses = () => {
   const fetchCourses = async () => {
     const token = localStorage.getItem("accessToken");
     try {
-      const res = await axiosInstance.get("/courses/admin/courses/", {
+      const res = await axiosInstance.get("/admin/courses/", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setCourses(res.data);
+      setCourses(extractResults(res));
     } catch (err) {
       console.error("Error fetching courses:", err);
     }
@@ -43,14 +47,14 @@ const AdminCourses = () => {
     const token = localStorage.getItem("accessToken");
     try {
       if (modalMode === "Add") {
-        await axiosInstance.post("/courses/admin/courses/", formData, {
+        await axiosInstance.post("/admin/courses/", formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
         });
       } else {
-        await axiosInstance.put(`/courses/admin/courses/${id}/`, formData, {
+        await axiosInstance.put(`/admin/courses/${id}/`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
@@ -69,7 +73,7 @@ const AdminCourses = () => {
     const token = localStorage.getItem("accessToken");
     try {
       await axiosInstance.patch(
-        `/courses/admin/courses/${course.id}/`,
+        `/admin/courses/${course.id}/`,
         { is_active: false },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -80,11 +84,10 @@ const AdminCourses = () => {
   };
 
   const handleActivate = async (course) => {
-    // if (!window.confirm("Are you sure to activate this course?")) return;
     const token = localStorage.getItem("accessToken");
     try {
       await axiosInstance.patch(
-        `/courses/admin/courses/${course.id}/`,
+        `/admin/courses/${course.id}/`,
         { is_active: true },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -92,8 +95,7 @@ const AdminCourses = () => {
     } catch (err) {
       console.error("Activation failed:", err);
     }
-  };
-
+  }; 
 
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
@@ -146,13 +148,12 @@ const AdminCourses = () => {
               <th className="px-6 py-3">Price</th>
               <th className="px-6 py-3">Status</th>
               <th className="px-6 py-3">Active</th>
-              <th className="px-6 py-3">Image</th>
               <th className="px-6 py-3">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filteredCourses.map((course) => (
-              <tr key={course.id}>
+              <tr key={course.id} className="border-t">
                 <td className="px-6 py-4">{course.id}</td>
                 <td className="px-6 py-4">{course.title}</td>
                 <td className="px-6 py-4">{course.instructor_username}</td>
@@ -175,23 +176,18 @@ const AdminCourses = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4">{course.is_active ? "Yes" : "No"}</td>
-                <td className="px-6 py-4">
-                  {course.course_image ? (
-                    <img
-                      src={course.course_image}
-                      alt="Course"
-                      className="w-16 h-12 object-cover rounded"
-                    />
-                  ) : (
-                    "No Image"
-                  )}
-                </td>
                 <td className="px-6 py-4 space-x-2">
                   <button
                     onClick={() => handleEdit(course)}
                     className="text-blue-600 hover:underline"
                   >
                     Edit
+                  </button>
+                  <button
+                    onClick={()=>navigate(`/admin/courses/${course.id}/review`)}
+                    className="px-3 py-1 bg-blue-500 text-white rounded-lg"
+                  >
+                    Review
                   </button>
                   {!course.is_active ? (
                     <button

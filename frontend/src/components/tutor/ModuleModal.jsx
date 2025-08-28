@@ -6,6 +6,7 @@ const ModuleModal = ({ show, onClose, onSubmit, mode = "Add", moduleData = null 
     description: "",
     order: 1,
     is_active: true,
+    status:"draft",
   });
 
   useEffect(() => {
@@ -15,6 +16,7 @@ const ModuleModal = ({ show, onClose, onSubmit, mode = "Add", moduleData = null 
         description: moduleData.description || "",
         order: moduleData.order || 1,
         is_active: moduleData.is_active ?? true,
+        status:"draft",
       });
     }
   }, [moduleData]);
@@ -27,10 +29,21 @@ const ModuleModal = ({ show, onClose, onSubmit, mode = "Add", moduleData = null 
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData, moduleData?.id || null);
-  };
+  const handleSubmit = (e,statusOverride = null)=>{
+    if (e) e.preventDefault();
+    const submitData = new FormData();
+    Object.entries(formData).forEach(([key,value])=>{
+      if (key === "status") return;
+      if (value !== null && value !== undefined){
+        submitData.append(key,value)
+      }
+    })
+    submitData.set("status",statusOverride ?? formData.status);
+    if (formData.course){
+      submitData.set("course",formData.course)
+    }
+    onSubmit(submitData,moduleData?.id)
+  }
 
   if (!show) return null;
 
@@ -80,8 +93,8 @@ const ModuleModal = ({ show, onClose, onSubmit, mode = "Add", moduleData = null 
             <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded">
-              Save
+            <button type="submit" onClick={(e) => handleSubmit(e,"draft")} className="px-4 py-2 bg-yellow-600 text-white rounded">
+              Save as Draft
             </button>
           </div>
         </form>

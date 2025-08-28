@@ -26,7 +26,8 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
 
     def create(self,validated_data):
         validated_data['instructor']=self.context['request'].user
-        validated_data['status']='submitted'
+        if 'status' not in validated_data:
+            validated_data['status']='submitted'
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -63,6 +64,10 @@ class LessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = '__all__'
 
+    def create(self, validated_data):
+        validated_data["status"] = "draft"
+        return super().create(validated_data)    
+
 class ModuleSerializer(serializers.ModelSerializer):
     lessons = LessonSerializer(many=True, read_only=True)
     quiz = QuizSerializer(many=True,read_only=True)
@@ -70,6 +75,10 @@ class ModuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Module
         fields = '__all__'   
+
+    def create(self, validated_data):
+        validated_data["status"] = "draft"
+        return super().create(validated_data)    
 
 class LessonProgressSerializer(serializers.ModelSerializer):
     class Meta:

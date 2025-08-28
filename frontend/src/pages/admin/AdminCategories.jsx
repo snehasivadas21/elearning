@@ -16,7 +16,7 @@ const AdminCategories = () => {
   const fetchCategories = async () => {
     const token = localStorage.getItem("accessToken");
     try {
-      const res = await axiosInstance.get("/courses/categories/", {
+      const res = await axiosInstance.get("/categories/", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCategories(res.data);
@@ -41,7 +41,7 @@ const AdminCategories = () => {
     const token = localStorage.getItem("accessToken");
     if (!window.confirm("Are you sure to delete this category?")) return;
     try {
-      await axiosInstance.delete(`/courses/categories/${id}/`, {
+      await axiosInstance.delete(`/categories/${id}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchCategories();
@@ -54,11 +54,11 @@ const AdminCategories = () => {
     const token = localStorage.getItem("accessToken");
     try {
       if (modalMode === "Add") {
-        await axiosInstance.post("/courses/categories/", formData, {
+        await axiosInstance.post("/categories/", formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
-        await axiosInstance.put(`/courses/categories/${id}/`, formData, {
+        await axiosInstance.put(`/categories/${id}/`, formData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }

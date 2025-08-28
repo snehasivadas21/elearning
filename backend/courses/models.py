@@ -37,7 +37,7 @@ class Course(models.Model):
         blank=True,
         related_name='courses'
     )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='submitted')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     course_image = CloudinaryField('course_image', blank=True, null=True)
@@ -50,12 +50,19 @@ class Course(models.Model):
         return self.title
 
 class Module(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted for Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
     course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='modules')
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='draft')
 
     class Meta:
         ordering = ['order'] 
@@ -64,6 +71,12 @@ class Module(models.Model):
         return f"{self.course.title} - {self.title}"
 
 class Lesson(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted for Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
     module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='lessons')
     title = models.CharField(max_length=255)
     content_type = models.CharField(max_length=20, choices=[
@@ -76,6 +89,7 @@ class Lesson(models.Model):
     is_preview = models.BooleanField(default=False) 
     is_active = models.BooleanField(default=True) 
     is_deleted = models.BooleanField(default=False)
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='draft')
 
     class Meta:
         ordering = ['order']

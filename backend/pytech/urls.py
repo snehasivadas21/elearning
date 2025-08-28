@@ -23,7 +23,7 @@ urlpatterns = [
     # Your app
     path('api/users/', include('users.urls')),
     path('api/admin/',include('adminpanel.urls')),
-    path('api/courses/',include('courses.urls')),
+    path('api/',include('courses.urls')),
     path('api/payments/', include('payment.urls')),
     path('api/quiz/',include('quiz.urls')),
     path('api/meets/',include('meet.urls')),

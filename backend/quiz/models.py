@@ -2,12 +2,18 @@ from django.db import models
 from courses.models import Module
 from django.conf import settings
 
-
 class Quiz(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted for Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
     module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='quiz')
     title = models.CharField(max_length=255)
     instructions = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='draft')
 
     def __str__(self):
         return f"Quiz for {self.lesson.title}"

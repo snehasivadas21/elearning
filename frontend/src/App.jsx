@@ -30,8 +30,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminTutors from "./pages/admin/AdminTutors";
 import AdminCourses from "./pages/admin/AdminCourses";
-import AdminCourseApproval from "./pages/admin/AdminCourseApproval";
 import AdminCategories from "./pages/admin/AdminCategories";
+import CourseReviewPage from "./pages/admin/AdminCourseReview";
 
 // Tutor
 import TutorLayout from "./components/tutor/TutorLayout";
@@ -92,8 +92,8 @@ function App() {
         <Route path="students" element={<AdminStudents />} />
         <Route path="instructors" element={<AdminTutors />} />
         <Route path="courses" element={<AdminCourses />} />
-        <Route path="approvals" element={<AdminCourseApproval/>}/>
         <Route path="categories" element={<AdminCategories />} />
+        <Route path="courses/:courseId/review" element={<CourseReviewPage />} />
       </Route>
 
       {/* Tutor Section */}

@@ -67,7 +67,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         app.save()
         return Response({"status":"shortlisted"},status=status.HTTP_200_OK)
     
-    @action(detail=True,methods=["post"],permissions_classes=[IsRecruiter])
+    @action(detail=True,methods=["post"],permission_classes=[IsRecruiter])
     def reject(self,request,pk=None):
         app=self.get_object()
         app.status = "rejected"
@@ -127,3 +127,20 @@ class RecruiterDashboardViewSet(viewsets.ViewSet):
 
         )
         return Response(list(data))
+    
+class JobViewSet(viewsets.ModelViewSet):
+    queryset = JobPosting.objects.all()
+    serializer_class = JobPostingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self,request,*args,**kwargs):
+        user = request.user
+
+        if user.role == "student":
+            completed_course = user.enrollments.filter(is_completed= True).count()    
+            if completed_course == 0:
+                return Response(
+                    {"detail":"You must complete at least one course to access the Job Portal."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        return super().list(request,*args,**kwargs)    

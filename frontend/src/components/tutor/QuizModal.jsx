@@ -47,7 +47,7 @@ const QuizModal = ({ show,onClose,moduleId,quizData=null,onSaved}) => {
 
     const handleAddChoice = (qIndex) =>{
         const updated = [...questions]
-        updated[qIndex].choices.push({text:"",is_active:false})
+        updated[qIndex].choices.push({text:"",is_correct:false})
         setQuestions(updated);
     }
 
@@ -79,10 +79,12 @@ const QuizModal = ({ show,onClose,moduleId,quizData=null,onSaved}) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await axiosInstance.post("/quiz/quizzes/",{
+              const payload = {
                 ...formData,
                 module : moduleId,
-            },{
+                status:"draft",
+            };
+              const res = await axiosInstance.post("/quiz/quizzes/",payload,{
                 headers : {Authorization : `Bearer ${token}`},
             });
 
@@ -234,9 +236,9 @@ const QuizModal = ({ show,onClose,moduleId,quizData=null,onSaved}) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-purple-600 text-white rounded"
+              className="px-4 py-2 bg-yellow-600 text-white rounded"
             >
-              Save Quiz
+              Save as Draft
             </button>
           </div>
         </form>

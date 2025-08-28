@@ -1,14 +1,7 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../../api/axiosInstance";
 
-const LessonModal = ({
-  show,
-  onClose,
-  onSubmit,
-  lessonData = null,
-  moduleId,
-  mode = "Add",
-}) => {
+const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => {
   const [formData, setFormData] = useState({
     title: "",
     content_type: "video",
@@ -52,12 +45,13 @@ const LessonModal = ({
     const payload = {
       ...formData,
       module: moduleId,
+      status:"draft",
     };
 
     try {
       const url = lessonData
-        ? `/courses/lessons/${lessonData.id}/`
-        : "/courses/lessons/";
+        ? `/lessons/${lessonData.id}/`
+        : "/lessons/";
       const method = lessonData ? axiosInstance.put : axiosInstance.post;
 
       const lessonRes = await method(url, payload, {
@@ -66,7 +60,6 @@ const LessonModal = ({
 
       const lessonId = lessonData?.id || lessonRes.data.id;
 
-      // Upload resources if any
       if (resourceFiles.length > 0) {
         const uploadPromises = resourceFiles.map((file) => {
           const formData = new FormData();
@@ -74,7 +67,7 @@ const LessonModal = ({
           formData.append("title", file.name);
           formData.append("file", file);
 
-          return axiosInstance.post("/courses/lesson-resources/", formData, {
+          return axiosInstance.post("/lesson-resources/", formData, {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "multipart/form-data",
@@ -183,9 +176,9 @@ const LessonModal = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-purple-600 text-white rounded"
+              className="px-4 py-2 bg-yellow-600 text-white rounded"
             >
-              Save
+              Save as Draft
             </button>
           </div>
         </form>

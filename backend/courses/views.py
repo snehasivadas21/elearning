@@ -103,7 +103,7 @@ class LessonProgressViewSet(viewsets.ModelViewSet):
 class CourseProgressViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
-    @action(detail=True,method = ["get"])
+    @action(detail=True,methods = ["get"])
     def progress(self,request,pk=None):
         try:
             course = Course.objects.get(pk=pk)
@@ -119,7 +119,7 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         return CourseCertificate.objects.filter(student=self.request.user)
     
-    @action(detail=False,method = ["get"],permission_classes=[permissions.AllowAny])
+    @action(detail=False,methods = ["get"],permission_classes=[permissions.AllowAny])
     def verify(self,request):
         certificate_id = request.query_params.get("certificate_id")
         result = verify_certificate(certificate_id)

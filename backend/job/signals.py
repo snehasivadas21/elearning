@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Job, Application, Notification
+from .models import JobPosting, Application, Notification
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -23,7 +23,7 @@ def notify_applicant_on_status_change(sender, instance, created, **kwargs):
             message=f"Your application for {instance.job.title} is {instance.status}"
         )
 
-@receiver(post_save, sender=Job)
+@receiver(post_save, sender=JobPosting)
 def notify_admin_on_new_job(sender, instance, created, **kwargs):
     if created:
         # Optional: notify admin if needed

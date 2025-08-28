@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import CourseModal from "../../components/admin/CourseModal"; 
 import InstructorLiveSessionPanel from "../../components/tutor/InstructorLivePanel";
+import { toast } from "react-toastify";
 
 const InstructorCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -20,7 +21,7 @@ const InstructorCourses = () => {
   const fetchCourses = async () => {
     const token = localStorage.getItem("accessToken");
     try {
-      const res = await axiosInstance.get("/courses/instructor/courses/", {
+      const res = await axiosInstance.get("/instructor/courses/", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = Array.isArray(res.data) ? res.data : res.data.results ?? [];
@@ -39,7 +40,7 @@ const InstructorCourses = () => {
 
   const handleEdit = (course) => {
     if (course.status === "approved") {
-      alert("Approved courses cannot be edited.");
+      toast.warning("Approved courses cannot be edited.");
       return;
     }
     setSelectedCourse(course);
@@ -51,28 +52,47 @@ const InstructorCourses = () => {
     const token = localStorage.getItem("accessToken");
     try {
       if (modalMode === "Add") {
-        await axiosInstance.post("courses/instructor/courses/", formData, {
+        await axiosInstance.post("/instructor/courses/", formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
         });
+        toast.success("Course created successfully!");
       } else {
-        await axiosInstance.put(`courses/instructor/courses/${id}/`, formData, {
+        await axiosInstance.put(`/instructor/courses/${id}/`, formData, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "multipart/form-data",
           },
         });
+        toast.success("Course updated successfully!");
       }
       setShowModal(false);
       fetchCourses();
     } catch (err) {
       console.error("Save error:", err);
+      toast.error("Failed to save course");
     }
   };
 
-  // Safe filter
+  const handleSubmitForReview = async (course) => {
+    const token = localStorage.getItem("accessToken");
+    try {
+      await axiosInstance.put(`/instructor/courses/${course.id}/`, {
+        ...course,
+        status: "submitted",
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Course submitted for review!");
+      fetchCourses();
+    } catch (error) {
+      console.error("Submit for review error:", error);
+      toast.error("Failed to submit for review");
+    }
+  };
+
   const filteredCourses = Array.isArray(courses)
     ? courses.filter((course) =>
         course.title?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -99,7 +119,6 @@ const InstructorCourses = () => {
         className="mb-6 border px-3 py-2 rounded w-full sm:w-1/2 focus:outline-none focus:ring-2 focus:ring-purple-500"
       />
 
-      {/* Courses Grid */}
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
         {filteredCourses.length > 0 ? (
           filteredCourses.map((course) => (
@@ -107,7 +126,6 @@ const InstructorCourses = () => {
               key={course.id}
               className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
             >
-              {/* Course Info */}
               <div>
                 <h3 className="text-xl font-bold mb-2">{course.title}</h3>
                 <p className="text-gray-700 mb-1">
@@ -124,6 +142,8 @@ const InstructorCourses = () => {
                         ? "bg-green-100 text-green-700"
                         : course.status === "rejected"
                         ? "bg-red-100 text-red-700"
+                        : course.status === "submitted"
+                        ? "bg-blue-100 text-blue-700"
                         : "bg-yellow-100 text-yellow-700"
                     }`}
                   >
@@ -146,11 +166,12 @@ const InstructorCourses = () => {
                 )}
               </div>
 
-              {/* Action Buttons */}
               <div className="mt-4 flex flex-col gap-2">
                 <button
                   onClick={() =>
-                    navigate(`/tutor/chat/${course.id}`, { state: { roomName: course.title } } , {state : {role : "instructor" }})
+                    navigate(`/tutor/chat/${course.id}`, { 
+                      state: { roomName: course.title, role: "instructor" } 
+                    })
                   }
                   className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
                 >
@@ -160,9 +181,19 @@ const InstructorCourses = () => {
                 <button
                   onClick={() => handleEdit(course)}
                   className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+                  disabled={course.status === "approved"}
                 >
                   Edit
                 </button>
+
+                {course.status === "draft" && (
+                  <button 
+                    onClick={() => handleSubmitForReview(course)}
+                    className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition-colors"
+                  >
+                    Submit for Review
+                  </button>
+                )}
 
                 {course.status !== "rejected" && (
                   <button
@@ -174,8 +205,8 @@ const InstructorCourses = () => {
                     Manage Content
                   </button>
                 )}
-                <InstructorLiveSessionPanel course={course} />
                 
+                <InstructorLiveSessionPanel course={course} />
               </div>
             </div>
           ))
@@ -184,15 +215,14 @@ const InstructorCourses = () => {
         )}
       </div>
 
-      {/* Reusing CourseModal */}
       <CourseModal
         show={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleModalSubmit}
         course={selectedCourse}
         mode={modalMode}
-        hideStatus={true}              
-        defaultStatus="submitted"      
+        hideStatus={true}
+        defaultStatus="draft"  
       />
     </div>
   );

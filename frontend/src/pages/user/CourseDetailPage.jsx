@@ -13,7 +13,7 @@ const CourseDetailPage = () => {
   const [modules, setModules] = useState([]);
   const [enrollLoading,setEnrollLoading] = useState(true);
   const [certificate,setCertificates] = useState(null);
-
+  
   const isLoggedIn = !!localStorage.getItem("accessToken");
 
 
@@ -22,7 +22,7 @@ const CourseDetailPage = () => {
       try {
         const res = await axiosPublic.get(`/users/approved/${id}/`);
         setCourse(res.data);
-        const certRes = await axiosPublic.get(`/courses/certificate/${id}/`)
+        const certRes = await axiosInstance.get(`/certificate/${id}/`)
         setCertificates(certRes.data);
       } catch (err) {
         console.error("Error fetching course detail", err);
@@ -31,7 +31,6 @@ const CourseDetailPage = () => {
     fetchCourse();
   }, [id]);
 
-  // ✅ Check if already enrolled
   useEffect(() => {
     const checkEnrollment = async () => {
       setEnrollLoading(true);
@@ -50,7 +49,6 @@ const CourseDetailPage = () => {
     }
   }, [course?.id, isLoggedIn]);
 
-  // ✅ Enroll (for free courses only)
   const handleEnroll = async () => {
     try {
       await axiosInstance.post("payments/purchase/", {
@@ -64,7 +62,6 @@ const CourseDetailPage = () => {
     }
   };
 
-  // ✅ Buy and Enroll (Paid courses only)
   const handleBuyNow = async () => {
     try {
       const res = await axiosInstance.post("payments/create-order/", {
@@ -113,7 +110,7 @@ const CourseDetailPage = () => {
 
   const handleDownloadInvoice = async () => {
     try {
-      const response = await api.get(`/invoices/${orderId}/download/`, {
+      const response = await axiosInstance.get(`/invoices/${orderId}/download/`, {
         responseType: "blob", // Important for files
       });
 
@@ -135,10 +132,10 @@ const CourseDetailPage = () => {
     const fetchCurriculum = async () => {
       try {
         const token = localStorage.getItem("accessToken");
-        const res = await axiosPublic.get(`/courses/modules/?course=${id}`);
+        const res = await axiosPublic.get(`/modules/?course=${id}`);
         const modulesWithLessons = await Promise.all(
           res.data.map(async (mod) => {
-            const lres = await axiosPublic.get(`/courses/lessons/?module=${mod.id}`);
+            const lres = await axiosPublic.get(`/lessons/?module=${mod.id}`);
             return { ...mod, lessons: lres.data };
           })
         );
@@ -155,7 +152,6 @@ const CourseDetailPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Left: Course Info */}
       <div className="md:col-span-2">
         <div className="relative mb-4">
           <img
@@ -185,7 +181,6 @@ const CourseDetailPage = () => {
           <span className="bg-gray-100 text-sm px-3 py-1 rounded-full">Lifetime Access</span>
         </div>
 
-        {/* Curriculum */}
         <div className="mt-8 bg-white rounded-xl border shadow p-6">
           <h2 className="text-lg font-bold mb-4">Course Curriculum</h2>
           {modules.length === 0 ? (
@@ -210,7 +205,6 @@ const CourseDetailPage = () => {
         </div>
       </div>
 
-      {/* Right: Sidebar */}
       <div className="bg-white border shadow rounded-xl p-6 h-fit">
         <div className="text-3xl font-bold text-gray-900">
           {course.is_free ? "Free" : `₹${course.price}`}
@@ -227,7 +221,6 @@ const CourseDetailPage = () => {
           </p>
         )}
 
-        {/* Conditional Button */}
         {isLoggedIn && course ? (
           enrollLoading ? (
             <button className="mt-6 bg-gray-200 text-gray-700 font-medium w-full py-3 rounded cursor-wait">

@@ -21,7 +21,7 @@ const CourseListPage = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axiosPublic.get("/courses/categories/");
+      const res = await axiosPublic.get("/categories/");
       setCategories(extractResults(res));
     } catch (err) {
       console.error("Category fetch failed", err);
@@ -47,7 +47,6 @@ const CourseListPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Search & Filter */}
       <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
         <div className="relative mb-4">
           <Search className="absolute left-3 top-3 text-gray-400" />
@@ -93,11 +92,11 @@ const CourseListPage = () => {
         </div>
       </div>
 
-      {/* Heading */}
+      
       <h2 className="text-2xl font-bold mb-2">All Courses</h2>
       <p className="text-gray-500 mb-6">{courses.length} courses found</p>
 
-      {/* Course Grid */}
+      
       <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 animate-fade-in">
         {courses.map((course) => (
           <Link

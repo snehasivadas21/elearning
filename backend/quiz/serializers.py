@@ -22,6 +22,10 @@ class QuizSerializer(serializers.ModelSerializer):
         model = Quiz
         fields = ['id', 'module', 'title', 'is_active','instructions','questions']
 
+    def create(self,validated_data):
+        validated_data["status"] = "draft"
+        return super().create(validated_data)    
+
 class AnswerSubmissionSerializer(serializers.ModelSerializer):
     question = serializers.PrimaryKeyRelatedField(queryset=Question.objects.all())
     selected_choice = serializers.PrimaryKeyRelatedField(queryset=Choice.objects.all())
