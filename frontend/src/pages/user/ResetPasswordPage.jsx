@@ -1,35 +1,43 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axiosPublic from "../../api/axiosPublic";
 
 export default function ResetPasswordPage() {
-  const { uid, token } = useParams(); // e.g. /reset-password/:uid/:token
+  const { uid, token } = useParams(); 
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [loading,setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setMessage("")
+
+    if (password.length < 8){
+      setError("Password must be at least 8 characters.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
+    setLoading(true);
 
     try {
-      await axios.post("/api/auth/password-reset-confirm/", {
-        uid,
-        token,
+      await axiosPublic.post(`/users/password-reset-confirm/${uid}/${token}/`, {
         new_password: password,
       });
       setMessage("Password reset successful! Redirecting to login...");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       setError("Invalid or expired link.");
+    } finally {
+      setLoading(false)
     }
   };
 
@@ -60,9 +68,10 @@ export default function ResetPasswordPage() {
           />
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-blue-600 text-white rounded-lg p-3 hover:bg-blue-700"
           >
-            Reset Password
+            {loading ? "Resetting...":"Reset Password"}
           </button>
         </form>
       </div>

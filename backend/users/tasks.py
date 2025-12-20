@@ -1,15 +1,19 @@
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
+from .models import CustomUser
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 @shared_task
-def send_otp_email_task(email, otp_code):
-    print(f"[✅ CELERY] Sent OTP {otp_code} to {email}")
+def send_verification_email_task(user_id):
+    user = CustomUser.objects.get(id=user_id)
+    token = PasswordResetTokenGenerator().make_token(user)
+
+    link = f"{settings.FRONTEND_URL}/verify-email?uid={user.id}&token={token}"
+
     send_mail(
-        subject='Verify your email',
-        message=f'Your OTP is {otp_code}',
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[email],
-        fail_silently=False,
+        "Verify your email",
+        f"Click to verify: {link}",
+        settings.DEFAULT_FROM_EMAIL,
+        [user.email]
     )
-    

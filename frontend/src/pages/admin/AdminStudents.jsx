@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 
 import UserModal from "../../components/admin/UserModal";
+import { extractResults } from "../../api/api";
 
 const AdminStudents = () => {
   const [students, setStudents] = useState([]);
@@ -15,16 +16,12 @@ const AdminStudents = () => {
   }, []);
 
   const fetchStudents = async () => {
-    const token = localStorage.getItem("accessToken");
     try {
-      const res = await axiosInstance.get("/admin/students/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setStudents(res.data);
+      const res = await axiosInstance.get("/admin/students/");
+      setStudents(extractResults(res));
     } catch (err) {
       console.error("Error fetching students:", err);
+      setStudents([]);
     }
   };
 

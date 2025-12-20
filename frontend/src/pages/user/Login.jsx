@@ -1,19 +1,24 @@
 import { useContext, useState } from 'react';
 import axiosPublic from "../../api/axiosPublic";
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 
 const Login = () => {
-  const navigate = useNavigate();
+
+  const {loginUser} = useContext(AuthContext)
   const [form, setForm] = useState({
     email: '',
     password: '',
   });
   
-  const {loginUser} = useContext(AuthContext)
+  const [error,setError] = useState("")
+  const [loading,setLoading] = useState(false)
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
+
     try {
       const res = await axiosPublic.post("/users/token/", form);
       const { access, refresh } = res.data;
@@ -21,14 +26,18 @@ const Login = () => {
       loginUser(access,refresh);
 
     } catch (err) {
-      console.error("Login error:", err.response?.data || err.message);
-      if (err.response?.status === 401) {
-        alert("Invalid email or password.");
-      } else if (err.response?.status === 500) {
-        alert("Server error. Please try again later.");
-      } else {
-        alert("Something went wrong.");
+      const status = err.response?.status;
+      const data = err.response?.data;
+
+      if (status === 403 && data?.error === "email_not_verified"){
+        setError("Please verify your email before logging in.");
+      }else if (status === 401){
+        setError("Invalid email or password");
+      }else{
+        setError("Something went wrong.Please try again")
       }
+    }finally {
+      setLoading(false);
     }
   };
 
@@ -44,6 +53,12 @@ const Login = () => {
         </div>
         <h2 className="text-2xl font-bold text-center mb-2">Welcome Back</h2>
         <p className="text-center text-sm text-gray-500 mb-6">Login to continue</p>
+
+        {error && (
+          <p className='mb-4 text-sm text-red-600 text-center'>
+            {error}
+          </p>
+        )}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <input
@@ -64,11 +79,27 @@ const Login = () => {
           />
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition"
           >
             Login
           </button>
         </form>
+
+        <div className='flex justify-between text-sm mt-4'>
+          <Link
+            to="/forgot-password"
+            className='text-blue-600 hover:underline'>
+            Forget Password
+          </Link>
+
+          <Link
+            to="/resend-verification"
+            className='text-blue-600 hover:underline'>
+            Resend Verification
+          </Link>
+
+        </div>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-500 mb-2">Or login with</p>

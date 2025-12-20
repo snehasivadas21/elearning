@@ -20,14 +20,12 @@ const AdminCourses = () => {
   }, []);
 
   const fetchCourses = async () => {
-    const token = localStorage.getItem("accessToken");
     try {
-      const res = await axiosInstance.get("/admin/courses/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/admin/courses/"); 
       setCourses(extractResults(res));
     } catch (err) {
       console.error("Error fetching courses:", err);
+      setCourses([])
     }
   };
 

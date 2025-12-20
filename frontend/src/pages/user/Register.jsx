@@ -8,16 +8,30 @@ const Register = () => {
     email: '',
     username: '',
     password: '',
+    confirmpassword: '',
     role: 'student',
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (form.password !== form.confirmpassword){
+      alert("Password do not match");
+      return;
+    }
+
     try {
-      await axiosPublic.post("/users/register/", form);
-      navigate("/verify-otp");
-    } catch (err) {
-      console.error(err.response?.data);
+      const payload = {
+        email : form.email,
+        username : form.username,
+        password : form.password,
+        role : form.role,
+      }
+      await axiosPublic.post("/users/register/",payload)
+      navigate("/check-email/")
+    } catch (error) {
+      console.error(error.response?.data);
+      alert("Registration failed.Try again")
     }
   };
 
@@ -56,6 +70,14 @@ const Register = () => {
             placeholder="Password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
+            className="w-full p-2 border border-gray-300 rounded-md"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            value={form.confirmpassword}
+            onChange={(e) => setForm({ ...form, confirmpassword: e.target.value })}
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />

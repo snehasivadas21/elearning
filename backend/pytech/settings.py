@@ -48,18 +48,9 @@ INSTALLED_APPS = [
     'channels',
     'django_filters',
     
-
     'users',
     'adminpanel',
     'courses',
-    'payment',
-    'meet',
-    'quiz',
-    'livesession',
-    'chat',
-    'ai',
-    'instrpanel',
-    'job',
 
     # 'dj_rest_auth',
     # 'dj_rest_auth.registration',

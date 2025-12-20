@@ -1,21 +1,26 @@
 import { useState } from "react";
-import axios from "axios";
+import axiosPublic from "../../api/axiosPublic";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading,setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     setError("");
+    setLoading(true);
 
     try {
-      await axios.post("/api/auth/password-reset/", { email });
-      setMessage("Password reset link has been sent to your email.");
+      await axiosPublic.post("/users/password-reset/", { email });
+      setMessage("If an account exists with this email , a password reset link has been sent to your email.");
+      setEmail("");
     } catch (err) {
       setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -38,9 +43,10 @@ export default function ForgotPasswordPage() {
           />
           <button
             type="submit"
+            disabled={loading}
             className="w-full bg-blue-600 text-white rounded-lg p-3 hover:bg-blue-700"
           >
-            Send Reset Link
+            {loading?"Sending...":"Send Reset Link"}
           </button>
         </form>
       </div>
