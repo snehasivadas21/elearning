@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react"
-import { useParams,useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import axiosPublic from "../../api/axiosPublic"
 
 const VerifyEmail = () => {
-    const {uid,token} = useParams();
     const navigate = useNavigate();
     const [status,setStatus] = useState("verifying");
+
+    const query = new URLSearchParams(window.location.search)
+    const uid = query.get("uid");
+    const token = query.get("token")
 
     useEffect(()=>{
         const verify = async()=>{
             try {
-                await axiosPublic.post("/users/verify-email/",{
-                    uidb64:uid,
-                    token,
-                })
+                await axiosPublic.get(
+                    `/users/verify-email/?uid=${uid}&token=${token}`
+                )
                 setStatus("success")
                 setTimeout(() => navigate("/login/"),2000);
                 

@@ -8,14 +8,14 @@ const Register = () => {
     email: '',
     username: '',
     password: '',
-    confirmpassword: '',
+    confirm_password: '',
     role: 'student',
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (form.password !== form.confirmpassword){
+    if (form.password !== form.confirm_password){
       alert("Password do not match");
       return;
     }
@@ -25,6 +25,7 @@ const Register = () => {
         email : form.email,
         username : form.username,
         password : form.password,
+        confirm_password : form.confirm_password,
         role : form.role,
       }
       await axiosPublic.post("/users/register/",payload)
@@ -76,8 +77,8 @@ const Register = () => {
           <input
             type="password"
             placeholder="Confirm Password"
-            value={form.confirmpassword}
-            onChange={(e) => setForm({ ...form, confirmpassword: e.target.value })}
+            value={form.confirm_password}
+            onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />

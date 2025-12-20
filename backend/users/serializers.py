@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser,StudentProfile
+from .models import CustomUser
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes, force_str
@@ -72,12 +72,6 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'username', 'role', 'is_active', 'is_verified','is_staff','date_joined']
-
-class StudentProfileSerializer(serializers.ModelSerializer):
-    profile_picture = serializers.ImageField(required=False, use_url=True)
-    class Meta:
-        model = StudentProfile
-        fields = ['bio','dob','phone','profile_picture']
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod

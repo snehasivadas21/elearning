@@ -10,7 +10,7 @@ import Register from "./pages/user/Register";
 import CheckEmail from "./pages/user/CheckEmail";
 import VerifyEmail from "./pages/user/VerifyEmail";
 import GoogleCallback from "./pages/user/GoogleCallback";
-import ForgotPasswordPage from "./pages/user/ForgetPassowordPage";
+import ForgotPasswordPage from "./pages/user/ForgetPasswordPage";
 import ResetPasswordPage from "./pages/user/ResetPasswordPage";
 import Dashboard from "./pages/student/Dashboard";
 import NotFound from "./pages/user/NotFound";
@@ -74,7 +74,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/check-email" element={<CheckEmail/>}/>
-      <Route path="/verify-email/:uid/:token" element={<VerifyEmail />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/google/callback" element={<GoogleCallback />} />
       <Route path="/forget-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage/>}/>
@@ -96,7 +96,7 @@ function App() {
 
       {/* Tutor Section */}
       <Route path="/tutor" element={
-        <RoleRoute allowedRoles={['tutor']}>
+        <RoleRoute allowedRoles={['instructor']}>
           <TutorLayout />
         </RoleRoute>
       }>

@@ -15,5 +15,6 @@ def send_verification_email_task(user_id):
         "Verify your email",
         f"Click to verify: {link}",
         settings.DEFAULT_FROM_EMAIL,
-        [user.email]
+        [user.email],
+        fail_silently=False
     )

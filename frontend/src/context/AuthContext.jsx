@@ -22,7 +22,7 @@ const AuthProvider = ({ children }) => {
 
       if (decoded.role === "admin") {
         navigate("/admin/dashboard");
-      } else if (decoded.role === "instructor") {
+      } else if (decoded.role === "Instructor") {
         navigate("/tutor/dashboard");
       } else {
         navigate("/");

@@ -8,7 +8,7 @@ const navLinks = [
   { name: "Courses", icon: <Layers size={18} />, path: "/admin/courses" },
   { name: "Categories", icon: <Boxes size={18} />, path: "/admin/categories" },
   
-  { name: "Statistics", icon: <BarChart2 size={18} />, path: "/admin/stats" },
+  // { name: "Statistics", icon: <BarChart2 size={18} />, path: "/admin/stats" },
 ];
 
 const AdminSidebar = () => {

@@ -88,7 +88,7 @@ const Login = () => {
 
         <div className='flex justify-between text-sm mt-4'>
           <Link
-            to="/forgot-password"
+            to="/forget-password"
             className='text-blue-600 hover:underline'>
             Forget Password
           </Link>
