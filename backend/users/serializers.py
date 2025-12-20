@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser,StudentProfile
+from .models import CustomUser
 from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes, force_str
@@ -10,11 +10,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=6)
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'username', 'password', 'role']
+        fields = ['email', 'username', 'password', 'confirm_password', 'role']
 
     def validate_email(self, value):
         if CustomUser.objects.filter(email=value).exists():
@@ -30,24 +31,39 @@ class RegisterSerializer(serializers.ModelSerializer):
         if value not in ['student', 'instructor', 'recruiter']:
             raise serializers.ValidationError("Invalid role selected.")
         return value
+    
+    def validate(self,value):
+        if value['password'] != value['confirm_password']:
+            raise serializers.ValidationError("password do not match")
+        if len(value['password'])<8:
+            raise serializers.ValidationError("password must be at least 8 characters")
+        return value
 
     def create(self, validated_data):
-        validated_data['role'] = validated_data.get('role', 'student')
-        return CustomUser.objects.create_user(**validated_data)
+        # validated_data['role'] = validated_data.get('role', 'student')
+        # return CustomUser.objects.create_user(**validated_data)
+    
+        validated_data.pop('confirm_password')
+        user = CustomUser.objects.create_user(**validated_data)
+        user.is_verified=False
+        user.save()
+        return user
     
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
     
     def validate(self,data):
-        email=data.get('email')
-        password=data.get('password')
-        user=authenticate(email=email,password=password)
-
-        if not user:
+        try:
+            user=CustomUser.objects.get(email=data['email'])
+        except CustomUser.DoesNotExist:
             raise serializers.ValidationError("Invalid credentials")
-        if not user.is_verified:
-            raise serializers.ValidationError("Email not verified")
+
+        if not user.check_password(data['password']):
+            raise serializers.ValidationError("Invalid credentials")
+
+        # if not user.is_verified:
+        #     raise serializers.ValidationError("Please verify your email")    
         
         data['user']=user
         return data
@@ -56,12 +72,6 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'username', 'role', 'is_active', 'is_verified','is_staff','date_joined']
-
-class StudentProfileSerializer(serializers.ModelSerializer):
-    profile_picture = serializers.ImageField(required=False, use_url=True)
-    class Meta:
-        model = StudentProfile
-        fields = ['bio','dob','phone','profile_picture']
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod

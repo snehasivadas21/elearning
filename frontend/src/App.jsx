@@ -7,9 +7,10 @@ import Layout from "./components/user/Layout";
 import Home from "./pages/user/Home";
 import Login from "./pages/user/Login";
 import Register from "./pages/user/Register";
-import VerifyOtp from "./pages/user/VerifyOtp";
+import CheckEmail from "./pages/user/CheckEmail";
+import VerifyEmail from "./pages/user/VerifyEmail";
 import GoogleCallback from "./pages/user/GoogleCallback";
-import ForgotPasswordPage from "./pages/user/ForgetPassowordPage";
+import ForgotPasswordPage from "./pages/user/ForgetPasswordPage";
 import ResetPasswordPage from "./pages/user/ResetPasswordPage";
 import Dashboard from "./pages/student/Dashboard";
 import NotFound from "./pages/user/NotFound";
@@ -21,7 +22,6 @@ import StudentProfile from "./pages/student/StudentProfile"
 import StudentQuiz from "./pages/student/StudentQuiz"
 import ChatPage from "./pages/student/ChatPage"
 import LiveSessionPage from "./pages/tutor/LiveSessionPage";
-import MockInterviewsPage from "./pages/student/MockInterviewsPage";
 import CertificatePage from "./pages/student/CertificatePage";
 
 // Admin
@@ -38,12 +38,10 @@ import TutorLayout from "./components/tutor/TutorLayout";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import TutorCourses from "./pages/tutor/TutorCourses";
 import TutorCoursesContent from "./pages/tutor/TutorCoursesContent";
-import TutorMockInterviews from "./pages/tutor/TutorMockInterviews";
 
 // Routes
 import PrivateRoute from "./routes/PrivateRoute";
-import AdminRoute from "./routes/AdminRoute";
-import TutorRoute from "./routes/TutorRoute";
+import RoleRoute from "./routes/RoleRoute";
 import StudentLayout from "./components/student/StudentLayout";
 
 function App() {
@@ -68,7 +66,6 @@ function App() {
           <Route path="quizzes" element={<StudentQuiz/>} />
           <Route path="chat/:courseId" element={<ChatPage/>}/>
           <Route path="live-session/:sessionId" element={<LiveSessionPage />} />
-          <Route path="interview" element={<MockInterviewsPage/>} />
           <Route path="certificate" element={<CertificatePage/>}/>
         </Route>
       </Route>
@@ -76,16 +73,17 @@ function App() {
       {/* Auth Pages */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/verify-otp" element={<VerifyOtp />} />
+      <Route path="/check-email" element={<CheckEmail/>}/>
+      <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/google/callback" element={<GoogleCallback />} />
       <Route path="/forget-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage/>}/>
 
       {/* Admin Section */}
       <Route path="/admin" element={
-        <AdminRoute>
+        <RoleRoute allowedRoles={['admin']}>
           <AdminLayout />
-        </AdminRoute>
+        </RoleRoute>
       }>
         <Route index element={<AdminDashboard />} />
         <Route path="dashboard" element={<AdminDashboard />} />
@@ -98,16 +96,15 @@ function App() {
 
       {/* Tutor Section */}
       <Route path="/tutor" element={
-        <TutorRoute>
+        <RoleRoute allowedRoles={['instructor']}>
           <TutorLayout />
-        </TutorRoute>
+        </RoleRoute>
       }>
         <Route index element={<TutorDashboard />} />
         <Route path="dashboard" element={<TutorDashboard />} />
         <Route path="courses" element={<TutorCourses />} />
         <Route path="courses/:id/content" element={<TutorCoursesContent/>}/>
         <Route path="chat/:courseId" element={<ChatPage/>}/>
-        <Route path="interview" element={<TutorMockInterviews/>}/>
       </Route>
 
       {/* Catch All */}

@@ -1,8 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser,BaseUserManager,PermissionsMixin
-import random
-from django.utils import timezone
-from datetime import timedelta
 from cloudinary.models import CloudinaryField
 
 # Create your models here.
@@ -53,36 +50,3 @@ class CustomUser(AbstractBaseUser,PermissionsMixin):
     def __str__(self):
         return self.username
     
-class EmailOTP(models.Model):
-    user=models.OneToOneField(CustomUser,on_delete=models.CASCADE)
-    otp=models.CharField(max_length=6)
-    created_at=models.DateTimeField(auto_now_add=True)
-    expires_at=models.DateTimeField()
-    used = models.BooleanField(default=False)
-
-    def is_expired(self):
-        return timezone.now()>self.expires_at
-    def save(self,*args,**kwargs):
-        if not self.otp:
-            self.otp=str(random.randint(100000,999999))
-        if not self.expires_at:
-            self.expires_at=timezone.now()+timedelta(minutes=2)
-        return super().save(*args,**kwargs)   
-    
-    def __str__(self):
-        return f"OTP for {self.user.email}"   
-
-class StudentProfile(models.Model):
-    user = models.OneToOneField(CustomUser,on_delete=models.CASCADE,related_name='student_profile')
-    profile_picture =  CloudinaryField('profile_picture',blank=True,null=True) 
-    bio = models.TextField(blank=True)
-    dob = models.DateField(blank=True,null=True)
-    phone = models.CharField(max_length=15,blank=True)
-
-    def __str__(self):
-        return f"{self.user.username}'s profile"   
-
-    
-
-        
-# Create your models here.

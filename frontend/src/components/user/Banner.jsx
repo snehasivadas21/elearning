@@ -28,7 +28,7 @@ const HeroBanner = () => {
               Explore Courses
             </button>
             <button className="px-6 py-3 border border-white text-white font-semibold rounded-md hover:bg-white hover:text-black">
-              Learn More
+              Watch how it works
             </button>
           </div>
         </div>

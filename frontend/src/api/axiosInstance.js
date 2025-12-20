@@ -6,13 +6,12 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem("access");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
-  },
-  (error) => Promise.reject(error)
+  }
 );
 
 axiosInstance.interceptors.response.use(
@@ -25,36 +24,28 @@ axiosInstance.interceptors.response.use(
       "/users/register/",
       "/users/token/",
       "/users/token/refresh/",
-      "/users/verify-otp/",
     ];
 
     if (
-      error.response &&
-      error.response.status === 401 &&
+      error.response?.status === 401 &&
       !originalRequest._retry &&
       !excludedPaths.some((path) => originalRequest.url.includes(path))
     ) {
       originalRequest._retry = true;
       try {
-        const res = await axios.post("http://localhost:8000/api/users/token/refresh/", {
-          refresh: localStorage.getItem("refreshToken"),
+        const res = await axiosInstance.post("/users/token/refresh/", {
+          refresh: localStorage.getItem("refresh"),
         });
 
-        const newAccess = res.data.access;
-
-        // ✅ Update access token everywhere
-        localStorage.setItem("accessToken", newAccess);
-        axiosInstance.defaults.headers.Authorization = `Bearer ${newAccess}`;
-        originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+        localStorage.setItem("accessToken", res.data.access);
+        originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
 
         return axiosInstance(originalRequest);
-      } catch (err) {
+      } catch {
         localStorage.clear();
         window.location.href = "/login";
-        return Promise.reject(err);
       }
     }
-
     return Promise.reject(error);
   }
 );

@@ -1,13 +1,24 @@
-import { Navigate } from "react-router-dom";
+import { Navigate,useLocation } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated, loading } = useContext(AuthContext);
+  const location = useLocation();
 
-  if (loading) return null; // Prevent redirect before auth check
+  if (loading) return null; 
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
+  return children;
 };
 
 export default PrivateRoute;

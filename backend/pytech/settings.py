@@ -48,18 +48,9 @@ INSTALLED_APPS = [
     'channels',
     'django_filters',
     
-
     'users',
     'adminpanel',
     'courses',
-    'payment',
-    'meet',
-    'quiz',
-    'livesession',
-    'chat',
-    'ai',
-    'instrpanel',
-    'job',
 
     # 'dj_rest_auth',
     # 'dj_rest_auth.registration',
@@ -215,12 +206,13 @@ CLOUDINARY_STORAGE = {
 
 MEDIA_URL = '/media/'
 
+FRONTEND_URL = os.getenv("FRONTEND_URL")
+
 CELERY_BROKER_URL = "redis://redis:6379/0"
 CELERY_RESULT_BACKEND = "redis://redis:6379/0"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
-
 
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
 EMAIL_HOST = os.getenv("EMAIL_HOST")
