@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 
 const CategoryModal = ({ show, onClose, onSubmit, category, mode = "Add" }) => {
-  if (!show) return null;
-
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-  });
+  
+  const [formData, setFormData] = useState({name: "",description: ""});
+  const [error,setError] = useState("");
+  const [loading,setLoading] = useState(false)
 
   useEffect(() => {
+    setError("")
     if (category) {
       setFormData({
         name: category.name || "",
@@ -17,7 +16,9 @@ const CategoryModal = ({ show, onClose, onSubmit, category, mode = "Add" }) => {
     } else {
       setFormData({ name: "", description: "" });
     }
-  }, [category]);
+  }, [category,show]);
+
+  if (!show) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,10 +28,19 @@ const CategoryModal = ({ show, onClose, onSubmit, category, mode = "Add" }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e)=>{
     e.preventDefault();
-    onSubmit(formData, category?.id);
-  };
+    setError("");
+    setLoading(true);
+    try {
+      await onSubmit({ ...formData,name:formData.name.trim()},category?.id);
+      setLoading(false);
+    } catch (err) {
+      setError(err?.response?.data?.name?.[0] || "Something went wrong")
+      setLoading(false);
+      
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
@@ -53,12 +63,13 @@ const CategoryModal = ({ show, onClose, onSubmit, category, mode = "Add" }) => {
             className="w-full border px-3 py-2 rounded"
             rows={3}
           />
+          {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex justify-end space-x-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
+            <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 rounded" disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded">
-              Save
+            <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-50" disabled={loading}>
+              {loading?"Saving...":"Save"}
             </button>
           </div>
         </form>

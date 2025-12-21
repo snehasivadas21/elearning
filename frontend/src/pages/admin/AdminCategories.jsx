@@ -14,11 +14,8 @@ const AdminCategories = () => {
   }, []);
 
   const fetchCategories = async () => {
-    const token = localStorage.getItem("accessToken");
     try {
-      const res = await axiosInstance.get("/categories/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axiosInstance.get("/categories/");
       setCategories(res.data);
     } catch (err) {
       console.error("Error fetching categories:", err);
@@ -37,35 +34,28 @@ const AdminCategories = () => {
     setShowModal(true);
   };
 
-  const handleDelete = async (id) => {
-    const token = localStorage.getItem("accessToken");
-    if (!window.confirm("Are you sure to delete this category?")) return;
+  const handleToggleStatus = async (id) => {
+    if (!window.confirm("Are you sure to toggle status for this category?")) return;
     try {
-      await axiosInstance.delete(`/categories/${id}/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axiosInstance.delete(`/categories/${id}/toggle_status/`);
       fetchCategories();
     } catch (err) {
-      console.error("Error deleting category:", err);
+      console.error("Status toggle error:", err);
     }
   };
 
   const handleModalSubmit = async (formData, id = null) => {
-    const token = localStorage.getItem("accessToken");
     try {
       if (modalMode === "Add") {
-        await axiosInstance.post("/categories/", formData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axiosInstance.post("/categories/", formData);
       } else {
-        await axiosInstance.put(`/categories/${id}/`, formData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axiosInstance.put(`/categories/${id}/`, formData);
       }
       setShowModal(false);
       fetchCategories();
     } catch (err) {
       console.error("Save error:", err);
+      throw err;
     }
   };
 
@@ -93,29 +83,55 @@ const AdminCategories = () => {
       />
 
       <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50 text-sm font-semibold text-gray-600">
-            <tr>
-              <th className="px-6 py-3">ID</th>
-              <th className="px-6 py-3">Name</th>
-              <th className="px-6 py-3">Description</th>
-              <th className="px-6 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filtered.map((cat) => (
-              <tr key={cat.id}>
-                <td className="px-6 py-3">{cat.id}</td>
-                <td className="px-6 py-3">{cat.name}</td>
-                <td className="px-6 py-3">{cat.description}</td>
-                <td className="px-6 py-3 space-x-2">
-                  <button onClick={() => handleEdit(cat)} className="text-blue-600 hover:underline">Edit</button>
-                  <button onClick={() => handleDelete(cat.id)} className="text-red-600 hover:underline">Delete</button>
-                </td>
+        {filtered.length === 0 ? (
+          <p className="text-center py-6 text-gray-500">No categories found</p>
+        ) : (
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50 text-sm font-semibold text-gray-600">
+              <tr>
+                <th className="px-6 py-3">ID</th>
+                <th className="px-6 py-3">Name</th>
+                <th className="px-6 py-3">Description</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filtered.map((cat) => (
+                <tr key={cat.id}>
+                  <td className="px-6 py-3">{cat.id}</td>
+                  <td className="px-6 py-3">{cat.name}</td>
+                  <td className="px-6 py-3">{cat.description}</td>
+                  <td className="px-6 py-3">
+                    <span
+                      className={`px-2 py-1 rounded text-sm ${
+                        cat.is_active
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {cat.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 space-x-2">
+                    <button
+                      onClick={() => handleEdit(cat)}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(cat.id)}
+                      className="text-yellow-600 hover:underline"
+                    >
+                      {cat.is_active ? "Deactivate" : "Activate"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <CategoryModal
