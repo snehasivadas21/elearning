@@ -4,27 +4,26 @@ from .models import (Course,CourseCategory,Module, Lesson,LessonResource)
 class CourseCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseCategory
-        fields = '__all__'
+        fields = ['id','name','description','is_active','created_at']
+        read_only_fields = ['is_active']
+
+    def validate_name(self,value):
+        if CourseCategory.objects.filter(name__iexact=value).exists():
+            raise serializers.ValidationError("Category already exists.")
+        return value    
 
 class InstructorCourseSerializer(serializers.ModelSerializer):
     course_image = serializers.ImageField(required=False, use_url=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
-    category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.all())
+    category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.filter(is_active=True))
 
     class Meta:
         model = Course
-        exclude = ['rating','is_published','created_at','instructor'] 
-
-    def get_category_name(self, obj):
-        return {
-            "id": obj.category.id,
-            "name": obj.category.name
-        }    
+        exclude = ['rating','is_published','created_at','instructor']  
 
     def create(self,validated_data):
         validated_data['instructor']=self.context['request'].user
-        if 'status' not in validated_data:
-            validated_data['status']='submitted'
+        validated_data['status']='submitted'
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
@@ -70,11 +69,16 @@ class AdminCourseSerializer(serializers.ModelSerializer):
     instructor_username = serializers.CharField(source='instructor.username', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)    
     course_image = serializers.ImageField(required=False, use_url=True)
-    category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.all())
+    category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.filter(is_active=True))
 
     modules = ModuleSerializer(many=True,read_only=True)
 
     class Meta:
         model=Course
-        fields='__all__'     
+        fields='__all__'  
+
+    def validate_category(self,value):
+        if value and not value.is_active:
+            raise serializers.ValidationError("Inactive category cannot be assigned.")
+        return value       
 

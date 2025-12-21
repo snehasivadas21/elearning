@@ -117,17 +117,17 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer    
 
 class ApprovedCourseListView(generics.ListAPIView):
-    queryset = Course.objects.filter(status = 'approved')
+    queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = AdminCourseSerializer
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
-    filterset_fields = ['category','is_free']
+    filterset_fields = ['category','level']
     search_fields = ['title','description']
     ordering_fields = ['price','title']
     ordering = ['title']
 
 class ApprovedCourseDetailView(generics.RetrieveAPIView):
-    queryset = Course.objects.filter(status = 'approved')
+    queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = AdminCourseSerializer
     permission_classes =[permissions.AllowAny]
 

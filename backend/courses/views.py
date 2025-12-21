@@ -1,6 +1,8 @@
-from rest_framework import viewsets,permissions,serializers
+from rest_framework import viewsets,permissions,status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.filters import SearchFilter,OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import (Course,CourseCategory,Module,Lesson,LessonResource)
 from .serializers import (AdminCourseSerializer,InstructorCourseSerializer,CourseCategorySerializer,
 ModuleSerializer,LessonSerializer,LessonResourceSerializer)
@@ -14,6 +16,8 @@ class AdminCourseViewSet(viewsets.ModelViewSet):
     queryset=Course.objects.all().order_by('-created_at')
     serializer_class = AdminCourseSerializer
     permission_classes = [permissions.IsAuthenticated,IsAdminUser]
+    filter_backends=[DjangoFilterBackend,SearchFilter,OrderingFilter]
+    filterset_fields = ['category','status','level']
 
     def perform_update(self,serializer):
         old_status = serializer.instance.status
@@ -24,6 +28,8 @@ class AdminCourseViewSet(viewsets.ModelViewSet):
 class InstructorCourseViewSet(viewsets.ModelViewSet):
     serializer_class = InstructorCourseSerializer
     permission_classes = [permissions.IsAuthenticated,IsInstructorUser]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields =['category']
 
     def get_queryset(self):
         return Course.objects.filter(instructor=self.request.user).order_by('-created_at')
@@ -32,10 +38,22 @@ class InstructorCourseViewSet(viewsets.ModelViewSet):
         serializer.save(instructor=self.request.user)
 
 class CourseCategoryViewSet(viewsets.ModelViewSet):
-    queryset = CourseCategory.objects.filter(is_active=True).order_by('name')
-    serializer_class = CourseCategorySerializer
-    permission_classes = [permissions.AllowAny]  
-    pagination_class = None      
+    queryset = CourseCategory.objects.all()
+    serializer_class=CourseCategorySerializer
+    permission_classes=[IsAdminUser]
+    filter_backends=[SearchFilter,OrderingFilter] 
+    search_fields = ['name']
+    ordering_fields =['name','created_at']
+    
+    @action(detail=True,methods=['patch'],permission_classes=[IsAdminUser])
+    def toggle_status(self,request,pk=None):
+        category=self.get_object()
+        category.is_active=not category.is_active
+        category.save()
+        return Response(
+            {"is_active":category.is_active},
+            status=status.HTTP_200_OK
+        )
 
 class ModuleViewSet(viewsets.ModelViewSet):
     queryset = Module.objects.all()
