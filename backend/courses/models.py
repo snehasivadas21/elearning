@@ -52,6 +52,7 @@ class Course(models.Model):
     course_image = CloudinaryField('course_image', blank=True, null=True)
     rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
     price = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
+    admin_feedback = models.TextField(blank=True)
     is_published = models.BooleanField(default=False)
 
     class Meta:
@@ -64,20 +65,14 @@ class Course(models.Model):
         return self.title
 
 class Module(models.Model):
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('submitted', 'Submitted for Review'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    ]
     course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='modules')
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
-    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='draft')
-
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['order'] 
 
@@ -85,26 +80,19 @@ class Module(models.Model):
         return f"{self.course.title} - {self.title}"
 
 class Lesson(models.Model):
-    STATUS_CHOICES = [
-        ('draft', 'Draft'),
-        ('submitted', 'Submitted for Review'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    ]
     module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='lessons')
     title = models.CharField(max_length=255)
     content_type = models.CharField(max_length=20, choices=[
         ('video', 'Video'),
         ('text', 'Text'),
-        ('quiz', 'Quiz'),
     ], default='video')
     content_url = models.URLField(blank=True,null=True) 
     order = models.PositiveIntegerField(default=0)
     is_preview = models.BooleanField(default=False) 
     is_active = models.BooleanField(default=True) 
     is_deleted = models.BooleanField(default=False)
-    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='draft')
-
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['order']
 

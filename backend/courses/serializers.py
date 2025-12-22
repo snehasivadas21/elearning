@@ -19,7 +19,10 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        exclude = ['rating','is_published','created_at','instructor']  
+        fields = [
+            'id','title','description','category','category_name','level','price','course_image','status',
+        ]
+        read_only_fields = ['status']
 
     def create(self,validated_data):
         validated_data['instructor']=self.context['request'].user
@@ -48,22 +51,16 @@ class LessonSerializer(serializers.ModelSerializer):
     resources = LessonResourceSerializer(many=True,read_only=True)
     class Meta:
         model = Lesson
-        fields = '__all__'
-
-    def create(self, validated_data):
-        validated_data["status"] = "draft"
-        return super().create(validated_data)    
+        fields = ['id','module','title','content_type','content_url','order','is_preview','is_active','create_at','update_at']
+        read_only_fields = ['created_at','update_at']    
 
 class ModuleSerializer(serializers.ModelSerializer):
     lessons = LessonSerializer(many=True, read_only=True)
 
     class Meta:
         model = Module
-        fields = '__all__'   
-
-    def create(self, validated_data):
-        validated_data["status"] = "draft"
-        return super().create(validated_data)    
+        fields = ['id','course','title','description','order','is_active','created_at','updated_at',] 
+        read_only_fields =['created_at','updated_at']   
     
 class AdminCourseSerializer(serializers.ModelSerializer):
     instructor_username = serializers.CharField(source='instructor.username', read_only=True)
@@ -76,6 +73,7 @@ class AdminCourseSerializer(serializers.ModelSerializer):
     class Meta:
         model=Course
         fields='__all__'  
+        read_only_fields = ['instructor']
 
     def validate_category(self,value):
         if value and not value.is_active:
