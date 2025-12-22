@@ -29,6 +29,15 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if(name==="content_type"){
+      setFormData((prev)=>({
+        ...prev,
+        content_type:value,
+        content_url:"",
+        is_preview:value === "video"?prev.is_preview:false,
+      }))
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -41,6 +50,19 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.title.trim()){
+      alert("Lesson title is required");
+      return;
+    }
+
+    if (!formData.content_url.trim()){
+      alert(
+        formData.content_type === "video"
+        ? "Video URL is required" : "Text content is required"
+      )
+      return;
+    }
 
     const payload = {
       ...formData,
@@ -111,17 +133,22 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
             <option value="text">Text</option>
           </select>
 
-          <input
-            name="content_url"
-            value={formData.content_url}
-            onChange={handleChange}
-            placeholder={
-              formData.content_type === "video"
-                ? "Video URL"
-                : "Text or Link to content"
-            }
-            className="w-full border px-3 py-2 rounded"
-          />
+          {formData.content_type === "video"?(
+            <input 
+              name="content_url"
+              value={formData.content_url}
+              onChange={handleChange}
+              placeholder="Video URL" 
+              className="w-full border px-3 py-2 rounded"/>
+          ) : (
+            <textarea 
+              name="content_url"
+              value={formData.content_url}
+              onChange={handleChange}
+              placeholder="Lesson text content"
+              rows={4}
+              className="w-full border px-3 py-2 rounded"/>
+          )}
 
           <div>
             <label className="block font-medium text-sm mb-1">
@@ -152,6 +179,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
                 name="is_preview"
                 checked={formData.is_preview}
                 onChange={handleChange}
+                disabled={formData.content_type!=="video"}
               />
               <span>Preview</span>
             </label>
