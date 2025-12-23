@@ -6,46 +6,59 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import (Course,CourseCategory,Module,Lesson,LessonResource)
 from .serializers import (AdminCourseSerializer,InstructorCourseSerializer,CourseCategorySerializer,
 ModuleSerializer,LessonSerializer,LessonResourceSerializer)
-
+from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
 from django.utils import timezone
 
 
-class AdminCourseViewSet(viewsets.ModelViewSet):
+class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
     queryset=Course.objects.all().order_by('-created_at')
     serializer_class = AdminCourseSerializer
-    permission_classes = [permissions.IsAuthenticated,IsAdminUser]
+    permission_classes = [permissions.IsAdminUser]
     filter_backends=[DjangoFilterBackend,SearchFilter,OrderingFilter]
     filterset_fields = ['category','status','level']
     search_fields = ['title']
     ordering_fields = ['created_at']
 
-    def perform_update(self,serializer):
-        old_status = serializer.instance.status
-        course = serializer.save()
-        if old_status != course.status:
-            send_course_status_email.delay(course.id)
-
     @action(detail=True,methods=['patch'])
     def approve(self,request,pk=None):
         course = self.get_object()
+
+        if course.status != 'submitted':
+            return Response(
+                {"detail":"Only submitted courses can be approved"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         course.status='approved'
         course.is_published=True
-        course.admin_feedback=''
-        course.save()
+        course.admin_feedback=request.data.get('admin_feedback','')
+        course.save(update_fields=['status','is_published','admin_feedback'])
         send_course_status_email.delay(course.id)
-        return Response({'message':'Course approved'})
+        return Response({'message':'Course approved successfully'})
 
     @action(detail=True,methods=['patch'])
     def reject(self,request,pk=None):
         course = self.get_object()
+
+        if course.status != 'submitted':
+            return Response(
+                {"detail":"Only submitted courses can be rejected."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         course.status = 'rejected'
         course.is_published = False
         course.admin_feedback=request.data.get('admin_feedback','')
         course.save()
         send_course_status_email.delay(course.id)
-        return Response({'message':'Course rejected'})       
+        return Response({'message':'Course rejected successfully'})    
+
+    @action(detail=True,methods=['patch'])
+    def toggel_active(self,request,pk=None):
+        course=self.get_object()
+        course.is_active=not course.is_active
+        course.save()
+        return Response({"is_active":course.is_active})   
 
 class InstructorCourseViewSet(viewsets.ModelViewSet):
     serializer_class = InstructorCourseSerializer
@@ -60,12 +73,21 @@ class InstructorCourseViewSet(viewsets.ModelViewSet):
         serializer.save(instructor=self.request.user)
 
 class CourseCategoryViewSet(viewsets.ModelViewSet):
-    queryset = CourseCategory.objects.all()
     serializer_class=CourseCategorySerializer
-    permission_classes=[IsAdminUser]
     filter_backends=[SearchFilter,OrderingFilter] 
     search_fields = ['name']
     ordering_fields =['name','created_at']
+
+    def get_queryset(self):
+        qs = CourseCategory.objects.all()
+        if not self.request.user.is_staff:
+           qs = qs.filter(is_active=True)
+        return qs
+
+    def get_permissions(self):
+        if self.action in ['list','retrieve']:
+            return [IsAuthenticated()]
+        return [IsAdminUser()] 
     
     @action(detail=True,methods=['patch'],permission_classes=[IsAdminUser])
     def toggle_status(self,request,pk=None):

@@ -25,18 +25,6 @@ const AdminTutors = () => {
     }
   };
 
-  const handleEdit = (tutor) => {
-    setSelectedInstructor(tutor);
-    setModalMode("Edit");
-    setShowModal(true);
-  };
-
-  const handleAdd = () => {
-    setSelectedInstructor(null);
-    setModalMode("Add");
-    setShowModal(true);
-  };
-
   const handleModalSubmit = async (data, id = null) => {
     const token = localStorage.getItem("accessToken");
     try {
@@ -87,12 +75,6 @@ const AdminTutors = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="border px-3 py-2 rounded w-1/3"
         />
-        <button
-          onClick={handleAdd}
-          className="px-4 py-2 bg-purple-600 text-white rounded shadow hover:bg-purple-700"
-        >
-          + Add Instructor
-        </button>
       </div>
 
       <div className="overflow-x-auto bg-white rounded-lg shadow">
@@ -116,15 +98,9 @@ const AdminTutors = () => {
                 <td className="px-6 py-4">{tutor.username}</td>
                 <td className="px-6 py-4">{tutor.email}</td>
                 <td className="px-6 py-4">{tutor.is_active ? "Yes" : "No"}</td>
-                <td className="px-6 py-4">{tutor.date_joined}</td>
+                <td className="px-6 py-4">{new Date(tutor.date_joined).toLocaleDateString()}</td>
                 <td className="px-6 py-4 capitalize">{tutor.role}</td>
                 <td className="px-6 py-4 space-x-2">
-                  <button
-                    onClick={() => handleEdit(tutor)}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit
-                  </button>
                   <button
                     onClick={() => handleDelete(tutor)}
                     className="text-red-600 hover:underline"

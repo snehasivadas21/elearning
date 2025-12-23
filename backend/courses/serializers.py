@@ -59,21 +59,19 @@ class ModuleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Module
-        fields = ['id','course','title','description','order','is_active','created_at','updated_at',] 
+        fields = ['id','course','title','description','order','is_active','created_at','updated_at','lessons'] 
         read_only_fields =['created_at','updated_at']   
     
 class AdminCourseSerializer(serializers.ModelSerializer):
     instructor_username = serializers.CharField(source='instructor.username', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)    
     course_image = serializers.ImageField(required=False, use_url=True)
-    category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.filter(is_active=True))
-
-    modules = ModuleSerializer(many=True,read_only=True)
+    category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.all())
 
     class Meta:
         model=Course
-        fields='__all__'  
-        read_only_fields = ['instructor']
+        fields=['id','title','price','level','status','is_active','is_published','admin_feedback','instructor_username','category_name','created_at','course_image','category']  
+        read_only_fields = fields
 
     def validate_category(self,value):
         if value and not value.is_active:
