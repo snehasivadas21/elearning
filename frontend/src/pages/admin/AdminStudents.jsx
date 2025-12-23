@@ -44,14 +44,12 @@ const AdminStudents = () => {
     }
   };
 
-  const handleDelete = async (student) => {
+  const handleToggleStatus = async (student) => {
     if (!window.confirm("Are you sure to deactivate this student?")) return;
-    const token = localStorage.getItem("accessToken");
     try {
       await axiosInstance.patch(
         `/admin/students/${student.id}/`,
-        { is_active: false },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { is_active: !student.is_active },
       );
       fetchStudents();
     } catch (err) {
@@ -102,10 +100,10 @@ const AdminStudents = () => {
                 <td className="px-6 py-4 capitalize">{student.role}</td>
                 <td className="px-6 py-4 space-x-2">
                   <button
-                    onClick={() => handleDelete(student)}
-                    className="text-red-600 hover:underline"
+                    onClick={() => handleToggleStatus(student)}
+                    className="text-yellow-600 hover:underline"
                   >
-                    Delete
+                    {student.is_active?"Deactivate":"Activate"}
                   </button>
                 </td>
               </tr>

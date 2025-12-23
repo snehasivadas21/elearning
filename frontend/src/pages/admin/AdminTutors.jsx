@@ -44,14 +44,12 @@ const AdminTutors = () => {
     }
   };
 
-  const handleDelete = async (tutor) => {
+  const handleToggleStatus = async (tutor) => {
     if (!window.confirm("Are you sure to deactivate this tutor?")) return;
-    const token = localStorage.getItem("accessToken");
     try {
       await axiosInstance.patch(
         `/admin/instructors/${tutor.id}/`,
-        { is_active: false },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { is_active: !tutor.is_active },
       );
       fetchTutors();
     } catch (err) {
@@ -102,10 +100,10 @@ const AdminTutors = () => {
                 <td className="px-6 py-4 capitalize">{tutor.role}</td>
                 <td className="px-6 py-4 space-x-2">
                   <button
-                    onClick={() => handleDelete(tutor)}
-                    className="text-red-600 hover:underline"
+                    onClick={() => handleToggleStatus(tutor)}
+                    className="text-yellow-600 hover:underline"
                   >
-                    Delete
+                    {tutor.is_active?"Deactivate":"Activate"}
                   </button>
                 </td>
               </tr>

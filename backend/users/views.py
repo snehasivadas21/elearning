@@ -11,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.decorators import action
+from django.conf import settings
 
 from .models import CustomUser 
 from .serializers import RegisterSerializer, LoginSerializer,CustomTokenObtainPairSerializer,PasswordResetConfirmSerializer,PasswordResetRequestSerializer
@@ -78,6 +79,7 @@ class LoginView(APIView):
           
 class PasswordResetRequestView(generics.GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -99,16 +101,20 @@ class PasswordResetRequestView(generics.GenericAPIView):
                 fail_silently=False,
             )
         except User.DoesNotExist:
-            # Don’t reveal if email exists (security best practice)
             pass
-
         return Response({"message": "If the email exists, a reset link has been sent."}, status=status.HTTP_200_OK)
 
 class PasswordResetConfirmView(generics.GenericAPIView):
     serializer_class = PasswordResetConfirmSerializer
+    permission_classes = [AllowAny]
 
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
+    def post(self, request ,uidb64, token):
+        data = {
+            "uidb64": uidb64,
+            "token": token,
+            "new_password": request.data.get("new_password")
+        }
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Password reset successful."}, status=status.HTTP_200_OK)

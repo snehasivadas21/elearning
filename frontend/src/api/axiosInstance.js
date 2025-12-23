@@ -17,6 +17,15 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (
+      error.response?.status === 403 && 
+      error.response?.data?.detail?.toLowerCase().includes("deactivated")
+    ){
+      alert("Your account has been deactivated.Please contact support.")
+      localStorage.clear();
+      window.location.href = "/login";
+      return Promise.reject(error);
+    }
     const originalRequest = error.config;
 
     const excludedPaths = [

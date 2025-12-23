@@ -3,13 +3,16 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter,OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils import timezone
+from django.core.exceptions import PermissionDenied,ValidationError
+
 from .models import (Course,CourseCategory,Module,Lesson,LessonResource)
 from .serializers import (AdminCourseSerializer,InstructorCourseSerializer,CourseCategorySerializer,
 ModuleSerializer,LessonSerializer,LessonResourceSerializer)
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
-from django.utils import timezone
+
 
 
 class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
@@ -86,7 +89,7 @@ class CourseCategoryViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list','retrieve']:
-            return [IsAuthenticated()]
+            return [AllowAny()]
         return [IsAdminUser()] 
     
     @action(detail=True,methods=['patch'],permission_classes=[IsAdminUser])
@@ -114,7 +117,7 @@ class ModuleViewSet(viewsets.ModelViewSet):
         return qs
     
     def perform_create(self,serializer):
-        course = serializer.validated_date['course']
+        course = serializer.validated_data['course']
         if course.status != 'approved':
             raise PermissionDenied(
                 "Course must be approved before adding modules."
@@ -137,6 +140,8 @@ class LessonViewSet(viewsets.ModelViewSet):
     
     def perform_create(self,serializer):
         module = serializer.validated_data['module']
+        if not module:
+            raise ValidationError("Module is required.")
         course = module.course
 
         if course.status != 'approved':

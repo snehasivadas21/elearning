@@ -63,7 +63,12 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid credentials")
 
         # if not user.is_verified:
-        #     raise serializers.ValidationError("Please verify your email")    
+        #     raise serializers.ValidationError("Please verify your email") 
+
+        if not user.is_active:
+            raise serializers.ValidationError(
+                "Your account has been deactivated.Please contact support."
+            )   
         
         data['user']=user
         return data

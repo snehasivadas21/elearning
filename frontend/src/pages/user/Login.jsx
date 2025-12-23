@@ -29,12 +29,14 @@ const Login = () => {
       const status = err.response?.status;
       const data = err.response?.data;
 
-      if (status === 403 && data?.error === "email_not_verified"){
+      if (status === 403 && data?.error === "email_not_verified") {
         setError("Please verify your email before logging in.");
-      }else if (status === 401){
+      } else if (status === 403 && data?.detail?.toLowerCase().includes("deactivated")) {
+        setError("Your account has been deactivated. Please contact support.");
+      } else if (status === 401) {
         setError("Invalid email or password");
-      }else{
-        setError("Something went wrong.Please try again")
+      } else {
+        setError("Something went wrong. Please try again.");
       }
     }finally {
       setLoading(false);
@@ -91,12 +93,6 @@ const Login = () => {
             to="/forget-password"
             className='text-blue-600 hover:underline'>
             Forget Password
-          </Link>
-
-          <Link
-            to="/resend-verification"
-            className='text-blue-600 hover:underline'>
-            Resend Verification
           </Link>
 
         </div>

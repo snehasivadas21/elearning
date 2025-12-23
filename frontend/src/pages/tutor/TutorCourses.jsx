@@ -4,6 +4,7 @@ import axiosInstance from "../../api/axiosInstance";
 import CourseModal from "../../components/admin/CourseModal";
 import { extractResults } from "../../api/api"; 
 import { toast } from "react-toastify";
+import Pagination from "../../components/ui/Pagination";
 
 const InstructorCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -12,13 +13,18 @@ const InstructorCourses = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchStatus,setSearchStatus] = useState("")
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
 
   const navigate = useNavigate();
   
   const fetchCourses = async () => {
     try {
-      const res = await axiosInstance.get("/instructor/courses/");
+      const res = await axiosInstance.get("/instructor/courses/",{
+        params:{page}
+      });
       setCourses(extractResults(res));
+      setCount(res.data.count);
     } catch (err) {
       console.error("Error fetching courses:", err);
       setCourses([]);
@@ -27,7 +33,7 @@ const InstructorCourses = () => {
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [page]);
 
 
   const handleAdd = () => {
@@ -80,7 +86,7 @@ const InstructorCourses = () => {
           <button onClick={()=>handleEdit(course)} className="px-4 py-2 bg-blue-400 text-white rounded hover:bg-purple-700">
             Edit
           </button>
-          <button onClick={()=>navigate(`/instructor/courses/${course.id}/content`)} className="px-4 py-2 bg-purple-600 text-white rounded">
+          <button onClick={()=>navigate(`/tutor/courses/${course.id}/content`)} className="px-4 py-2 bg-purple-600 text-white rounded">
             Manage Content
           </button>
           <button onClick={()=>handleSubmitForReview(course.id)} className="px-4 py-2 bg-red-500 text-white rounded">
@@ -90,14 +96,14 @@ const InstructorCourses = () => {
         )
       case "submitted":
         return (
-          <button onClick={()=>navigate(`/instructor/courses/${course.id}`)} className="px-4 py-2 bg-purple-600 text-white rounded">
+          <button onClick={()=>navigate(`/tutor/courses/${course.id}`)} className="px-4 py-2 bg-purple-600 text-white rounded">
             View Details
           </button>
         ) 
       case "approved":
         return (
           <>
-          <button onClick={()=>navigate(`/instrucor/courses/${course.id}/content`)} className="px-4 py-2 bg-blue-400 text-white rounded">
+          <button onClick={()=>navigate(`/tutor/courses/${course.id}/content`)} className="px-4 py-2 bg-blue-400 text-white rounded">
             Manage Content
           </button>
           <button onClick={()=>navigate(`/courses/${course.id}`)} className="px-4 py-2 bg-purple-600 text-white rounded">
@@ -108,7 +114,7 @@ const InstructorCourses = () => {
       case "rejected":
         return (
           <>
-          <button onClick={()=>navigate(`/instructor/courses/${course.id}`)} className="px-4 py-2 bg-purple-600 text-white rounded">
+          <button onClick={()=>navigate(`/tutor/courses/${course.id}`)} className="px-4 py-2 bg-purple-600 text-white rounded">
             View Feedback
           </button>
           <button onClick={()=>handleEdit(course)} className="px-4 py-2 bg-yellow-400 text-white rounded">
@@ -218,6 +224,12 @@ const InstructorCourses = () => {
           mode={modalMode}
         />
       )}
+
+      <Pagination
+        page={page}
+        setPage={setPage}
+        count={count}
+      />
     </div>
   );
 };
