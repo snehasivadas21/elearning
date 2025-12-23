@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import CategoryModal from "../../components/admin/CategoryModal";
+import { extractResults } from "../../api/api";
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState([]);
@@ -16,7 +17,7 @@ const AdminCategories = () => {
   const fetchCategories = async () => {
     try {
       const res = await axiosInstance.get("/categories/");
-      setCategories(res.data);
+      setCategories(extractResults(res));
     } catch (err) {
       console.error("Error fetching categories:", err);
     }
@@ -37,7 +38,7 @@ const AdminCategories = () => {
   const handleToggleStatus = async (id) => {
     if (!window.confirm("Are you sure to toggle status for this category?")) return;
     try {
-      await axiosInstance.delete(`/categories/${id}/toggle_status/`);
+      await axiosInstance.patch(`/categories/${id}/toggle_status/`);
       fetchCategories();
     } catch (err) {
       console.error("Status toggle error:", err);

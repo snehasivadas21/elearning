@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from "../../api/axiosInstance";
+import { extractResults } from '../../api/api';
 
 const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add" }) => {
   const [formData, setFormData] = useState({
@@ -17,12 +18,9 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add" }) => {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const token = localStorage.getItem("accessToken");
       try {
-        const res = await axiosInstance.get("/categories/", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setCategories(res.data);
+        const res = await axiosInstance.get("/categories/");
+        setCategories(extractResults(res));
       } catch (err) {
         console.error("Error fetching categories:", err);
       }
