@@ -130,7 +130,7 @@ pytech/
 │   └── services/
 └── docs/
 
-## 🔄 Development Workflow
+🔄 Development Workflow
 
 1. Design UI in Figma
 2. Plan API structure (Postman)
@@ -138,28 +138,28 @@ pytech/
 4. Connect frontend
 5. Test & refine
 
-## 📌 Current Status
+📌 Current Status
 
 ✅ API design completed
 ✅ Database schema finalized
 ✅ Postman documentation ready
 ⏳ Backend & frontend implementation in progress
 
-## 🧠 Future Enhancements
+🧠 Future Enhancements
 
 * AI-powered course recommendations
 * Resume scoring system
 * Real-time interview scheduling
 * Advanced analytics dashboard
 
-## 👤 Author
+👤 Author
 
-**Sneha**
+Sneha
 Full Stack Developer
-Project: *PyTech – Smart Learning Platform*
+Project: PyTech – Smart Learning Platform
 
-## 📄 License
+📄 License
 
 This project is for educational and demonstration purposes.
 
-✨ *Built with passion to create a smart learning ecosystem.*
+✨ Built with passion to create a smart learning ecosystem.
