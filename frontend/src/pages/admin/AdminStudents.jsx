@@ -3,6 +3,7 @@ import axiosInstance from "../../api/axiosInstance";
 
 import UserModal from "../../components/admin/UserModal";
 import { extractResults } from "../../api/api";
+import Pagination from "../../components/ui/Pagination";
 
 const AdminStudents = () => {
   const [students, setStudents] = useState([]);
@@ -10,20 +11,23 @@ const AdminStudents = () => {
   const [modalMode, setModalMode] = useState("Add");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    fetchStudents();
-  }, []);
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
 
   const fetchStudents = async () => {
     try {
-      const res = await axiosInstance.get("/admin/students/");
+      const res = await axiosInstance.get("/admin/students/",{params:{page}});
       setStudents(extractResults(res));
+      setCount(res.data.count)
     } catch (err) {
       console.error("Error fetching students:", err);
       setStudents([]);
     }
   };
+
+  useEffect(() => {
+    fetchStudents();
+  }, [page]);
 
   const handleModalSubmit = async (data, id = null) => {
     const token = localStorage.getItem("accessToken");
@@ -90,9 +94,9 @@ const AdminStudents = () => {
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {filtered.map((student) => (
+            {filtered.map((student,index) => (
               <tr key={student.id}>
-                <td className="px-6 py-4">{student.id}</td>
+                <td className="px-6 py-4">{index+1}</td>
                 <td className="px-6 py-4">{student.username}</td>
                 <td className="px-6 py-4">{student.email}</td>
                 <td className="px-6 py-4">{student.is_active ? "Yes" : "No"}</td>
@@ -119,6 +123,11 @@ const AdminStudents = () => {
         user={selectedStudent}
         mode={modalMode}
         type="Student"
+      />
+      <Pagination
+       page={page}
+       setPage={setPage}
+       count={count}
       />
     </div>
   );

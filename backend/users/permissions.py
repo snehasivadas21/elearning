@@ -26,8 +26,3 @@ class IsStudentUser(BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == 'student'
     
-class IsActiveUser(BasePermission):
-    message ="Your account has been deactivated."
-
-    def has_permission(self, request, view):
-       return request.user and request.user.is_active   

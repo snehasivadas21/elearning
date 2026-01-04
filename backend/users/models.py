@@ -4,12 +4,13 @@ from cloudinary.models import CloudinaryField
 
 # Create your models here.
 class CustomUserManager(BaseUserManager):
-    def create_user(self,email,username,password=None,role='student',**extra_fields):
+    def create_user(self,email,username=None,password=None,role='student',**extra_fields):
         if not email:
             raise ValueError("Email is required")
-        if not username:
-            raise ValueError("Username is required")
         email=self.normalize_email(email)
+        if not username:
+            username = email.split('@')[0]
+               
         user=self.model(email=email,username=username,role=role,**extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -50,3 +51,33 @@ class CustomUser(AbstractBaseUser,PermissionsMixin):
     def __str__(self):
         return self.username
     
+class Profile(models.Model):
+    user = models.OneToOneField(CustomUser,on_delete=models.CASCADE,related_name="profile")
+
+    full_name = models.CharField(max_length=150)
+    bio = models.TextField(blank=True)
+    headline = models.CharField(max_length=255,blank=True)
+    profile_image = CloudinaryField('image', blank=True, null=True)
+
+    date_of_birth = models.DateField(null=True,blank=True)
+    location = models.CharField(max_length=100,blank=True)
+
+    experience = models.PositiveIntegerField(default=0)
+    resume = CloudinaryField('file', blank=True, null=True)
+    skills = models.TextField(help_text="Common separated skills",blank=True)
+
+    def __str__(self):
+        return self.full_name
+
+class ProfileLink(models.Model):
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="links"
+    )
+
+    label = models.CharField(max_length=50) 
+    url = models.URLField()
+
+    def __str__(self):
+        return f"{self.label} - {self.profile.full_name}"

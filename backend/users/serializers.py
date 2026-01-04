@@ -1,11 +1,12 @@
 from rest_framework import serializers
-from .models import CustomUser
-from django.contrib.auth import authenticate
+from .models import CustomUser,Profile,ProfileLink
+from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.exceptions import AuthenticationFailed
 
 User = get_user_model()
 
@@ -57,18 +58,10 @@ class LoginSerializer(serializers.Serializer):
         try:
             user=CustomUser.objects.get(email=data['email'])
         except CustomUser.DoesNotExist:
-            raise serializers.ValidationError("Invalid credentials")
+            raise AuthenticationFailed("Invalid credentials")
 
         if not user.check_password(data['password']):
-            raise serializers.ValidationError("Invalid credentials")
-
-        # if not user.is_verified:
-        #     raise serializers.ValidationError("Please verify your email") 
-
-        if not user.is_active:
-            raise serializers.ValidationError(
-                "Your account has been deactivated.Please contact support."
-            )   
+            raise AuthenticationFailed("Invalid credentials")
         
         data['user']=user
         return data
@@ -77,6 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'username', 'role', 'is_active', 'is_verified','is_staff','date_joined']
+        read_only_fields = fields
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -110,4 +104,33 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     def save(self):
         self.user.set_password(self.validated_data['new_password'])
         self.user.save()
-        return self.user      
+        return self.user   
+class ProfileLinkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfileLink
+        fields = ["id", "label", "url"]
+
+class ProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    links = ProfileLinkSerializer(many=True, required=False)
+
+    class Meta:
+        model = Profile
+        fields = ["id","user","full_name","bio","headline","profile_image","date_of_birth","location","experience","resume","skills","links",]
+
+    def update(self, instance, validated_data):
+        links_data = validated_data.pop("links", None)
+
+        for attr,value in validated_data.items():
+            setattr(instance,attr,value)
+
+        instance.save()    
+
+        if links_data is not None:
+            instance.links.all().delete()
+            for link in links_data:
+                ProfileLink.objects.create(profile=instance, **link)
+
+        return instance
+
+                    

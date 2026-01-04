@@ -98,9 +98,9 @@ const AdminCategories = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filtered.map((cat) => (
+              {filtered.map((cat,index) => (
                 <tr key={cat.id}>
-                  <td className="px-6 py-3">{cat.id}</td>
+                  <td className="px-6 py-3">{index+1}</td>
                   <td className="px-6 py-3">{cat.name}</td>
                   <td className="px-6 py-3">{cat.description}</td>
                   <td className="px-6 py-3">

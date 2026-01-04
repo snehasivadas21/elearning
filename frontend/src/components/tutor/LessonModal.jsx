@@ -12,7 +12,6 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
   });
 
   const [resourceFiles,setResourceFiles] = useState([]);
-  const token = localStorage.getItem("accessToken")
 
   useEffect(() => {
     if (lessonData) {
@@ -65,9 +64,10 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
     }
 
     const payload = {
-      ...formData,
-      module: moduleId,
-      status:"draft",
+      title:formData.title,
+      content_type:formData.content_type,
+      content_url:formData.content_url,
+      module:moduleId,
     };
 
     try {
@@ -76,34 +76,27 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
         : "/lessons/";
       const method = lessonData ? axiosInstance.put : axiosInstance.post;
 
-      const lessonRes = await method(url, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const lessonRes = await method(url, payload);
 
       const lessonId = lessonData?.id || lessonRes.data.id;
 
       if (resourceFiles.length > 0) {
-        const uploadPromises = resourceFiles.map((file) => {
-          const formData = new FormData();
-          formData.append("lesson", lessonId);
-          formData.append("title", file.name);
-          formData.append("file", file);
+        await Promise.all(
+          resourceFiles.map((file) => {
+            const fd = new FormData();
+            fd.append("lesson", lessonId);
+            fd.append("title", file.name);
+            fd.append("file", file);
 
-          return axiosInstance.post("/lesson-resources/", formData, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          });
-        });
-
-        await Promise.all(uploadPromises);
+            return axiosInstance.post("/lesson-resources/", fd);
+          })
+        );
       }
 
       setResourceFiles([]);
       onClose();
     } catch (err) {
-      console.error("Error saving lesson or resources:", err);
+      console.error("Error saving lesson or resources:", err.response?.data);
     }
   };
 

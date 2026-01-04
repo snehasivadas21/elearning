@@ -106,9 +106,9 @@ const AdminCourses = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {filteredCourses.map((course) => (
+            {filteredCourses.map((course,index) => (
               <tr key={course.id} className="border-t">
-                <td className="px-6 py-4">{course.id}</td>
+                <td className="px-6 py-4">{index+1}</td>
                 <td className="px-6 py-4">{course.title}</td>
                 <td className="px-6 py-4">{course.instructor_username}</td>
                 <td className="px-6 py-4">{course.category_name || course.category}</td>

@@ -90,9 +90,9 @@ const AdminTutors = () => {
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {filtered.map((tutor) => (
+            {filtered.map((tutor,index) => (
               <tr key={tutor.id}>
-                <td className="px-6 py-4">{tutor.id}</td>
+                <td className="px-6 py-4">{index+1}</td>
                 <td className="px-6 py-4">{tutor.username}</td>
                 <td className="px-6 py-4">{tutor.email}</td>
                 <td className="px-6 py-4">{tutor.is_active ? "Yes" : "No"}</td>

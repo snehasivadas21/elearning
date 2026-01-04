@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axiosPublic from "../../api/axiosPublic";
 import { useNavigate, Link } from 'react-router-dom';
+import GoogleLoginButton from '../../components/user/GoogleLoginButton';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -101,21 +102,8 @@ const Register = () => {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500 mb-2">Or continue with</p>
-          <button
-            onClick={() =>
-              window.location.href =
-                "http://localhost:8000/auth/o/google-oauth2/?redirect_uri=http://localhost:5173/google/callback"
-            }
-            className="w-full border border-gray-300 p-2 rounded-md flex items-center justify-center gap-2 hover:bg-gray-100"
-          >
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-              className="w-5 h-5"
-            />
-            Continue with Google
-          </button>
+          <p className="text-sm text-gray-500 mb-2">Or Continue with</p>
+            <GoogleLoginButton/>
         </div>
 
         <div className="mt-6 text-center">

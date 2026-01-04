@@ -51,7 +51,7 @@ class LessonSerializer(serializers.ModelSerializer):
     resources = LessonResourceSerializer(many=True,read_only=True)
     class Meta:
         model = Lesson
-        fields = ['id','module','title','content_type','content_url','order','is_preview','is_active','created_at','updated_at']
+        fields = ['id','module','title','content_type','content_url','order','is_preview','is_active','created_at','updated_at','resources']
         read_only_fields = ['created_at','updated_at']    
 
 class ModuleSerializer(serializers.ModelSerializer):

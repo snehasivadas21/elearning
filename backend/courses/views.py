@@ -107,17 +107,22 @@ class ModuleViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        course_id = self.request.query_params.get('course')
-        if self.request.user.is_staff:
-            qs = Module.objects.filter(is_deleted= False)
-        else:    
-            qs = Module.objects.filter(course__instructor=self.request.user, is_deleted=False)
+        qs = Module.objects.filter(is_deleted= False)
+
+        if not self.request.user.is_staff:
+           qs=qs.filter(course__instructor=self.request.user)
+        course_id = self.request.query_params.get('course')  
+
         if course_id:
             qs = qs.filter(course_id=course_id)
         return qs
     
     def perform_create(self,serializer):
         course = serializer.validated_data['course']
+        
+        if not self.request.user.is_staff and course.instructor != self.request.user:
+            raise PermissionDenied("You do not own this course.")
+
         if course.status != 'approved':
             raise PermissionDenied(
                 "Course must be approved before adding modules."
@@ -129,20 +134,22 @@ class LessonViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        module_id = self.request.query_params.get('module')
-        if self.request.user.is_staff:
-            qs = Lesson.objects.filter(is_deleted=False)
-        else:    
-            qs = Lesson.objects.filter(module__course__instructor=self.request.user, is_deleted=False)
+        qs = Lesson.objects.filter(is_deleted=False)
+       
+        if not self.request.user.is_staff:    
+            qs = qs.filter(module__course__instructor=self.request.user)
+
+        module_id = self.request.query_params.get('module')    
         if module_id:
             qs = qs.filter(module_id=module_id)
         return qs
     
     def perform_create(self,serializer):
         module = serializer.validated_data['module']
-        if not module:
-            raise ValidationError("Module is required.")
         course = module.course
+
+        if not self.request.user.is_staff and course.instructor != self.request.user:
+            raise PermissionDenied("You do not own this course")
 
         if course.status != 'approved':
             raise PermissionDenied(
