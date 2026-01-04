@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
-
+import { extractResults } from "../../api/api";
 import ModuleModal from "../../components/tutor/ModuleModal";
 import LessonModal from "../../components/tutor/LessonModal";
 
@@ -38,7 +38,7 @@ const InstructorCourseContent = () => {
    const fetchModules = async () => {
     try {
       const res = await axiosInstance.get(`/modules/?course=${courseId}`);
-      setModules(res.data);
+      setModules(extractResults(res));
     } catch (err) {
       console.error("Failed to load modules", err);
     }
@@ -66,7 +66,7 @@ const InstructorCourseContent = () => {
 
   const handleAddLesson = (module) => {
     setSelectedLesson(module);
-    selectedLesson(null)
+    setSelectedLesson(null)
     setShowLessonModal(true);
   };
 
@@ -85,7 +85,7 @@ const InstructorCourseContent = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Course Content</h2>
+        <h2 className="text-2xl font-bold text-purple-600">Course Content</h2>
         <button
           onClick={handleAddModule}
           className="bg-purple-600 text-white px-4 py-2 rounded"
@@ -206,7 +206,7 @@ const InstructorCourseContent = () => {
           moduleData={selectedModule}
           onSubmit={async (data, id) => {
             if (id) {
-              await axiosInstance.put(`/modules/${id}/`, data);
+              await axiosInstance.patch(`/modules/${id}/`, data);
             } else {
               data.set("course", courseId);
               await axiosInstance.post("/modules/", data);

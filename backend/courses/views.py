@@ -3,13 +3,16 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter,OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils import timezone
+from django.core.exceptions import PermissionDenied,ValidationError
+
 from .models import (Course,CourseCategory,Module,Lesson,LessonResource)
 from .serializers import (AdminCourseSerializer,InstructorCourseSerializer,CourseCategorySerializer,
 ModuleSerializer,LessonSerializer,LessonResourceSerializer)
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
-from django.utils import timezone
+
 
 
 class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
@@ -86,7 +89,7 @@ class CourseCategoryViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ['list','retrieve']:
-            return [IsAuthenticated()]
+            return [AllowAny()]
         return [IsAdminUser()] 
     
     @action(detail=True,methods=['patch'],permission_classes=[IsAdminUser])
@@ -104,17 +107,22 @@ class ModuleViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        course_id = self.request.query_params.get('course')
-        if self.request.user.is_staff:
-            qs = Module.objects.filter(is_deleted= False)
-        else:    
-            qs = Module.objects.filter(course__instructor=self.request.user, is_deleted=False)
+        qs = Module.objects.filter(is_deleted= False)
+
+        if not self.request.user.is_staff:
+           qs=qs.filter(course__instructor=self.request.user)
+        course_id = self.request.query_params.get('course')  
+
         if course_id:
             qs = qs.filter(course_id=course_id)
         return qs
     
     def perform_create(self,serializer):
-        course = serializer.validated_date['course']
+        course = serializer.validated_data['course']
+        
+        if not self.request.user.is_staff and course.instructor != self.request.user:
+            raise PermissionDenied("You do not own this course.")
+
         if course.status != 'approved':
             raise PermissionDenied(
                 "Course must be approved before adding modules."
@@ -126,11 +134,12 @@ class LessonViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        module_id = self.request.query_params.get('module')
-        if self.request.user.is_staff:
-            qs = Lesson.objects.filter(is_deleted=False)
-        else:    
-            qs = Lesson.objects.filter(module__course__instructor=self.request.user, is_deleted=False)
+        qs = Lesson.objects.filter(is_deleted=False)
+       
+        if not self.request.user.is_staff:    
+            qs = qs.filter(module__course__instructor=self.request.user)
+
+        module_id = self.request.query_params.get('module')    
         if module_id:
             qs = qs.filter(module_id=module_id)
         return qs
@@ -138,6 +147,9 @@ class LessonViewSet(viewsets.ModelViewSet):
     def perform_create(self,serializer):
         module = serializer.validated_data['module']
         course = module.course
+
+        if not self.request.user.is_staff and course.instructor != self.request.user:
+            raise PermissionDenied("You do not own this course")
 
         if course.status != 'approved':
             raise PermissionDenied(

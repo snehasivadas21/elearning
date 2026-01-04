@@ -1,4 +1,3 @@
-// frontend/src/components/ui/Textarea.jsx
 export function Textarea({ className, ...props }) {
   return (
     <textarea

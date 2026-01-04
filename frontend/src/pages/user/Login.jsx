@@ -2,6 +2,7 @@ import { useContext, useState } from 'react';
 import axiosPublic from "../../api/axiosPublic";
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
+import GoogleLoginButton from '../../components/user/GoogleLoginButton';
 
 const Login = () => {
 
@@ -27,14 +28,16 @@ const Login = () => {
 
     } catch (err) {
       const status = err.response?.status;
-      const data = err.response?.data;
+      const detail = err.response?.data;
 
-      if (status === 403 && data?.error === "email_not_verified"){
-        setError("Please verify your email before logging in.");
-      }else if (status === 401){
-        setError("Invalid email or password");
-      }else{
-        setError("Something went wrong.Please try again")
+      if (status === 401 && detail === "ACCOUNT_DEACTIVATED") {
+        setError("Your account has been deactivated. Please contact support.");
+      } 
+      else if (status === 401) {
+        setError("Invalid email or password.");
+      } 
+      else {
+        setError("Something went wrong. Please try again.");
       }
     }finally {
       setLoading(false);
@@ -93,30 +96,11 @@ const Login = () => {
             Forget Password
           </Link>
 
-          <Link
-            to="/resend-verification"
-            className='text-blue-600 hover:underline'>
-            Resend Verification
-          </Link>
-
         </div>
 
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500 mb-2">Or login with</p>
-          <button
-            onClick={() =>
-              window.location.href =
-                "http://localhost:8000/auth/o/google-oauth2/?redirect_uri=http://localhost:5173/google/callback"
-            }
-            className="w-full border border-gray-300 p-2 rounded-md flex items-center justify-center gap-2 hover:bg-gray-100"
-          >
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-              className="w-5 h-5"
-            />
-            Continue with Google
-          </button>
+          <p className="text-sm text-gray-500 mb-2">Or Continue with</p>
+            <GoogleLoginButton/>
         </div>
 
         <div className="mt-6 text-center">

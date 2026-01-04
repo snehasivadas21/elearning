@@ -9,7 +9,6 @@ import Login from "./pages/user/Login";
 import Register from "./pages/user/Register";
 import CheckEmail from "./pages/user/CheckEmail";
 import VerifyEmail from "./pages/user/VerifyEmail";
-import GoogleCallback from "./pages/user/GoogleCallback";
 import ForgotPasswordPage from "./pages/user/ForgetPasswordPage";
 import ResetPasswordPage from "./pages/user/ResetPasswordPage";
 import Dashboard from "./pages/student/Dashboard";
@@ -19,7 +18,6 @@ import CourseDetailPage from "./pages/user/CourseDetailPage";
 import About from "./pages/user/About"
 import MyCourse from "./pages/student/MyCourses"
 import StudentProfile from "./pages/student/StudentProfile"
-import StudentQuiz from "./pages/student/StudentQuiz"
 import ChatPage from "./pages/student/ChatPage"
 import LiveSessionPage from "./pages/tutor/LiveSessionPage";
 import CertificatePage from "./pages/student/CertificatePage";
@@ -62,7 +60,6 @@ function App() {
           <Route path="dashboard" element={<Dashboard/>}/>
           <Route path="courses" element={<MyCourse/>}/>
           <Route path="profile" element={<StudentProfile/>} />
-          <Route path="quizzes" element={<StudentQuiz/>} />
           <Route path="chat/:courseId" element={<ChatPage/>}/>
           <Route path="live-session/:sessionId" element={<LiveSessionPage />} />
           <Route path="certificate" element={<CertificatePage/>}/>
@@ -74,7 +71,6 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/check-email" element={<CheckEmail/>}/>
       <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/google/callback" element={<GoogleCallback />} />
       <Route path="/forget-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage/>}/>
 

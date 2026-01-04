@@ -3,6 +3,7 @@ import axiosInstance from "../../api/axiosInstance";
 
 import UserModal from "../../components/admin/UserModal";
 import { extractResults } from "../../api/api";
+import Pagination from "../../components/ui/Pagination";
 
 const AdminStudents = () => {
   const [students, setStudents] = useState([]);
@@ -10,20 +11,23 @@ const AdminStudents = () => {
   const [modalMode, setModalMode] = useState("Add");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    fetchStudents();
-  }, []);
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
 
   const fetchStudents = async () => {
     try {
-      const res = await axiosInstance.get("/admin/students/");
+      const res = await axiosInstance.get("/admin/students/",{params:{page}});
       setStudents(extractResults(res));
+      setCount(res.data.count)
     } catch (err) {
       console.error("Error fetching students:", err);
       setStudents([]);
     }
   };
+
+  useEffect(() => {
+    fetchStudents();
+  }, [page]);
 
   const handleModalSubmit = async (data, id = null) => {
     const token = localStorage.getItem("accessToken");
@@ -44,14 +48,12 @@ const AdminStudents = () => {
     }
   };
 
-  const handleDelete = async (student) => {
+  const handleToggleStatus = async (student) => {
     if (!window.confirm("Are you sure to deactivate this student?")) return;
-    const token = localStorage.getItem("accessToken");
     try {
       await axiosInstance.patch(
         `/admin/students/${student.id}/`,
-        { is_active: false },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { is_active: !student.is_active },
       );
       fetchStudents();
     } catch (err) {
@@ -92,9 +94,9 @@ const AdminStudents = () => {
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {filtered.map((student) => (
+            {filtered.map((student,index) => (
               <tr key={student.id}>
-                <td className="px-6 py-4">{student.id}</td>
+                <td className="px-6 py-4">{index+1}</td>
                 <td className="px-6 py-4">{student.username}</td>
                 <td className="px-6 py-4">{student.email}</td>
                 <td className="px-6 py-4">{student.is_active ? "Yes" : "No"}</td>
@@ -102,10 +104,10 @@ const AdminStudents = () => {
                 <td className="px-6 py-4 capitalize">{student.role}</td>
                 <td className="px-6 py-4 space-x-2">
                   <button
-                    onClick={() => handleDelete(student)}
-                    className="text-red-600 hover:underline"
+                    onClick={() => handleToggleStatus(student)}
+                    className="text-yellow-600 hover:underline"
                   >
-                    Delete
+                    {student.is_active?"Deactivate":"Activate"}
                   </button>
                 </td>
               </tr>
@@ -121,6 +123,11 @@ const AdminStudents = () => {
         user={selectedStudent}
         mode={modalMode}
         type="Student"
+      />
+      <Pagination
+       page={page}
+       setPage={setPage}
+       count={count}
       />
     </div>
   );

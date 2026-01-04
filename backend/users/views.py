@@ -11,9 +11,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.decorators import action
+from django.conf import settings
 
-from .models import CustomUser 
-from .serializers import RegisterSerializer, LoginSerializer,CustomTokenObtainPairSerializer,PasswordResetConfirmSerializer,PasswordResetRequestSerializer
+from .models import CustomUser,Profile
+from .serializers import RegisterSerializer, LoginSerializer,CustomTokenObtainPairSerializer,PasswordResetConfirmSerializer,PasswordResetRequestSerializer,ProfileSerializer
 from .permissions import IsInstructorUser
 from .tasks import send_verification_email_task
 from django.core.mail import send_mail
@@ -24,6 +25,9 @@ from django.db.models import Avg,Sum
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.parsers import MultiPartParser,FormParser
+
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 import random
 
@@ -61,6 +65,7 @@ class VerifyEmailView(APIView):
         return Response({"message":"Email verified successfully"})           
 
 class LoginView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -71,13 +76,13 @@ class LoginView(APIView):
         return Response({
             'access': str(refresh.access_token),
             'refresh': str(refresh),
-            'token': str(refresh.access_token),
             'username': user.username,
             'role': user.role
         }, status=200)
           
 class PasswordResetRequestView(generics.GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -99,23 +104,71 @@ class PasswordResetRequestView(generics.GenericAPIView):
                 fail_silently=False,
             )
         except User.DoesNotExist:
-            # Don’t reveal if email exists (security best practice)
             pass
-
         return Response({"message": "If the email exists, a reset link has been sent."}, status=status.HTTP_200_OK)
 
 class PasswordResetConfirmView(generics.GenericAPIView):
     serializer_class = PasswordResetConfirmSerializer
+    permission_classes = [AllowAny]
 
-    def post(self, request):
-        serializer = self.get_serializer(data=request.data)
+    def post(self, request ,uidb64, token):
+        data = {
+            "uidb64": uidb64,
+            "token": token,
+            "new_password": request.data.get("new_password")
+        }
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Password reset successful."}, status=status.HTTP_200_OK)
     
 class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer    
+    permission_classes=[AllowAny]
+    authentication_classes=[]
+    serializer_class = CustomTokenObtainPairSerializer  
 
+class GoogleLoginView(APIView):
+    permission_classes =[AllowAny]
+
+    def post(self,request):
+        token = request.data.get("credential")
+
+        if not token:
+            return Response({"error":"No credential provided"},status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID,
+            )     
+        except Exception as e:
+            return Response({"error":"Invalid Google token"},status=status.HTTP_400_BAD_REQUEST)
+
+        email = idinfo["email"]
+        name = idinfo.get("name","")
+
+        if not email:
+            return Response(
+                {"error":"Email not found in token"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user,created = CustomUser.objects.get_or_create(
+            email=email,
+            defaults={"full_name":name}
+        ) 
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            "access":str(refresh.access_token),
+            "refresh":str(refresh),
+            "role":getattr(user,"role","student"),
+        },
+        status=status.HTTP_200_OK
+        ) 
+      
 class ApprovedCourseListView(generics.ListAPIView):
     queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = AdminCourseSerializer
@@ -130,4 +183,28 @@ class ApprovedCourseDetailView(generics.RetrieveAPIView):
     queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = AdminCourseSerializer
     permission_classes =[permissions.AllowAny]
+
+class ProfileView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def get(self,request):
+        profile = request.user.profile
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    def put(self,request):
+        profile = request.user.profile
+        serializer = ProfileSerializer(profile,data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    def patch(self,request):
+        profile = request.user.profile
+        serializer = ProfileSerializer(
+            profile,data=request.data,partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
