@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     RegisterView, LoginView, VerifyEmailView,
-    CustomTokenObtainPairView, GoogleLoginView, ApprovedCourseListView,
+    CustomTokenObtainPairView, GoogleLoginView,LogoutView, ApprovedCourseListView,
     ApprovedCourseDetailView, PasswordResetRequestView,PasswordResetConfirmView,
     ProfileView
 )
@@ -18,6 +18,7 @@ urlpatterns = [
     path('password-reset/',PasswordResetRequestView.as_view(),name="password-reset"),
     path("password-reset-confirm/<uidb64>/<token>/", PasswordResetConfirmView.as_view(), name="password-reset-confirm"),
     path("google/",GoogleLoginView.as_view(),name="google-login"),
+    path("logout/",LogoutView.as_view(),name='logout'),
     
     path('approved/', ApprovedCourseListView.as_view(), name='approved-courses'),
     path('approved/<int:pk>/', ApprovedCourseDetailView.as_view(), name='approved-course-detail'),

@@ -168,7 +168,16 @@ class GoogleLoginView(APIView):
         },
         status=status.HTTP_200_OK
         ) 
-      
+
+class LogoutView(APIView):
+    permission_classes =[IsAuthenticated]
+    
+    def post(self,request):
+        refresh_token = request.data.get("refresh")
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        return Response({"detail":"Logged out"})
+    
 class ApprovedCourseListView(generics.ListAPIView):
     queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = AdminCourseSerializer

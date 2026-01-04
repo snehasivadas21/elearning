@@ -1,18 +1,38 @@
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../api/axiosInstance";
 
-export const AuthContext = createContext(); 
+export const AuthContext = createContext(null); 
 
-const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading,setLoading] = useState(true);
 
-  const getUserFromToken = () => {
-    const token = localStorage.getItem("access");
-    return token ? jwtDecode( token ) : null;
-  };
+  useEffect(()=>{
+    const initAuth = async()=>{
+      const refresh = localStorage.getItem("refresh");
+      if (!refresh) {
+        setLoading(false);
+        return;
+      }
 
-  const [user, setUser] = useState(getUserFromToken);
+      try {
+        const res = await axiosInstance.post("/users/token/refresh/",{
+          refresh,
+        })
+        localStorage.setItem("access",res.data.access);
+        setUser(jwtDecode(res.data.access));
+      } catch {
+        localStorage.clear();
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    initAuth();
+  },[]);
 
   const loginUser = (access, refresh) => {
       localStorage.setItem("access", access);
@@ -29,11 +49,18 @@ const AuthProvider = ({ children }) => {
       }
     } 
 
-  const logoutUser = () => {
+  const logoutUser = async () => {
+    try {
+      await axiosInstance.post("/users/logout/", {
+        refresh: localStorage.getItem("refresh"),
+      });
+    } catch {}
     localStorage.clear();
     setUser(null);
     navigate("/login");
   };
+
+  if (loading) return null;
   
   return (
     <AuthContext.Provider
