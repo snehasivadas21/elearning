@@ -75,7 +75,7 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add" }) => {
     }
   };
 
-  const handleSubmit = (e,statusOverride = "submitted") => {
+  const handleSubmit = (e) => {
     if (e) e.preventDefault();
     const submitData = new FormData();
 
@@ -84,7 +84,6 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add" }) => {
         submitData.append(key, value);
       }
     });
-    submitData.set("status",statusOverride)
 
     onSubmit(submitData, course?.id);
   };
@@ -184,18 +183,10 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add" }) => {
             </button>
 
             <button
-              type="button"
-              onClick={(e) => handleSubmit(e, "draft")}
-              className="px-4 py-2 bg-yellow-500 text-white rounded"
-            >
-              Save as Draft
-            </button>
-
-            <button
               type="submit"
               className="px-4 py-2 bg-purple-600 text-white rounded"
             >
-              Submit for Review
+              Save
             </button>
           </div>
         </form>

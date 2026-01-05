@@ -5,20 +5,38 @@ import { extractResults } from "../../api/api";
 import ModuleModal from "../../components/tutor/ModuleModal";
 import LessonModal from "../../components/tutor/LessonModal";
 
+const getEmbedUrl = (url) => {
+  if (!url) return "";
+
+  if (url.includes("youtube.com/watch?v=")) {
+    return url.replace("watch?v=", "embed/");
+  }
+
+  if (url.includes("youtu.be/")) {
+    return url.replace("youtu.be/", "www.youtube.com/embed/");
+  }
+
+  return url;
+};
+
 const LessonPreview = ({ lesson }) => {
   if (lesson.content_type === "video" && lesson.content_url) {
     return (
-      <video
-        src={lesson.content_url}
-        controls
-        className="w-full max-w-md mt-2 rounded border"
-      />
+      <div className="mt-3 aspect-video w-full max-w-xl">
+        <iframe
+          src={getEmbedUrl(lesson.content_url)}
+          className="w-full h-full rounded border"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title={lesson.title}
+        />
+      </div>
     );
   }
 
   if (lesson.content_type === "text" && lesson.content_url) {
     return (
-      <p className="mt-2 text-sm text-gray-700 line-clamp-3">
+      <p className="mt-2 text-sm text-gray-700 whitespace-pre-line">
         {lesson.content_url}
       </p>
     );
@@ -65,13 +83,13 @@ const InstructorCourseContent = () => {
   };
 
   const handleAddLesson = (module) => {
-    setSelectedLesson(module);
-    setSelectedLesson(null)
+    setSelectedModule(module);
+    setSelectedLesson(null);
     setShowLessonModal(true);
   };
 
   const handleEditLesson = (module, lesson) => {
-    setSelectedLesson(module);
+    setSelectedModule(module);
     setSelectedLesson(lesson)
     setShowLessonModal(true);
   };

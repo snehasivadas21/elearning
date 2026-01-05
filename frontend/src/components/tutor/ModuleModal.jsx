@@ -9,6 +9,8 @@ const ModuleModal = ({ show, onClose, onSubmit, mode = "Add", moduleData = null 
     status:"draft",
   });
 
+  const [submitting,setSubmitting] = useState(false);
+
   useEffect(() => {
     if (moduleData) {
       setFormData({
@@ -29,21 +31,34 @@ const ModuleModal = ({ show, onClose, onSubmit, mode = "Add", moduleData = null 
     }));
   };
 
-  const handleSubmit = (e,statusOverride = null)=>{
-    if (e) e.preventDefault();
+  const handleSubmit = async (e, statusOverride = null) => {
+    e.preventDefault();
+
+    if (submitting) return;   
+    setSubmitting(true);
+
     const submitData = new FormData();
-    Object.entries(formData).forEach(([key,value])=>{
+
+    Object.entries(formData).forEach(([key, value]) => {
       if (key === "status") return;
-      if (value !== null && value !== undefined){
-        submitData.append(key,value)
+      if (value !== null && value !== undefined) {
+        submitData.append(key, value);
       }
-    })
-    submitData.set("status",statusOverride ?? formData.status);
-    if (formData.course){
-      submitData.set("course",formData.course)
+    });
+
+    submitData.set("status", statusOverride ?? formData.status);
+
+    if (formData.course) {
+      submitData.set("course", formData.course);
     }
-    onSubmit(submitData,moduleData?.id)
-  }
+
+    try {
+      await onSubmit(submitData, moduleData?.id);
+      onClose();   
+    } finally {
+      setSubmitting(false);   
+    }
+  };
 
   if (!show) return null;
 
@@ -93,8 +108,17 @@ const ModuleModal = ({ show, onClose, onSubmit, mode = "Add", moduleData = null 
             <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
               Cancel
             </button>
-            <button type="submit" onClick={(e) => handleSubmit(e,"draft")} className="px-4 py-2 bg-yellow-600 text-white rounded">
-              Save as Draft
+            <button
+              type="submit"
+              disabled={submitting}
+              onClick={(e) => handleSubmit(e, "draft")}
+              className={`px-4 py-2 rounded text-white ${
+                submitting
+                  ? "bg-yellow-400 cursor-not-allowed"
+                  : "bg-yellow-600 hover:bg-yellow-700"
+              }`}
+            >
+              {submitting ? "Saving..." : "Save as Draft"}
             </button>
           </div>
         </form>

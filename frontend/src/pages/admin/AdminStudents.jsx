@@ -1,15 +1,10 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
-
-import UserModal from "../../components/admin/UserModal";
 import { extractResults } from "../../api/api";
 import Pagination from "../../components/ui/Pagination";
 
 const AdminStudents = () => {
   const [students, setStudents] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState("Add");
-  const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [page,setPage] = useState(1);
   const [count,setCount] = useState(0);
@@ -28,25 +23,6 @@ const AdminStudents = () => {
   useEffect(() => {
     fetchStudents();
   }, [page]);
-
-  const handleModalSubmit = async (data, id = null) => {
-    const token = localStorage.getItem("accessToken");
-    try {
-      if (modalMode === "Add") {
-        await axiosInstance.post("/admin/students/", data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } else {
-        await axiosInstance.put(`/admin/students/${id}/`, data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
-      setShowModal(false);
-      fetchStudents();
-    } catch (err) {
-      console.error("Save error:", err);
-    }
-  };
 
   const handleToggleStatus = async (student) => {
     if (!window.confirm("Are you sure to deactivate this student?")) return;
@@ -116,14 +92,6 @@ const AdminStudents = () => {
         </table>
       </div>
 
-      <UserModal
-        show={showModal}
-        onClose={() => setShowModal(false)}
-        onSubmit={handleModalSubmit}
-        user={selectedStudent}
-        mode={modalMode}
-        type="Student"
-      />
       <Pagination
        page={page}
        setPage={setPage}

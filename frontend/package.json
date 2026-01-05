@@ -15,6 +15,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.11.0",
     "canvas-confetti": "^1.9.3",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.23.12",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.539.0",
