@@ -38,6 +38,7 @@ axiosInstance.interceptors.response.use(
         });
 
         localStorage.setItem("access", res.data.access);
+        if (res.data.refresh) localStorage.setItem("refresh",res.data.refresh);
         axiosInstance.defaults.headers.Authorization = `Bearer ${res.data.access}`;
         originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
 

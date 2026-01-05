@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
-
-import UserModal from "../../components/admin/UserModal";
 import { extractResults } from "../../api/api"; 
 
 const AdminTutors = () => {
   const [tutors, setTutors] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState("Add");
-  const [selectedInstructor, setSelectedInstructor] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -22,25 +17,6 @@ const AdminTutors = () => {
     } catch (err) {
       console.error("Error fetching instructors:", err);
       setTutors([]);
-    }
-  };
-
-  const handleModalSubmit = async (data, id = null) => {
-    const token = localStorage.getItem("accessToken");
-    try {
-      if (modalMode === "Add") {
-        await axiosInstance.post("/admin/instructors/", data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } else {
-        await axiosInstance.put(`/admin/instructors/${id}/`, data, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
-      setShowModal(false);
-      fetchTutors();
-    } catch (err) {
-      console.error("Save error:", err);
     }
   };
 
@@ -111,15 +87,6 @@ const AdminTutors = () => {
           </tbody>
         </table>
       </div>
-
-      <UserModal
-        show={showModal}
-        onClose={() => setShowModal(false)}
-        onSubmit={handleModalSubmit}
-        user={selectedInstructor}
-        mode={modalMode}
-        type="Instructor"
-      />
     </div>
   );
 };

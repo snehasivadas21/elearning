@@ -12,6 +12,8 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
   });
 
   const [resourceFiles,setResourceFiles] = useState([]);
+  const [replacedResources,setReplacedResources] = useState([]);
+  const [submitting,setSubmitting] = useState(false);
 
   useEffect(() => {
     if (lessonData) {
@@ -49,54 +51,64 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.title.trim()){
-      alert("Lesson title is required");
-      return;
-    }
-
-    if (!formData.content_url.trim()){
-      alert(
-        formData.content_type === "video"
-        ? "Video URL is required" : "Text content is required"
-      )
-      return;
-    }
-
-    const payload = {
-      title:formData.title,
-      content_type:formData.content_type,
-      content_url:formData.content_url,
-      module:moduleId,
-    };
+    if (submitting) return;
 
     try {
-      const url = lessonData
-        ? `/lessons/${lessonData.id}/`
-        : "/lessons/";
-      const method = lessonData ? axiosInstance.put : axiosInstance.post;
-
-      const lessonRes = await method(url, payload);
-
-      const lessonId = lessonData?.id || lessonRes.data.id;
-
-      if (resourceFiles.length > 0) {
-        await Promise.all(
-          resourceFiles.map((file) => {
-            const fd = new FormData();
-            fd.append("lesson", lessonId);
-            fd.append("title", file.name);
-            fd.append("file", file);
-
-            return axiosInstance.post("/lesson-resources/", fd);
-          })
-        );
+      if (!formData.title.trim()) {
+        alert("Lesson title is required");
+        return;
       }
 
+      if (!formData.content_url.trim()) {
+        alert(
+          formData.content_type === "video"
+            ? "Video URL is required"
+            : "Text content is required"
+        );
+        return;
+      }
+
+      setSubmitting(true);
+
+      const payload = {
+        title: formData.title,
+        content_type: formData.content_type,
+        content_url: formData.content_url,
+        module: moduleId,
+      };
+
+      const lessonRes = lessonData
+        ? await axiosInstance.patch(`/lessons/${lessonData.id}/`, payload)
+        : await axiosInstance.post("/lessons/", payload);
+
+      const lessonId = lessonData?.id || lessonRes.data.id;
+      
+      for (const file of resourceFiles) {
+        const fd = new FormData();
+        fd.append("lesson", lessonId);
+        fd.append("title", file.name);
+        fd.append("file", file);
+        await axiosInstance.post("/lesson-resources/", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+
+      for (const res of replacedResources) {
+        const fd = new formData();
+        fd.append("file",res.file);
+
+        await axiosInstance.patch(`/lesson-resources/${res.id}/`,fd,
+          {headers:{"Content-Type":"multipart/form-data"}}
+        )
+      }
       setResourceFiles([]);
+      setReplacedResources([]);
       onClose();
     } catch (err) {
-      console.error("Error saving lesson or resources:", err.response?.data);
+      console.error("Error saving lesson:", err);
+      alert("Failed to save lesson.Please try again.");
+    } finally {
+      setSubmitting(false);  
     }
   };
 
@@ -197,9 +209,14 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-yellow-600 text-white rounded"
+              disabled={submitting}
+              className={`px-4 py-2 rounded text-white ${
+                submitting
+                  ? "bg-yellow-400 cursor-not-allowed"
+                  : "bg-yellow-600 hover:bg-yellow-700"
+              }`}
             >
-              Save as Draft
+              {submitting ? "Saving..." : "Save as Draft"}
             </button>
           </div>
         </form>

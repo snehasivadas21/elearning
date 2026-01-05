@@ -5,20 +5,22 @@ import CourseModal from "../../components/admin/CourseModal";
 import { extractResults } from "../../api/api"; 
 import { toast } from "react-toastify";
 import Pagination from "../../components/ui/Pagination";
+import { formatDistanceToNow } from "date-fns"
 
 const InstructorCourses = () => {
   const [courses, setCourses] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState("Add");
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchStatus,setSearchStatus] = useState("")
   const [page,setPage] = useState(1);
   const [count,setCount] = useState(0);
+  const [isLoading,setIsLoading] = useState(false);
 
   const navigate = useNavigate();
   
   const fetchCourses = async () => {
+    setIsLoading(true);
     try {
       const res = await axiosInstance.get("/instructor/courses/",{
         params:{page}
@@ -28,6 +30,9 @@ const InstructorCourses = () => {
     } catch (err) {
       console.error("Error fetching courses:", err);
       setCourses([]);
+      toast.error("Faile to load courses.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,94 +43,42 @@ const InstructorCourses = () => {
 
   const handleAdd = () => {
     setSelectedCourse(null);
-    setModalMode("Add");
     setShowModal(true);
   };
 
   const handleEdit = (course) => {
     setSelectedCourse(course);
-    setModalMode("Edit");
     setShowModal(true);
   };
 
   const handleModalSubmit = async (formData, id) => {
     try {
       if (id) {
-        await axiosInstance.put(`/instructor/courses/${id}`, formData);
+        await axiosInstance.patch(`/instructor/courses/${id}/`, formData);
         toast.success("Course updated successfully!");
       } else {
         await axiosInstance.post("/instructor/courses/", formData);
-        toast.success("Course created successfully!");
+        toast.success("Course created and submitted for review!");
       }
       setShowModal(false);
       fetchCourses();
     } catch (err) {
       console.error("Save error:", err);
-      toast.error("Failed to save course");
-    }
+      const message = err?.response?.data?.detail || "Failed to save course";
+      toast.error(message);
+    } 
   };
 
-  const handleSubmitForReview = async (id) => {
-    try {
-      await axiosInstance.post(`/instructor/courses/${id}/`, {
-        status: "submitted",
-      });
-      toast.success("Course submitted for review!");
-      fetchCourses();
-    } catch (error) {
-      console.error("Submit for review error:", error);
-      toast.error("Failed to submit for review");
-    }
-  };
+  const handleSubmitForReview = async (courseId) => {
+      if (!window.confirm("Submit course for admin review?")) return;
 
-  const renderActions = (course) => {
-    switch(course.status){
-      case "draft":
-        return (
-          <>
-          <button onClick={()=>handleEdit(course)} className="px-4 py-2 bg-blue-400 text-white rounded hover:bg-purple-700">
-            Edit
-          </button>
-          <button onClick={()=>navigate(`/tutor/courses/${course.id}/content`)} className="px-4 py-2 bg-purple-600 text-white rounded">
-            Manage Content
-          </button>
-          <button onClick={()=>handleSubmitForReview(course.id)} className="px-4 py-2 bg-red-500 text-white rounded">
-            Submit for Review
-          </button>
-          </>
-        )
-      case "submitted":
-        return (
-          <button onClick={()=>navigate(`/tutor/courses/${course.id}`)} className="px-4 py-2 bg-purple-600 text-white rounded">
-            View Details
-          </button>
-        ) 
-      case "approved":
-        return (
-          <>
-          <button onClick={()=>navigate(`/tutor/courses/${course.id}/content`)} className="px-4 py-2 bg-blue-400 text-white rounded">
-            Manage Content
-          </button>
-          <button onClick={()=>navigate(`/courses/${course.id}`)} className="px-4 py-2 bg-purple-600 text-white rounded">
-            View Course
-          </button>
-          </>
-        ) 
-      case "rejected":
-        return (
-          <>
-          <button onClick={()=>navigate(`/tutor/courses/${course.id}`)} className="px-4 py-2 bg-purple-600 text-white rounded">
-            View Feedback
-          </button>
-          <button onClick={()=>handleEdit(course)} className="px-4 py-2 bg-yellow-400 text-white rounded">
-            Edit & Resubmit
-          </button>
-          </>
-        )  
-      default:
-        return null;    
-    }
-  }
+      try {
+        await axiosInstance.post(`/instructor/courses/${courseId}/submit/`);
+        fetchCourses(); 
+      } catch (err) {
+        alert(err.response?.data?.detail || "Failed to submit");
+      }
+    };
 
   const statusBadge = (status) => {
     const map = {
@@ -165,55 +118,113 @@ const InstructorCourses = () => {
         </button>
       </div>
 
-      <input
-        type="text"
-        placeholder="Search by title/category"
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="mb-4 border px-3 py-2 rounded w-1/3"
-      />
-      
-      <select
-        className="ml-2 border px-2 py-1 rounded"
-        onChange={(e) => setSearchStatus(e.target.value)}
-      >
-        <option value="">All</option>
-        <option value="submitted">Submitted</option>
-        <option value="approved">Approved</option>
-        <option value="rejected">Rejected</option>
-      </select>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCourses.map((course) => (
-          <div
-            key={course.id}
-            className="border rounded-lg p-4 shadow-sm bg-white"
-          >
-            {course.course_image ? (
-              <img
-                src={course.course_image}
-                alt="Course"
-                className="w-full h-40 object-cover rounded mt-2"
-              />
-            ) : (
-              <div className="w-full h-40 flex items-center justify-center bg-gray-200 rounded mt-2">
-                No Image
-              </div>
-            )}
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold text-lg">{course.title}</h3>
-              {statusBadge(course.status)}
-            </div>
-
-            <p className="text-sm text-gray-600 mb-2">
-              {course.category_name} • {course.level}
-            </p>
-
-            <p className="font-medium mb-4">₹ {course.price}</p>
-
-            <div className="flex flex-wrap gap-2">{renderActions(course)}</div>
-          </div>
-        ))}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <input
+          type="text"
+          placeholder="Search by title/category"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="border px-3 py-2 rounded w-1/3"
+        />
+        <select
+          className="border px-2 py-1 rounded"
+          value={searchStatus}
+          onChange={(e) => setSearchStatus(e.target.value)}
+        >
+          <option value="">All Status</option>
+          <option value="draft">Draft</option>
+          <option value="submitted">Submitted</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
       </div>
+
+      {isLoading ? (
+        <div className="text-center py-20">Loading courses...</div>
+      ) : filteredCourses.length === 0 ? (
+        <div className="text-center py-20">No courses found</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCourses.map((course) => (
+            <div
+              key={course.id}
+              className="border rounded-lg p-4 shadow-sm bg-white flex flex-col"
+            >
+              {course.course_image ? (
+                <img
+                  src={course.course_image}
+                  alt={course.title}
+                  className="w-full h-40 object-cover rounded mt-2"
+                />
+              ) : (
+                <div className="w-full h-40 flex items-center justify-center bg-gray-200 rounded mt-2">
+                  No Image
+                </div>
+              )}
+
+              <div className="flex justify-between items-center mb-2 mt-2">
+                <h3 className="font-semibold text-lg">{course.title}</h3>
+                {statusBadge(course.status)}
+              </div>
+
+              <p className="text-sm text-gray-600 mb-1">
+                {course.category_name} • {course.level}
+              </p>
+
+              {course.updated_at && (
+                <p className="text-xs text-gray-400 mb-2">
+                  Updated {formatDistanceToNow(new Date(course.updated_at))} ago
+                </p>
+              )}
+
+              <p className="font-medium mb-4">₹ {course.price}</p>
+
+              <div className="flex flex-wrap gap-2 mt-4">
+                
+                <button
+                  onClick={() => handleEdit(course)}
+                  className="px-3 py-1 bg-blue-500 text-white rounded"
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() =>
+                    navigate(`/tutor/courses/${course.id}/content`)
+                  }
+                  className="px-3 py-1 bg-purple-600 text-white rounded"
+                >
+                  Manage Content
+                </button>
+
+                {["draft", "rejected"].includes(course.status) && (
+                  <button
+                    onClick={() => handleSubmitForReview(course.id)}
+                    className="px-3 py-1 bg-yellow-500 text-white rounded"
+                  >
+                    Submit for Review
+                  </button>
+                )}
+
+                {course.status === "approved" && (
+                  <button
+                    onClick={() => navigate(`/courses/${course.id}`)}
+                    className="px-3 py-1 bg-green-600 text-white rounded"
+                  >
+                    View Live
+                  </button>
+                )}
+              </div>
+
+              {course.status === "rejected" && course.admin_feedback && (
+                <p className="mt-3 text-sm text-red-600">
+                  Feedback: {course.admin_feedback}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {showModal && (
         <CourseModal
@@ -221,15 +232,11 @@ const InstructorCourses = () => {
           onClose={() => setShowModal(false)}
           onSubmit={handleModalSubmit}
           course={selectedCourse}
-          mode={modalMode}
+          mode={selectedCourse ? "Edit":"Add"}
         />
       )}
 
-      <Pagination
-        page={page}
-        setPage={setPage}
-        count={count}
-      />
+      <Pagination page={page} setPage={setPage} count={count} />
     </div>
   );
 };

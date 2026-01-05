@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import (Course,CourseCategory,Module, Lesson,LessonResource)
+from django.db import transaction
 
 class CourseCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -20,18 +21,24 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = [
-            'id','title','description','category','category_name','level','price','course_image','status',
+            'id','title','description','category','category_name','level','price','course_image','status','updated_at',
         ]
         read_only_fields = ['status']
 
     def create(self,validated_data):
-        validated_data['instructor']=self.context['request'].user
-        validated_data['status']='submitted'
-        return super().create(validated_data)
+        with transaction.atomic():
+            validated_data['instructor']=self.context['request'].user
+            validated_data['status'] = 'draft'
+            return super().create(validated_data)
 
     def update(self, instance, validated_data):
         validated_data.pop('instructor', None)
         validated_data.pop('status', None)
+
+        if instance.status == 'approved':
+            instance.is_published = False
+            instance.status = 'submitted'
+            instance.save(update_fields=['status','is_published'])
         return super().update(instance, validated_data)         
 
 class LessonResourceSerializer(serializers.ModelSerializer):
@@ -55,12 +62,26 @@ class LessonSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at','updated_at']    
 
 class ModuleSerializer(serializers.ModelSerializer):
-    lessons = LessonSerializer(many=True, read_only=True)
+    lessons = serializers.SerializerMethodField()
 
     class Meta:
         model = Module
-        fields = ['id','course','title','description','order','is_active','created_at','updated_at','lessons'] 
-        read_only_fields =['created_at','updated_at']   
+        fields = [
+            'id',
+            'course',
+            'title',
+            'description',
+            'order',
+            'is_active',
+            'created_at',
+            'updated_at',
+            'lessons',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def get_lessons(self, obj):
+        lessons = obj.lessons.filter(is_deleted=False)
+        return LessonSerializer(lessons, many=True).data
     
 class AdminCourseSerializer(serializers.ModelSerializer):
     instructor_username = serializers.CharField(source='instructor.username', read_only=True)

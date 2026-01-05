@@ -5,6 +5,7 @@ from rest_framework.filters import SearchFilter,OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied,ValidationError
+from rest_framework.parsers import MultiPartParser,FormParser
 
 from .models import (Course,CourseCategory,Module,Lesson,LessonResource)
 from .serializers import (AdminCourseSerializer,InstructorCourseSerializer,CourseCategorySerializer,
@@ -36,7 +37,7 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
         course.status='approved'
         course.is_published=True
         course.admin_feedback=request.data.get('admin_feedback','')
-        course.save(update_fields=['status','is_published','admin_feedback'])
+        course.save(update_fields=['status','is_published','admin_feedback','updated_at'])
         send_course_status_email.delay(course.id)
         return Response({'message':'Course approved successfully'})
 
@@ -52,7 +53,7 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
         course.status = 'rejected'
         course.is_published = False
         course.admin_feedback=request.data.get('admin_feedback','')
-        course.save()
+        course.save(update_fields=['status','is_published','admin_feedback','updated_at'])
         send_course_status_email.delay(course.id)
         return Response({'message':'Course rejected successfully'})    
 
@@ -60,20 +61,45 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
     def toggel_active(self,request,pk=None):
         course=self.get_object()
         course.is_active=not course.is_active
-        course.save()
+        course.save(update_fields=['status','is_published','admin_feedback','updated_at'])
         return Response({"is_active":course.is_active})   
 
 class InstructorCourseViewSet(viewsets.ModelViewSet):
     serializer_class = InstructorCourseSerializer
     permission_classes = [permissions.IsAuthenticated,IsInstructorUser]
+    parser_classes = [MultiPartParser, FormParser]
     filter_backends = [DjangoFilterBackend]
     filterset_fields =['category']
 
     def get_queryset(self):
-        return Course.objects.filter(instructor=self.request.user).order_by('-created_at')
+        return Course.objects.filter(instructor=self.request.user,is_active=True).order_by('-created_at')
+    
+    def destroy(self, request, *args, **kwargs):
+        course = self.get_object()
+        if course.status == 'approved':
+            return Response(
+                {"detail":"Approved courses cannot be deleted"},
+                status=403
+            )
+        course.is_active = False
+        course.save()
+        return Response(status=204)
+    
+    @action(detail=True, methods=["post"], url_path="submit")
+    def submit_for_review(self, request, pk=None):
+        course = self.get_object()
 
-    def perform_create(self, serializer):
-        serializer.save(instructor=self.request.user)
+        if course.instructor != request.user:
+            raise PermissionDenied("Not your course")
+        
+        if course.status == "draft":
+            return Response({"detail":"Only draft courses can be submitted"},status=400)
+
+        course.status = "submitted"
+        course.is_published = False
+        course.save(update_fields=["status", "is_published", "updated_at"])
+
+        return Response({"message": "Course submitted for review"})
 
 class CourseCategoryViewSet(viewsets.ModelViewSet):
     serializer_class=CourseCategorySerializer
@@ -123,11 +149,17 @@ class ModuleViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_staff and course.instructor != self.request.user:
             raise PermissionDenied("You do not own this course.")
 
-        if course.status != 'approved':
-            raise PermissionDenied(
-                "Course must be approved before adding modules."
-            )
         serializer.save() 
+
+    def perform_update(self, serializer):
+        module = serializer.save()
+        
+
+    def destroy(self, request, *args, **kwargs):
+        module = self.get_object()
+        module.is_deleted = True
+        module.save(update_fields=['is_deleted'])
+        return Response(status=204)   
 
 class LessonViewSet(viewsets.ModelViewSet):
     serializer_class = LessonSerializer
@@ -150,26 +182,35 @@ class LessonViewSet(viewsets.ModelViewSet):
 
         if not self.request.user.is_staff and course.instructor != self.request.user:
             raise PermissionDenied("You do not own this course")
+        
+        serializer.save()
 
-        if course.status != 'approved':
-            raise PermissionDenied(
-                "Course must be approved before adding lessons."
-            )
-        serializer.save()    
-    
+    def perform_update(self, serializer):
+        lesson = serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        lesson = self.get_object()
+        lesson.is_deleted = True
+        lesson.save(update_fields=['is_deleted'])
+        return Response(status=204)     
 class LessonResourceViewSet(viewsets.ModelViewSet):
     serializer_class = LessonResourceSerializer
     permission_classes = [permissions.IsAuthenticated,IsInstructorUser]
 
     def get_queryset(self):
-        return LessonResource.objects.filter(lesson__module__course__instructor=self.request.user)   
+        return LessonResource.objects.filter(lesson__module__course__instructor=self.request.user) 
     
     def perform_create(self,serializer):
         lesson = serializer.validated_data['lesson']
         course = lesson.module.course
 
-        if course.status != 'approved':
-            raise PermissionDenied(
-                "Course must be approved before adding resources."
-            )
         serializer.save()
+
+    def perform_update(self,serializer):
+        resource = serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        resource = self.get_object()
+        course = resource.lesson.module.course
+        resource.delete()
+        return Response(status=204)       
