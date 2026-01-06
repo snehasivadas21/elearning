@@ -75,6 +75,9 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
         content_type: formData.content_type,
         content_url: formData.content_url,
         module: moduleId,
+        is_preview: formData.is_preview,
+        is_active: formData.is_active,
+        order: formData.order,
       };
 
       const lessonRes = lessonData
@@ -94,7 +97,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
       }
 
       for (const res of replacedResources) {
-        const fd = new formData();
+        const fd = new FormData();
         fd.append("file",res.file);
 
         await axiosInstance.patch(`/lesson-resources/${res.id}/`,fd,

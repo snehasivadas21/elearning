@@ -20,7 +20,7 @@ from .tasks import send_verification_email_task
 from django.core.mail import send_mail
 
 from courses.models import Course
-from courses.serializers import AdminCourseSerializer
+from courses.serializers import AdminCourseSerializer,UserCourseDetailSerializer
 from django.db.models import Avg,Sum
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
@@ -180,7 +180,7 @@ class LogoutView(APIView):
     
 class ApprovedCourseListView(generics.ListAPIView):
     queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
-    serializer_class = AdminCourseSerializer
+    serializer_class = UserCourseDetailSerializer
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
     filterset_fields = ['category','level']
@@ -190,7 +190,7 @@ class ApprovedCourseListView(generics.ListAPIView):
 
 class ApprovedCourseDetailView(generics.RetrieveAPIView):
     queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
-    serializer_class = AdminCourseSerializer
+    serializer_class = UserCourseDetailSerializer
     permission_classes =[permissions.AllowAny]
 
 class ProfileView(APIView):

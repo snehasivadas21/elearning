@@ -14,7 +14,8 @@ import ResetPasswordPage from "./pages/user/ResetPasswordPage";
 import Dashboard from "./pages/student/Dashboard";
 import NotFound from "./pages/user/NotFound";
 import CourseListPage from "./pages/user/Courses";
-import CourseDetailPage from "./pages/user/CourseDetailPage";
+// import CourseDetailPage from "./pages/user/CourseDetailPage";
+import UserCourseDetail from "./pages/user/UserCourseDetail";
 import About from "./pages/user/About"
 import MyCourse from "./pages/student/MyCourses"
 import StudentProfile from "./pages/student/StudentProfile"
@@ -28,6 +29,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminTutors from "./pages/admin/AdminTutors";
 import AdminCourses from "./pages/admin/AdminCourses";
+import AdminCourseDetail from "./pages/admin/AdminCourseDetail";
 import AdminCategories from "./pages/admin/AdminCategories";
 
 // Tutor
@@ -35,6 +37,7 @@ import TutorLayout from "./components/tutor/TutorLayout";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import TutorCourses from "./pages/tutor/TutorCourses";
 import TutorCoursesContent from "./pages/tutor/TutorCoursesContent";
+import TutorCourseDetail from "./pages/tutor/TutorCourseDetail";
 
 // Routes
 import PrivateRoute from "./routes/PrivateRoute";
@@ -48,7 +51,8 @@ function App() {
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path = "/courses" element={<CourseListPage/>}/>
-        <Route path = "/courses/:id" element={<CourseDetailPage/>}/>
+        {/* <Route path = "/courses/:id" element={<CourseDetailPage/>}/> */}
+        <Route path = "/courses/:id" element={<UserCourseDetail/>}/> 
         <Route path="/about" element={<About/>} />
 
         {/* Protected Dashboard */}
@@ -85,6 +89,7 @@ function App() {
         <Route path="students" element={<AdminStudents />} />
         <Route path="instructors" element={<AdminTutors />} />
         <Route path="courses" element={<AdminCourses />} />
+        <Route path="courses/:id" element={<AdminCourseDetail />}/>
         <Route path="categories" element={<AdminCategories />} />
       </Route>
 
@@ -98,6 +103,7 @@ function App() {
         <Route path="dashboard" element={<TutorDashboard />} />
         <Route path="courses" element={<TutorCourses />} />
         <Route path="courses/:id/content" element={<TutorCoursesContent/>}/>
+        <Route path="courses/:id" element={<TutorCourseDetail />}/>
         <Route path="chat/:courseId" element={<ChatPage/>}/>
       </Route>
 

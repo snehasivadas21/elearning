@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance"; 
 import { extractResults } from "../../api/api";
+import { useNavigate } from "react-router-dom";
 
 const AdminCourses = () => {
   const [courses, setCourses] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
-  const [showModal,setShowModal] = useState(false);
-  const [selectedCourse,setSelectedCourse] = useState(null);
-  const [feedback,setFeedback] = useState("");
-  const [actionType,setActionType] = useState("");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCourses();
@@ -22,26 +21,6 @@ const AdminCourses = () => {
     } catch (err) {
       console.error("Error fetching courses:", err);
       setCourses([])
-    }
-  };
-
-  const openReviewModal = (course,action) =>{
-    setSelectedCourse(course);
-    setActionType(action);
-    setFeedback("");
-    setShowModal(true);
-  }
-
-  const submitReview = async()=>{
-    try {
-      await axiosInstance.patch(
-        `admin/courses/${selectedCourse.id}/${actionType}/`,
-        {admin_feedback:feedback}
-      )
-      setShowModal(false)
-      fetchCourses(); 
-    } catch (err) {
-      console.error("Review failed",err)
     }
   };
 
@@ -129,24 +108,6 @@ const AdminCourses = () => {
                 
                 <td className="px-6 py-4">{course.is_active ? "Yes" : "No"}</td>
 
-                <td className="px-6 py-4 space-x-2">
-                  {course.status === "submitted" && (
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => openReviewModal(course,"approve")}
-                      className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                    >
-                      ✓ Approve Course
-                    </button>
-                    <button
-                      onClick={() => openReviewModal(course,"reject")}
-                      className="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                    >
-                      ✗ Reject Course
-                    </button>
-                  </div>
-                  )}
-
                   <button
                     onClick={() => toggleActive(course)}
                     className={`${
@@ -157,38 +118,17 @@ const AdminCourses = () => {
                   >
                     {course.is_active ? "Deactivate" : "Activate"}
                   </button>
-                </td>
+                  <button
+                    onClick={() => navigate(`/admin/courses/${course.id}`)}
+                    className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    View Details
+                  </button>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center ">
-          <div className="bg-white p-6 rounded w-96">
-            <h3 className="text-lg font-semibold mb-3 capitalize">
-              {actionType} Course
-            </h3>
-
-            <textarea
-              value={feedback}
-              onChange={(e)=>setFeedback(e.target.value)}
-              placeholder="Admin Feedback"
-              className="w-full border px-3 py-2 rounded mb-4"
-            />
-
-            <div className="flex justify-end gap-2">
-              <button onClick={()=>setShowModal(false)} className="px-4 py-1 border rounded">
-                Cancel
-              </button>
-              <button onClick={submitReview} className="px-4 py-1 bg-purple-600 text-white rounded">
-                Submit
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
