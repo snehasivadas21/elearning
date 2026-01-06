@@ -97,5 +97,33 @@ class AdminCourseSerializer(serializers.ModelSerializer):
     def validate_category(self,value):
         if value and not value.is_active:
             raise serializers.ValidationError("Inactive category cannot be assigned.")
-        return value       
+        return value
 
+class UserCourseDetailSerializer(serializers.ModelSerializer):
+    instructor_username = serializers.CharField(source="instructor.username", read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    course_image = serializers.ImageField(required=False, use_url=True)
+    modules = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "title",
+            "description",
+            "price",
+            "level",
+            "course_image",
+            "updated_at",
+            "instructor_username",
+            "category_name",
+            "modules",
+        ]
+
+    def get_modules(self, obj):
+        return ModuleSerializer(
+            obj.modules.filter(is_active=True,is_deleted=False),
+            many=True,
+            context=self.context
+        ).data
+    

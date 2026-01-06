@@ -5,7 +5,7 @@ import CourseModal from "../../components/admin/CourseModal";
 import { extractResults } from "../../api/api"; 
 import { toast } from "react-toastify";
 import Pagination from "../../components/ui/Pagination";
-import { formatDistanceToNow } from "date-fns"
+import { format } from "date-fns";
 
 const InstructorCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -172,8 +172,8 @@ const InstructorCourses = () => {
               </p>
 
               {course.updated_at && (
-                <p className="text-xs text-gray-400 mb-2">
-                  Updated {formatDistanceToNow(new Date(course.updated_at))} ago
+                <p className="text-sm text-gray-600 mb-2">
+                  Updated on {format(new Date(course.updated_at), "dd/MM/yyyy")}
                 </p>
               )}
 
@@ -206,14 +206,13 @@ const InstructorCourses = () => {
                   </button>
                 )}
 
-                {course.status === "approved" && (
-                  <button
-                    onClick={() => navigate(`/courses/${course.id}`)}
-                    className="px-3 py-1 bg-green-600 text-white rounded"
-                  >
-                    View Live
-                  </button>
-                )}
+                <button
+                  onClick={() => navigate(`/tutor/courses/${course.id}`)}
+                  className="px-3 py-1 bg-green-600 text-white rounded"
+                >
+                  View Details
+                </button>
+                
               </div>
 
               {course.status === "rejected" && course.admin_feedback && (
