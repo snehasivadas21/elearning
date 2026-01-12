@@ -1,24 +1,30 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import { extractResults } from "../../api/api"; 
+import Pagination from "../../components/ui/Pagination";
 
 const AdminTutors = () => {
   const [tutors, setTutors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    fetchTutors();
-  }, []);
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
 
   const fetchTutors = async () => {
     try {
-      const res = await axiosInstance.get("/admin/instructors/");
+      const res = await axiosInstance.get("/admin/instructors/",{params:{page}});
       setTutors(extractResults(res));
+      setCount(res.data.count)
     } catch (err) {
       console.error("Error fetching instructors:", err);
       setTutors([]);
     }
   };
+
+  useEffect(() => {
+    fetchTutors();
+  }, [page]);
+
+  const totalPages = Math.ceil(count / 10); 
 
   const handleToggleStatus = async (tutor) => {
     if (!window.confirm("Are you sure to deactivate this tutor?")) return;
@@ -87,6 +93,12 @@ const AdminTutors = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+      page={page}
+      totalPages={totalPages}
+      setPage={setPage}
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import (Course,CourseCategory,Module, Lesson,LessonResource)
+from .models import (Course,CourseCategory,Module, Lesson,LessonResource,LessonProgress,CourseCertificate)
 from django.db import transaction
+from users.serializers import ProfileSerializer
 
 class CourseCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,11 +18,12 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
     course_image = serializers.ImageField(required=False, use_url=True)
     category_name = serializers.CharField(source='category.name', read_only=True)
     category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.filter(is_active=True))
+    instructor_profile = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = [
-            'id','title','description','category','category_name','level','price','course_image','status','updated_at',
+            'id','title','description','category','category_name','level','price','course_image','status','updated_at','instructor_profile',
         ]
         read_only_fields = ['status']
 
@@ -39,8 +41,13 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
             instance.is_published = False
             instance.status = 'submitted'
             instance.save(update_fields=['status','is_published'])
-        return super().update(instance, validated_data)         
+        return super().update(instance, validated_data) 
 
+    def get_instructor_profile(self, obj):
+        profile = getattr(obj.instructor, "profile", None)
+        if not profile:
+            return None
+        return ProfileSerializer(profile).data
 class LessonResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonResource  
@@ -58,7 +65,7 @@ class LessonSerializer(serializers.ModelSerializer):
     resources = LessonResourceSerializer(many=True,read_only=True)
     class Meta:
         model = Lesson
-        fields = ['id','module','title','content_type','content_url','order','is_preview','is_active','created_at','updated_at','resources']
+        fields = ['id','module','title','content_type','content_url','video_file','order','is_preview','is_active','created_at','updated_at','resources']
         read_only_fields = ['created_at','updated_at']    
 
 class ModuleSerializer(serializers.ModelSerializer):
@@ -88,22 +95,30 @@ class AdminCourseSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)    
     course_image = serializers.ImageField(required=False, use_url=True)
     category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.all())
+    instructor_profile = serializers.SerializerMethodField()
 
     class Meta:
         model=Course
-        fields=['id','title','price','level','status','is_active','is_published','admin_feedback','instructor_username','category_name','created_at','course_image','category']  
+        fields=['id','title','price','level','status','is_active','is_published','admin_feedback','instructor_username','category_name','created_at','course_image','category','updated_at','instructor_profile',]  
         read_only_fields = fields
 
     def validate_category(self,value):
         if value and not value.is_active:
             raise serializers.ValidationError("Inactive category cannot be assigned.")
         return value
+    
+    def get_instructor_profile(self, obj):
+        profile = getattr(obj.instructor, "profile", None)
+        if not profile:
+            return None
+        return ProfileSerializer(profile).data
 
 class UserCourseDetailSerializer(serializers.ModelSerializer):
     instructor_username = serializers.CharField(source="instructor.username", read_only=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
     course_image = serializers.ImageField(required=False, use_url=True)
     modules = serializers.SerializerMethodField()
+    instructor_profile = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -118,6 +133,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
             "instructor_username",
             "category_name",
             "modules",
+            "instructor_profile",
         ]
 
     def get_modules(self, obj):
@@ -127,3 +143,24 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
             context=self.context
         ).data
     
+    def get_instructor_profile(self, obj):
+        profile = getattr(obj.instructor, "profile", None)
+        if not profile:
+            return None
+        return ProfileSerializer(profile).data
+class LessonProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonProgress 
+        fields = ['id','student','lesson','completed','completed_at'] 
+        read_only_fields = fields
+
+class CertificateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseCertificate
+        fields = [
+            "certificate_id",
+            "course",
+            "certificate_file",
+            "issued_at",
+        ]
+        read_only_fields = fields

@@ -6,7 +6,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed,PermissionDenied
 
 User = get_user_model()
 
@@ -59,9 +59,12 @@ class LoginSerializer(serializers.Serializer):
             user=CustomUser.objects.get(email=data['email'])
         except CustomUser.DoesNotExist:
             raise AuthenticationFailed("Invalid credentials")
+        
+        if not user.is_active:
+            raise PermissionDenied("Your account has been suspened.")
 
         if not user.check_password(data['password']):
-            raise AuthenticationFailed("Invalid credentials")
+            raise AuthenticationFailed("Invalid password")
         
         data['user']=user
         return data
@@ -79,6 +82,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['username'] = user.username
         token['role'] = user.role  
         return token      
+    
+    def validate(self,attrs):
+        try:
+            data = super().validate(attrs)
+        except AuthenticationFailed:
+            raise AuthenticationFailed("Invalid email or password")
+
+        if not self.user.is_active:
+            raise AuthenticationFailed("Your account has been suspended.Please contact support.")
+        return data 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -105,6 +118,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         self.user.set_password(self.validated_data['new_password'])
         self.user.save()
         return self.user   
+    
 class ProfileLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProfileLink
@@ -113,7 +127,7 @@ class ProfileLinkSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     links = ProfileLinkSerializer(many=True, required=False)
-
+    profile_image = serializers.ImageField(required=False, use_url=True)
     class Meta:
         model = Profile
         fields = ["id","user","full_name","bio","headline","profile_image","date_of_birth","location","experience","resume","skills","links",]

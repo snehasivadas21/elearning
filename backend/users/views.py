@@ -25,6 +25,7 @@ from django.db.models import Avg,Sum
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.parsers import MultiPartParser,FormParser
+from rest_framework.exceptions import PermissionDenied,AuthenticationFailed
 
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -69,16 +70,22 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        refresh = RefreshToken.for_user(user)
-        return Response({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
-            'username': user.username,
-            'role': user.role
-        }, status=200)
+        try:
+            serializer = LoginSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            user = serializer.validated_data['user']
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'username': user.username,
+                'role': user.role
+            }, status=200)
+        except PermissionDenied as e:
+            return Response({
+                'error':str(e),
+                'blocked':True
+            },status=status.HTTP_403_FORBIDDEN)
           
 class PasswordResetRequestView(generics.GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
@@ -125,13 +132,34 @@ class PasswordResetConfirmView(generics.GenericAPIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     permission_classes=[AllowAny]
     authentication_classes=[]
-    serializer_class = CustomTokenObtainPairSerializer  
+    serializer_class = CustomTokenObtainPairSerializer 
+
+    # def post(self, request, *args, **kwargs):
+    #     try:
+    #         return super().post(request, *args, **kwargs)
+    #     except PermissionDenied as e:
+    #         return Response({
+    #             'error': str(e),
+    #             'blocked': True
+    #         }, status=status.HTTP_403_FORBIDDEN)
+    #     except AuthenticationFailed as e:
+    #         return Response({
+    #             'error': str(e)
+    #         }, status=status.HTTP_401_UNAUTHORIZED) 
 
 class GoogleLoginView(APIView):
     permission_classes =[AllowAny]
 
     def post(self,request):
         token = request.data.get("credential")
+
+        print(f"\n{'='*50}")
+        print(f"Google Login Attempt")
+        print(f"{'='*50}")
+        print(f"Token received: {bool(token)}")
+        print(f"Token length: {len(token) if token else 0}")
+        print(f"Client ID from settings: {settings.GOOGLE_CLIENT_ID}")
+        print(f"{'='*50}\n")
 
         if not token:
             return Response({"error":"No credential provided"},status=status.HTTP_400_BAD_REQUEST)
@@ -141,9 +169,27 @@ class GoogleLoginView(APIView):
                 token,
                 google_requests.Request(),
                 settings.GOOGLE_CLIENT_ID,
-            )     
+            )   
+
+            print(f"✓ Token verified successfully!")
+            print(f"✓ Email: {idinfo.get('email')}")
+            print(f"✓ Name: {idinfo.get('name')}")  
+
+        except ValueError as e:
+            error_msg = str(e)
+            print(f"✗ ValueError: {error_msg}")
+            return Response(
+                {"error": f"Invalid Google token: {error_msg}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         except Exception as e:
-            return Response({"error":"Invalid Google token"},status=status.HTTP_400_BAD_REQUEST)
+            error_msg = str(e)
+            print(f"✗ Unexpected error: {type(e).__name__}: {error_msg}")
+            return Response(
+                {"error": f"Token verification failed: {error_msg}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         email = idinfo["email"]
         name = idinfo.get("name","")
@@ -156,8 +202,18 @@ class GoogleLoginView(APIView):
 
         user,created = CustomUser.objects.get_or_create(
             email=email,
-            defaults={"full_name":name}
         ) 
+
+        print(f"✓ User {'created' if created else 'found'}: {email}")
+
+        if not user.is_active:
+            return Response(
+                {
+                    "error":"Your account has been suspended.Please contact support.",
+                    "blocked":True
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         refresh = RefreshToken.for_user(user)
 
@@ -177,7 +233,7 @@ class LogoutView(APIView):
         token = RefreshToken(refresh_token)
         token.blacklist()
         return Response({"detail":"Logged out"})
-    
+       
 class ApprovedCourseListView(generics.ListAPIView):
     queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = UserCourseDetailSerializer
@@ -192,6 +248,46 @@ class ApprovedCourseDetailView(generics.RetrieveAPIView):
     queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = UserCourseDetailSerializer
     permission_classes =[permissions.AllowAny]
+
+
+
+class StudentDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        profile_data = {
+            "bio": "",
+            "dob": "",
+            "phone": ""
+        }
+
+        if hasattr(user, 'student_profile'):
+            profile = user.student_profile
+            profile_data = {
+                "bio": profile.bio or "",
+                "dob": profile.dob or "",
+                "phone": profile.phone or "",
+            }
+
+        # Fetch enrolled courses
+        enrollments = CoursePurchase.objects.filter(student=user)
+        total_courses = enrollments.count()
+
+        # Course progress
+        total_lessons_completed = LessonProgress.objects.filter(student=user).count()
+
+        # Response
+        data = {
+            "username": user.username,
+            "email": user.email,
+            "profile": profile_data,
+            "enrolled_courses": total_courses,
+            "lessons_completed": total_lessons_completed,
+        }
+
+        return Response(data)
 
 class ProfileView(APIView):
     permission_classes=[IsAuthenticated]
@@ -217,3 +313,4 @@ class ProfileView(APIView):
         serializer.save()
         return Response(serializer.data,status=status.HTTP_200_OK)
 
+    
