@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import axiosInstance from '../../api/axiosInstance';
 import { Users, Star, Clock, BookOpen } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import CourseChat from "../../components/user/CourseChat";
 
 const MyCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -40,21 +41,21 @@ const MyCourses = () => {
     fetchInvoices();
   },[]);
 
-  const handleChatClick = (courseId, e) => {
-    e.preventDefault(); // Prevent the Link navigation
-    e.stopPropagation(); // Stop event bubbling
-    navigate(`/student/chat/${courseId}`,{state:{role:"student"}});
-  }
+  // const handleChatClick = (courseId, e) => {
+  //   e.preventDefault(); 
+  //   e.stopPropagation(); 
+  //   navigate(`/student/chat/${courseId}`,{state:{role:"student"}});
+  // }
 
   const handleContinueLearning = (courseId, e) => {
-    e.preventDefault(); // Prevent the Link navigation
-    e.stopPropagation(); // Stop event bubbling
+    e.preventDefault(); 
+    e.stopPropagation(); 
     navigate(`/courses/${courseId}`);
   }
 
-  const handleLiveSessionClick = (e) => {
-    e.stopPropagation(); // Stop event bubbling to prevent Link navigation
-  }
+  // const handleLiveSessionClick = (e) => {
+  //   e.stopPropagation(); 
+  // }
 
   return (
     <div>
@@ -146,8 +147,8 @@ const MyCourses = () => {
                   ))}
                 </ul>
               </div>
-              
-              <button 
+              <CourseChat courseId={course.id} />           
+              {/* <button 
                 className='mt-2 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2' 
                 onClick={(e) => handleChatClick(course.id, e)}
               >
@@ -162,7 +163,7 @@ const MyCourses = () => {
                 >
                   Join Now
                 </Link>
-              )}
+              )} */}
             </div>
           </Link>
         ))}

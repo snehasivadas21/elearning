@@ -62,7 +62,7 @@ function App() {
           </PrivateRoute>
         }>
           <Route path="dashboard" element={<Dashboard/>}/>
-          <Route path="courses" element={<MyCourse/>}/>
+          <Route path="courses/:id" element={<MyCourse/>}/>
           <Route path="profile" element={<StudentProfile/>} />
           <Route path="chat/:courseId" element={<ChatPage/>}/>
           <Route path="live-session/:sessionId" element={<LiveSessionPage />} />
@@ -104,6 +104,7 @@ function App() {
         <Route path="courses" element={<TutorCourses />} />
         <Route path="courses/:id/content" element={<TutorCoursesContent/>}/>
         <Route path="courses/:id" element={<TutorCourseDetail />}/>
+        <Route path="profile" element={<StudentProfile/>} />
         <Route path="chat/:courseId" element={<ChatPage/>}/>
       </Route>
 

@@ -3,6 +3,7 @@ import axiosPublic from "../../api/axiosPublic";
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import GoogleLoginButton from '../../components/user/GoogleLoginButton';
+import {Eye,EyeOff} from "lucide-react"
 
 const Login = () => {
 
@@ -14,6 +15,7 @@ const Login = () => {
   
   const [error,setError] = useState("")
   const [loading,setLoading] = useState(false)
+  const [showPassword,setShowPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -72,14 +74,25 @@ const Login = () => {
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />
-          <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full p-2 border border-gray-300 rounded-md pr-10"
+              required
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+
           <button
             type="submit"
             disabled={loading}

@@ -88,6 +88,7 @@ class Lesson(models.Model):
         ('text', 'Text'),
     ], default='video')
     content_url = models.URLField(blank=True,null=True) 
+    video_file = models.FileField(upload_to="lesson_videos/",storage=MediaCloudinaryStorage(),blank=True,null=True)
     order = models.PositiveIntegerField(default=0)
     is_preview = models.BooleanField(default=False) 
     is_active = models.BooleanField(default=True) 
@@ -108,4 +109,33 @@ class LessonResource(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.lesson.title})"
-    
+
+class LessonProgress(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lesson,on_delete=models.CASCADE)
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True,blank=True)
+
+    class Meta:
+        unique_together = ('student','lesson')
+        indexes = [
+            models.Index(fields=['student']),
+            models.Index(fields=['lesson']),
+        ]
+class CourseCertificate(models.Model):
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="certificates"
+    )
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    certificate_id = models.CharField(max_length=20, unique=True)
+    certificate_file = models.FileField(upload_to="certificates/",storage=MediaCloudinaryStorage(),null=True,blank=True)
+    issued_at = models.DateTimeField()
+
+    class Meta:
+        unique_together = ("student", "course")
+        indexes = [
+            models.Index(fields=["certificate_id"]),
+            models.Index(fields=["student"]),
+        ]

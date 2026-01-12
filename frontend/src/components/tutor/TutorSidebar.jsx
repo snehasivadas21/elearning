@@ -4,6 +4,7 @@ import { LayoutDashboard, Layers, User } from "lucide-react";
 const navLinks = [
   { name: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/tutor/dashboard" },
   { name: "Courses", icon: <Layers size={18} />, path: "/tutor/courses" },
+  { name: "My Profile", icon: <User size={18} />, path: "/tutor/profile" },
 ];
 
 const TutorSidebar = () => {

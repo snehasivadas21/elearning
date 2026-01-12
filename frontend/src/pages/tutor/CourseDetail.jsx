@@ -189,9 +189,8 @@ const CourseDetail = ({ course }) => {
                   className="w-16 h-16 rounded-full object-cover"
                 />
                 <div>
-                  <p className="font-semibold">
-                    {course.instructor?.full_name}
-                  </p>
+                  <h1 className="text-xl font-bold">{course.instructor?.full_name}</h1>
+                  <p className="text-xl font-bold">{course.instructor?.headline}</p>
                   <p className="text-gray-600 text-sm">
                     {course.instructor?.bio || "No bio available."}
                   </p>

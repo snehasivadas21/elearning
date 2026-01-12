@@ -24,6 +24,8 @@ const AdminStudents = () => {
     fetchStudents();
   }, [page]);
 
+  const totalPages = Math.ceil(count / 10); 
+
   const handleToggleStatus = async (student) => {
     if (!window.confirm("Are you sure to deactivate this student?")) return;
     try {
@@ -94,8 +96,8 @@ const AdminStudents = () => {
 
       <Pagination
        page={page}
+       totalPages={totalPages}
        setPage={setPage}
-       count={count}
       />
     </div>
   );

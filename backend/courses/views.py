@@ -6,13 +6,15 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied,ValidationError
 from rest_framework.parsers import MultiPartParser,FormParser
+from django.shortcuts import get_object_or_404
 
-from .models import (Course,CourseCategory,Module,Lesson,LessonResource)
+from .models import (Course,CourseCategory,Module,Lesson,LessonResource,LessonProgress,CourseCertificate)
 from .serializers import (AdminCourseSerializer,InstructorCourseSerializer,CourseCategorySerializer,
-ModuleSerializer,LessonSerializer,LessonResourceSerializer)
+ModuleSerializer,LessonSerializer,LessonResourceSerializer,LessonProgressSerializer,CertificateSerializer)
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
+from .utils import issue_certificate_if_eligible,verify_certificate,get_course_progress
 
 
 
@@ -214,3 +216,63 @@ class LessonResourceViewSet(viewsets.ModelViewSet):
         course = resource.lesson.module.course
         resource.delete()
         return Response(status=204)       
+
+class LessonProgressViewSet(viewsets.GenericViewSet):
+    serializer_class = LessonProgressSerializer
+    permission_classes = [permissions.IsAuthenticated,IsStudentUser]
+    
+    def get_queryset(self):
+        return LessonProgress.objects.filter(student=self.request.user) 
+    
+    @action(detail=False, methods=["post"], url_path="lessons/(?P<lesson_id>[^/.]+)/toggle")
+    def toggle_complete(self, request, lesson_id=None):
+        lesson = get_object_or_404(Lesson, id=lesson_id)
+
+        progress, _ = LessonProgress.objects.get_or_create(
+            student=request.user,
+            lesson=lesson
+        )
+
+        progress.completed = not progress.completed
+        progress.completed_at = timezone.now() if progress.completed else None
+        progress.save()
+
+        issue_certificate_if_eligible(
+            student=request.user,
+            course=lesson.module.course
+        )
+
+        return Response({
+            "lesson_id": lesson.id,
+            "completed": progress.completed
+        })
+ 
+class CourseProgressViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=True,methods = ["get"])
+    def progress(self,request,pk=None):
+        try:
+            course = Course.objects.get(pk=pk)
+        except Course.DoesNotExist:
+            return Response({"error":"Course not found"},status=404)
+        progress_percent = get_course_progress(request.user,course)
+        return Response({"course_id":pk,"progress":progress_percent})                 
+    
+class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = CertificateSerializer
+    permission_classes = [permissions.IsAuthenticated, IsStudentUser]
+
+    def get_queryset(self):
+        return CourseCertificate.objects.filter(student=self.request.user)
+    
+    @action(detail=False,methods = ["get"],permission_classes=[permissions.AllowAny])
+    def verify(self,request):
+        certificate_id = request.query_params.get("certificate_id")
+        if not certificate_id:
+            return Response({"error":"certificate_id required"},status=400)
+        result = verify_certificate(certificate_id)
+        if not result:
+            return Response({"error":"Certificate not found"},status=404)
+        return Response(result)
+    

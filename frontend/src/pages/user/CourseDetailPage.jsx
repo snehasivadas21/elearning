@@ -35,7 +35,7 @@ const CourseDetailPage = () => {
     const checkEnrollment = async () => {
       setEnrollLoading(true);
       try {
-        const res = await axiosInstance.get("/payments/purchase/");
+        const res = await axiosInstance.get("/payment/purchase/");
         const enrolledCourses = res.data.map((en) => en.course);
         setIsEnrolled(enrolledCourses.includes(course.id));
       } catch (err) {
@@ -51,7 +51,7 @@ const CourseDetailPage = () => {
 
   const handleEnroll = async () => {
     try {
-      await axiosInstance.post("payments/purchase/", {
+      await axiosInstance.post("payment/purchase/", {
         course: course.id,
       });
       toast.success("Enrolled successfully!");
@@ -64,7 +64,7 @@ const CourseDetailPage = () => {
 
   const handleBuyNow = async () => {
     try {
-      const res = await axiosInstance.post("payments/create-order/", {
+      const res = await axiosInstance.post("payment/create-order/", {
         course_id: course.id,
       });
 
@@ -79,7 +79,7 @@ const CourseDetailPage = () => {
         order_id: razorpay_order_id,
         handler: async function (response) {
           try {
-            await axiosInstance.post("payments/verify-payment/", {
+            await axiosInstance.post("payment/verify-payment/", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
@@ -152,7 +152,7 @@ const CourseDetailPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="md:col-span-2">
+      <div className="md:col-span-1">
         <div className="relative mb-4">
           <img
             src={course.course_image}
