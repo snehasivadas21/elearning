@@ -33,7 +33,7 @@ const StudentProfile = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <h1 className='text-2xl font-bold mb-6'>My Profile</h1>
+      <h1 className='text-2xl font-bold text-purple-600'>My Profile</h1>
 
       <div className="flex items-center gap-6 bg-white p-6 rounded-xl shadow">
         <img

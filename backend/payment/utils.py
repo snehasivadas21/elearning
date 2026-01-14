@@ -2,13 +2,13 @@ from .models import CoursePurchase
 from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from django.core.files.base import ContentFile
 import io
+import cloudinary.uploader
 
 def can_access_course(user, course):
     if course.is_free:
         return True
-    return CoursePurchase.objects.filter(student=user, course=course, is_paid=True).exists()
+    return CoursePurchase.objects.filter(student=user, course=course).exists()
 
 def generate_invoice_number():
     today = datetime.now().strftime("%Y%m%d")
@@ -33,12 +33,22 @@ def create_invoice_pdf(invoice):
 
     # Course & Payment
     purchase = invoice.purchase
+    order = purchase.order
+
     p.drawString(50, 600, f"Course: {purchase.course.title}")
-    p.drawString(50, 580, f"Price: ₹{purchase.amount}")
-    p.drawString(50, 560, f"Payment ID: {purchase.payment_id}")
+    p.drawString(50, 580, f"Price: ₹{order.amount}")
+    p.drawString(50, 560, f"Payment ID: {order.payment_id}")
 
     p.showPage()
     p.save()
 
     buffer.seek(0)
-    return ContentFile(buffer.getvalue(), f"{invoice.invoice_number}.pdf")
+
+    upload_result = cloudinary.uploader.upload(
+        buffer,
+        folder="invoices",
+        resource_type ="raw",
+        public_id = f"{invoice.invoice_number}",
+        format="pdf"
+    )
+    return upload_result['secure_url']

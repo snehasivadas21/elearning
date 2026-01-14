@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'courses',
     'payment',
     'ai',
+    'instrpanel',
 
     'django.contrib.sites',
 

@@ -1,15 +1,19 @@
 from rest_framework import viewsets, permissions, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework import status
 from django.conf import settings
+from django.http import HttpResponse,FileResponse
 from .models import Order,CoursePurchase,Invoice
-from .serializers import OrderSerializer,CoursePurchaseSerializer
+from .serializers import OrderSerializer,CoursePurchaseSerializer,InvoiceSerializer
 from users.permissions import IsStudentUser
 from courses.models import Course
+from django.db import transaction
 import razorpay
 import hmac
 import hashlib
+import requests
 from rest_framework.decorators import api_view
 from .utils import generate_invoice_number,create_invoice_pdf
 
@@ -21,21 +25,36 @@ class CoursePurchaseViewSet(viewsets.ModelViewSet):
     permission_classes =[permissions.IsAuthenticated,IsStudentUser]
 
     def get_queryset(self):
-        return CoursePurchase.objects.filter(student=self.request.user)
+        qs = CoursePurchase.objects.filter(student=self.request.user).select_related("course","course__category","course__instructor")
+
+        course_id = self.request.query_params.get("course_id")
+        if course_id:
+            qs = qs.filter(course_id=course_id)
+        return qs    
 
     def perform_create(self, serializer):
         course = serializer.validated_data['course']
         if CoursePurchase.objects.filter(student=self.request.user,course=course).exists():
-            raise serializers.ValidationErro("You are already enrolled in this course.")
+            raise serializers.ValidationError("You are already enrolled in this course.")
         serializer.save(student=self.request.user)
 
-class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all()
+    @action(detail=False,methods=["get"])
+    def enrolled(self,request):
+        course_id = request.query_params.get("course_id")
+        enrolled = CoursePurchase.objects.filter(
+            student = request.user,
+            course_id = course_id
+        ).exists()
+        return Response({"enrolled":enrolled})    
+
+class OrderViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        serializer.save(student=self.request.user, status='pending')
+    def get_queryset(self):
+        return Order.objects.filter(
+            student=self.request.user
+        ).select_related("course").order_by("-created_at")
 
 class CreateRazorpayOrder(APIView):
     permission_classes = [permissions.IsAuthenticated,IsStudentUser]
@@ -92,28 +111,61 @@ class VerifyRazorpayPayment(APIView):
 
         if generated_signature != signature:
             return Response({"error": "Invalid signature"}, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            order = Order.objects.select_for_update().get(order_id=order_id, student=request.user)
 
-        order = Order.objects.select_for_update().get(order_id=order_id, student=request.user)
+            if order.status == 'completed':
+                return Response({"message":"Already processed"})
 
-        if order.status == 'completed':
-            return Response({"message":"Already processed"})
+            purchase = CoursePurchase.objects.create(
+                student=request.user,
+                course=order.course,
+                order=order
+            )
+            
+            order.purchase = purchase
+            order.payment_id = payment_id
+            order.status = 'completed'
+            order.save()
 
-        purchase = CoursePurchase.objects.create(
-            student=request.user,
-            course=order.course
-        )
+            invoice = Invoice.objects.create(
+                student = request.user,
+                purchase =  purchase,
+                invoice_number = generate_invoice_number(),
+            ) 
+            pdf_url = create_invoice_pdf(invoice)
+            invoice.pdf_file = pdf_url
+            invoice.save()
 
-        order.payment_id = payment_id
-        order.status = 'completed'
-        order.save()
+        return Response({
+            "message":"Payment success & invoice generated",
+            "course_id":order.course.id,
+            "invoice_id":invoice.id,
+            "invoice_number":invoice.invoice_number})   
 
-        invoice = Invoice.objects.create(
-            student = request.user,
-            purchase =  purchase,
-            invoice_number = generate_invoice_number(),
-        ) 
-        pdf = create_invoice_pdf(invoice)
-        invoice.pdf_file.save(f"{invoice.invoice_number}.pdf",pdf)
+class InvoiceViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class=InvoiceSerializer
+    permission_classes = [permissions.IsAuthenticated,IsStudentUser]
 
-        return Response({"message":"Payment success & invoice generated",
-                         "course_id":order.course.id})   
+    def get_queryset(self):
+        return Invoice.objects.filter(student = self.request.user).select_related('purchase__course')
+    
+    @action(detail=True,methods=['get'])
+    def download(self,request,pk=None):
+        invoice = self.get_object()
+
+        if not invoice.pdf_file:
+            return Response({"error":"Invoice not available"},status=404)
+
+        pdf_url = invoice.pdf_file.url 
+
+        pdf_response = requests.get(pdf_url)
+
+        response = HttpResponse(pdf_response.content,content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment;filename="invoice={invoice.invoice_number}.pdf"'
+        return response
+    
+    @action(detail=True,methods=['get'])
+    def view(self,request,pk=None):
+        invoice = self.get_object()
+        return Response({"pdf_url":invoice.pdf_file.url})

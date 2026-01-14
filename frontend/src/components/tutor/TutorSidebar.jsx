@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Layers, User } from "lucide-react";
+import { LayoutDashboard, Layers, User, Wallet } from "lucide-react";
 
 const navLinks = [
   { name: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/tutor/dashboard" },
   { name: "Courses", icon: <Layers size={18} />, path: "/tutor/courses" },
   { name: "My Profile", icon: <User size={18} />, path: "/tutor/profile" },
+  { name: "Orders", icon: <Wallet size={18} />, path: "/tutor/orders" },
 ];
 
 const TutorSidebar = () => {

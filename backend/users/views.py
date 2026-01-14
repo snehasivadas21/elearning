@@ -19,7 +19,8 @@ from .permissions import IsInstructorUser
 from .tasks import send_verification_email_task
 from django.core.mail import send_mail
 
-from courses.models import Course
+from courses.models import Course,Lesson,LessonProgress,LessonResource
+from payment.models import CoursePurchase
 from courses.serializers import AdminCourseSerializer,UserCourseDetailSerializer
 from django.db.models import Avg,Sum
 from django.contrib.auth import get_user_model
@@ -249,45 +250,6 @@ class ApprovedCourseDetailView(generics.RetrieveAPIView):
     serializer_class = UserCourseDetailSerializer
     permission_classes =[permissions.AllowAny]
 
-
-
-class StudentDashboardView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-
-        profile_data = {
-            "bio": "",
-            "dob": "",
-            "phone": ""
-        }
-
-        if hasattr(user, 'student_profile'):
-            profile = user.student_profile
-            profile_data = {
-                "bio": profile.bio or "",
-                "dob": profile.dob or "",
-                "phone": profile.phone or "",
-            }
-
-        # Fetch enrolled courses
-        enrollments = CoursePurchase.objects.filter(student=user)
-        total_courses = enrollments.count()
-
-        # Course progress
-        total_lessons_completed = LessonProgress.objects.filter(student=user).count()
-
-        # Response
-        data = {
-            "username": user.username,
-            "email": user.email,
-            "profile": profile_data,
-            "enrolled_courses": total_courses,
-            "lessons_completed": total_lessons_completed,
-        }
-
-        return Response(data)
 
 class ProfileView(APIView):
     permission_classes=[IsAuthenticated]

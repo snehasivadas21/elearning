@@ -1,73 +1,54 @@
-import React, { useEffect, useState } from 'react'
-import axiosInstance from '../../api/axiosInstance';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axiosInstance from "../../api/axiosInstance";
 import { Users, Star, Clock, BookOpen } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
 import CourseChat from "../../components/user/CourseChat";
+import { extractResults } from "../../api/api";
 
 const MyCourses = () => {
   const [courses, setCourses] = useState([]);
-  const [invoices,setInvoices] = useState([]);
-  const navigate = useNavigate()
-
-  const discountPercent = (original, current) => {
-    if (!original || !current || original <= current) return 0;
-    return Math.round(((original - current) / original) * 100);
-  };
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEnrolledCourses = async () => {
       try {
-        const res = await axiosInstance.get("/payments/purchase/");
-        const courseList = res.data.results.map((enrollment) => enrollment.course);
-        setCourses(courseList);
+        const res = await axiosInstance.get("/payment/purchase/");
+        setCourses(extractResults(res));
       } catch (err) {
         console.error("Failed to fetch enrolled courses", err);
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchEnrolledCourses();
   }, []);
 
-  if (!courses.length) return (
-    <div className="p-8 text-center text-gray-600">
-      You haven't enrolled in any courses yet.
-    </div>
-  );
-
-  useEffect(()=>{
-    const fetchInvoices = async () => {
-      const response = await axiosInstance.get("/invoice/");
-      setInvoices(response.data)
-    }
-    fetchInvoices();
-  },[]);
-
-  // const handleChatClick = (courseId, e) => {
-  //   e.preventDefault(); 
-  //   e.stopPropagation(); 
-  //   navigate(`/student/chat/${courseId}`,{state:{role:"student"}});
-  // }
-
-  const handleContinueLearning = (courseId, e) => {
-    e.preventDefault(); 
-    e.stopPropagation(); 
-    navigate(`/courses/${courseId}`);
+  if (loading) {
+    return <p className="p-8 text-gray-500">Loading your courses...</p>;
   }
 
-  // const handleLiveSessionClick = (e) => {
-  //   e.stopPropagation(); 
-  // }
+  if (!courses.length) {
+    return (
+      <div className="p-8 text-center text-gray-600">
+        You haven’t enrolled in any courses yet.
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1 className='text-2xl font-bold mb-6'>My Enrolled Courses</h1>
-      <p className="text-gray-500 mb-6">{courses.length} courses found</p>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-purple-600">My Courses</h1>
+      <p className="text-gray-500 mb-6">
+        {courses.length} enrolled course{courses.length > 1 && "s"}
+      </p>
 
-      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6 bg-white rounded-xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 animate-fade-in">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
         {courses.map((course) => (
-          <Link
-            to={`/courses/${course.id}`}
+          <div
             key={course.id}
-            className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition block"
+            className="bg-white rounded-xl overflow-hidden shadow hover:shadow-lg transition"
           >
             <div className="relative">
               <img
@@ -75,22 +56,19 @@ const MyCourses = () => {
                 alt={course.title}
                 className="w-full h-44 object-cover"
               />
-              {discountPercent(course.original_price, course.price) > 0 && (
-                <span className="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                  -{discountPercent(course.original_price, course.price)}%
-                </span>
-              )}
               <span className="absolute top-3 left-3 bg-white text-xs font-medium px-2 py-1 rounded shadow">
                 {course.category_name}
               </span>
             </div>
 
             <div className="p-4 space-y-2">
-              <h3 className="font-semibold text-lg leading-snug line-clamp-2">
+              <h3 className="font-semibold text-lg line-clamp-2">
                 {course.title}
               </h3>
-              <p className="text-sm text-gray-500 line-clamp-2">{course.description}</p>
-              <p className="text-sm text-gray-600">By {course.instructor_username}</p>
+
+              <p className="text-sm text-gray-600">
+                By {course.instructor_username}
+              </p>
 
               <div className="flex items-center text-sm gap-4 text-gray-500 mt-2">
                 <div className="flex items-center gap-1">
@@ -107,65 +85,19 @@ const MyCourses = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mt-3">
-                <div className="text-gray-900 font-bold text-xl">
-                  {course.is_free ? "Free" : `₹${course.price}`}
-                  {course.original_price && (
-                    <span className="ml-2 line-through text-sm text-gray-500">
-                      ₹{course.original_price}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <button 
-                className="mt-4 w-full bg-blue-600 text-white py-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-700 transition"
-                onClick={(e) => handleContinueLearning(course.id, e)}
+              <button
+                onClick={() => navigate(`/courses`)}
+                className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-md flex items-center justify-center gap-2 hover:bg-indigo-700 transition"
               >
                 <BookOpen className="w-4 h-4" />
                 Continue Learning
               </button>
 
-              <div className="p-6">
-                <h2 className="text-xl font-bold mb-4">My Invoices</h2>
-                <ul className="space-y-3">
-                  {invoices.map((invoice) => (
-                    <li
-                      key={invoice.id}
-                      className="flex justify-between items-center bg-gray-100 p-4 rounded-lg shadow"
-                    >
-                      <span>{invoice.course_title}</span>
-                      <a
-                        href={invoice.pdf_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                      >
-                        View / Download
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+              <div className="mt-4">
+                <CourseChat courseId={course.id} />
               </div>
-              <CourseChat courseId={course.id} />           
-              {/* <button 
-                className='mt-2 w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2' 
-                onClick={(e) => handleChatClick(course.id, e)}
-              >
-                Chat with Instructor
-              </button>
-              
-              {course.live_session?.join_url && (
-                <Link
-                  to={`/live-session/${course.live_session.join_url}`}
-                  className="mt-2 block w-full bg-green-500 text-white py-2 rounded text-center hover:bg-green-600"
-                  onClick={handleLiveSessionClick}
-                >
-                  Join Now
-                </Link>
-              )} */}
             </div>
-          </Link>
+          </div>
         ))}
       </div>
     </div>
