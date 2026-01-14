@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from courses.models import Course
+from cloudinary.models import CloudinaryField
 
 class CoursePurchase(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='purchases')
@@ -35,7 +36,7 @@ class Invoice(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="invoices")
     purchase = models.OneToOneField("CoursePurchase",on_delete=models.CASCADE,related_name="invoice")
     invoice_number = models.CharField(max_length=20,unique=True)
-    pdf_file = models.FileField(upload_to="invoices/")
+    pdf_file = CloudinaryField("invoices",resource_type='raw',null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

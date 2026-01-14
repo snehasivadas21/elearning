@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Users, GraduationCap, BarChart2 , Layers, Boxes } from "lucide-react";
+import { LayoutDashboard, Users, GraduationCap, BarChart2 , Layers, Boxes, Wallet } from "lucide-react";
 
 const navLinks = [
   { name: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/admin/dashboard" },
@@ -7,6 +7,7 @@ const navLinks = [
   { name: "Instructors", icon: <GraduationCap size={18} />, path: "/admin/instructors" },
   { name: "Courses", icon: <Layers size={18} />, path: "/admin/courses" },
   { name: "Categories", icon: <Boxes size={18} />, path: "/admin/categories" },
+  { name: "Orders", icon: <Wallet size={18} />, path: "/admin/orders" },
   
   // { name: "Statistics", icon: <BarChart2 size={18} />, path: "/admin/stats" },
 ];

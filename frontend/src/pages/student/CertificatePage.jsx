@@ -39,7 +39,7 @@ export default function CertificatePage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">My Certificates</h1>
+      <h1 className="text-2xl font-bold text-purple-600">My Certificates</h1>
       {certificates.length === 0 ? (
         <p className="text-gray-500">No certificates available yet.</p>
       ) : (

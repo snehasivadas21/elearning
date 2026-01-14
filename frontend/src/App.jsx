@@ -14,11 +14,11 @@ import ResetPasswordPage from "./pages/user/ResetPasswordPage";
 import Dashboard from "./pages/student/Dashboard";
 import NotFound from "./pages/user/NotFound";
 import CourseListPage from "./pages/user/Courses";
-// import CourseDetailPage from "./pages/user/CourseDetailPage";
 import UserCourseDetail from "./pages/user/UserCourseDetail";
 import About from "./pages/user/About"
-import MyCourse from "./pages/student/MyCourses"
+import MyCourses from "./pages/student/MyCourses";
 import StudentProfile from "./pages/student/StudentProfile"
+import MyPurchases from "./pages/student/MyPurchases";
 import ChatPage from "./pages/student/ChatPage"
 import LiveSessionPage from "./pages/tutor/LiveSessionPage";
 import CertificatePage from "./pages/student/CertificatePage";
@@ -31,6 +31,7 @@ import AdminTutors from "./pages/admin/AdminTutors";
 import AdminCourses from "./pages/admin/AdminCourses";
 import AdminCourseDetail from "./pages/admin/AdminCourseDetail";
 import AdminCategories from "./pages/admin/AdminCategories";
+import AdminOrders from "./pages/admin/AdminOrders";
 
 // Tutor
 import TutorLayout from "./components/tutor/TutorLayout";
@@ -38,11 +39,13 @@ import TutorDashboard from "./pages/tutor/TutorDashboard";
 import TutorCourses from "./pages/tutor/TutorCourses";
 import TutorCoursesContent from "./pages/tutor/TutorCoursesContent";
 import TutorCourseDetail from "./pages/tutor/TutorCourseDetail";
+import TutorOrders from "./pages/tutor/TutorOrders";
 
 // Routes
 import PrivateRoute from "./routes/PrivateRoute";
 import RoleRoute from "./routes/RoleRoute";
 import StudentLayout from "./components/student/StudentLayout";
+
 
 function App() {
   return (
@@ -51,7 +54,6 @@ function App() {
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path = "/courses" element={<CourseListPage/>}/>
-        {/* <Route path = "/courses/:id" element={<CourseDetailPage/>}/> */}
         <Route path = "/courses/:id" element={<UserCourseDetail/>}/> 
         <Route path="/about" element={<About/>} />
 
@@ -62,8 +64,9 @@ function App() {
           </PrivateRoute>
         }>
           <Route path="dashboard" element={<Dashboard/>}/>
-          <Route path="courses/:id" element={<MyCourse/>}/>
-          <Route path="profile" element={<StudentProfile/>} />
+          <Route path="mycourses" element={<MyCourses/>}/>
+          <Route path="myprofile" element={<StudentProfile/>} />
+          <Route path="mypurchase" element={<MyPurchases/>}/>
           <Route path="chat/:courseId" element={<ChatPage/>}/>
           <Route path="live-session/:sessionId" element={<LiveSessionPage />} />
           <Route path="certificate" element={<CertificatePage/>}/>
@@ -91,6 +94,7 @@ function App() {
         <Route path="courses" element={<AdminCourses />} />
         <Route path="courses/:id" element={<AdminCourseDetail />}/>
         <Route path="categories" element={<AdminCategories />} />
+        <Route path="orders" element={<AdminOrders/>}/>
       </Route>
 
       {/* Tutor Section */}
@@ -105,6 +109,7 @@ function App() {
         <Route path="courses/:id/content" element={<TutorCoursesContent/>}/>
         <Route path="courses/:id" element={<TutorCourseDetail />}/>
         <Route path="profile" element={<StudentProfile/>} />
+        <Route path="orders" element={<TutorOrders/>}/>
         <Route path="chat/:courseId" element={<ChatPage/>}/>
       </Route>
 

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from users.models import CustomUser
+from payment.models import Order
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,4 +25,23 @@ class UserSerializer(serializers.ModelSerializer):
         if password:
             instance.set_password(password)
         instance.save()
-        return instance            
+        return instance  
+class AdminOrderSerializer(serializers.ModelSerializer):
+    user_email = serializers.CharField(source="student.email", read_only=True)
+    user_username = serializers.CharField(source="student.username", read_only=True)
+    course_title = serializers.CharField(source="course.title", read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "order_id",
+            "user_email",
+            "user_username",
+            "course_title",
+            "amount",
+            "status",
+            "payment_id",
+            "created_at",
+        ]
+          
