@@ -1,26 +1,53 @@
 import { useState, useEffect } from "react";
 import axiosInstance from "../../api/axiosInstance";
+import { toast } from "react-toastify";
 
-const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => {
+
+const uploadVideoToCloudinary = async (file) => {
+  const data = new FormData();
+  data.append("file", file);
+  data.append("upload_preset", "video_upload_unsigned");
+  data.append("resource_type", "video");
+
+  const res = await fetch(
+    "https://api.cloudinary.com/v1_1/dgqjlqivb/video/upload",
+    {
+      method: "POST",
+      body: data,
+    }
+  );
+
+  const result = await res.json();
+  if (!result.secure_url) {
+    throw new Error("Video upload failed");
+  }
+  return result.secure_url;
+};
+const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
   const [formData, setFormData] = useState({
     title: "",
     content_type: "video",
-    content_url: "",
+    video_source: "youtube", 
+    video_url: "",
+    video_file: null,
+    text_content: "",
     order: 1,
     is_preview: false,
     is_active: true,
   });
 
-  const [resourceFiles,setResourceFiles] = useState([]);
-  const [replacedResources,setReplacedResources] = useState([]);
-  const [submitting,setSubmitting] = useState(false);
+  const [resourceFiles, setResourceFiles] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (lessonData) {
       setFormData({
         title: lessonData.title || "",
         content_type: lessonData.content_type || "video",
-        content_url: lessonData.content_url || "",
+        video_source: lessonData.video_source || "youtube",
+        video_url: lessonData.video_url || "",
+        video_file: null,
+        text_content: lessonData.text_content || "",
         order: lessonData.order || 1,
         is_preview: lessonData.is_preview || false,
         is_active: lessonData.is_active ?? true,
@@ -28,99 +55,132 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
     }
   }, [lessonData]);
 
+  if (!show) return null;
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if(name==="content_type"){
-      setFormData((prev)=>({
+
+    if (name === "content_type") {
+      setFormData((prev) => ({
         ...prev,
-        content_type:value,
-        content_url:"",
-        is_preview:value === "video"?prev.is_preview:false,
-      }))
+        content_type: value,
+        video_source: value === "video" ? "youtube" : "",
+        video_url: "",
+        video_file: null,
+        text_content: "",
+        is_preview: value === "video" ? prev.is_preview : false,
+      }));
       return;
     }
+
+    if (name === "video_source") {
+      setFormData((prev) => ({
+        ...prev,
+        video_source: value,
+        video_url: "",
+        video_file: null,
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const handleFileChange = (e) => {
-    setResourceFiles(Array.from(e.target.files))
-  }
+  const handleVideoFileChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      video_file: e.target.files[0],
+    }));
+  };
+
+  const handleResourceChange = (e) => {
+    setResourceFiles(Array.from(e.target.files));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submitting) return;
 
+    if (!formData.title.trim()) {
+      alert("Lesson title is required");
+      return;
+    }
+
+    if (formData.content_type === "video") {
+      if (formData.video_source === "youtube" && !formData.video_url.trim()) {
+        alert("Video URL is required");
+        return;
+      }
+      if (formData.video_source === "upload" && !formData.video_file) {
+        alert("Please upload a video file");
+        return;
+      }
+    }
+
+    if (formData.content_type === "text" && !formData.text_content.trim()) {
+      alert("Text content is required");
+      return;
+    }
+
     try {
-      if (!formData.title.trim()) {
-        alert("Lesson title is required");
-        return;
-      }
-
-      if (!formData.content_url.trim()) {
-        alert(
-          formData.content_type === "video"
-            ? "Video URL is required"
-            : "Text content is required"
-        );
-        return;
-      }
-
       setSubmitting(true);
 
-      const payload = {
-        title: formData.title,
-        content_type: formData.content_type,
-        content_url: formData.content_url,
-        module: moduleId,
-        is_preview: formData.is_preview,
-        is_active: formData.is_active,
-        order: formData.order,
-      };
+      let finalVideoUrl = formData.video_url;
+
+      if (formData.content_type === "video" && formData.video_source === "upload") {
+        finalVideoUrl = await uploadVideoToCloudinary(formData.video_file);
+      }
+
+      const payload = new FormData();
+      payload.append("title", formData.title);
+      payload.append("module", moduleId);
+      payload.append("content_type", formData.content_type);
+      payload.append("order", formData.order);
+      payload.append("is_preview", formData.is_preview);
+      payload.append("is_active", formData.is_active);
+
+      if (formData.content_type === "video") {
+        payload.append("video_source", formData.video_source === "upload"?"cloud":"youtube");
+        payload.append("video_url",finalVideoUrl)
+      }
+
+      if (formData.content_type === "text") {
+        payload.append("text_content", formData.text_content);
+      }
 
       const lessonRes = lessonData
         ? await axiosInstance.patch(`/lessons/${lessonData.id}/`, payload)
         : await axiosInstance.post("/lessons/", payload);
 
       const lessonId = lessonData?.id || lessonRes.data.id;
-      
+
       for (const file of resourceFiles) {
         const fd = new FormData();
         fd.append("lesson", lessonId);
         fd.append("title", file.name);
         fd.append("file", file);
-        await axiosInstance.post("/lesson-resources/", fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+
+        await axiosInstance.post("/lesson-resources/", fd);
       }
 
-      for (const res of replacedResources) {
-        const fd = new FormData();
-        fd.append("file",res.file);
-
-        await axiosInstance.patch(`/lesson-resources/${res.id}/`,fd,
-          {headers:{"Content-Type":"multipart/form-data"}}
-        )
-      }
       setResourceFiles([]);
-      setReplacedResources([]);
       onClose();
     } catch (err) {
-      console.error("Error saving lesson:", err);
-      alert("Failed to save lesson.Please try again.");
+      console.error("Lesson save failed:", err);
+      toast.error("Failed to save lesson. Please try again.");
     } finally {
-      setSubmitting(false);  
+      setSubmitting(false);
     }
   };
 
-  if (!show) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-[450px]">
-        <h3 className="text-xl font-bold mb-4">{mode} Lesson</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-[480px]">
+        <h3 className="text-xl font-bold mb-4">{lessonData ? "Edit Lesson" : "Add Lesson"}</h3>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             name="title"
@@ -141,32 +201,59 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
             <option value="text">Text</option>
           </select>
 
-          {formData.content_type === "video"?(
-            <input 
-              name="content_url"
-              value={formData.content_url}
-              onChange={handleChange}
-              placeholder="Video URL" 
-              className="w-full border px-3 py-2 rounded"/>
-          ) : (
-            <textarea 
-              name="content_url"
-              value={formData.content_url}
+          {formData.content_type === "video" && (
+            <>
+              <select
+                name="video_source"
+                value={formData.video_source}
+                onChange={handleChange}
+                className="w-full border px-3 py-2 rounded"
+              >
+                <option value="youtube">YouTube / External URL</option>
+                <option value="upload">Upload Video</option>
+              </select>
+
+              {formData.video_source === "youtube" && (
+                <input
+                  name="video_url"
+                  value={formData.video_url}
+                  onChange={handleChange}
+                  placeholder="YouTube / Video URL"
+                  className="w-full border px-3 py-2 rounded"
+                />
+              )}
+
+              {formData.video_source === "upload" && (
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={handleVideoFileChange}
+                  className="w-full border px-3 py-2 rounded"
+                />
+              )}
+            </>
+          )}
+
+          {formData.content_type === "text" && (
+            <textarea
+              name="text_content"
+              value={formData.text_content}
               onChange={handleChange}
               placeholder="Lesson text content"
               rows={4}
-              className="w-full border px-3 py-2 rounded"/>
+              className="w-full border px-3 py-2 rounded"
+            />
           )}
 
           <div>
-            <label className="block font-medium text-sm mb-1">
-              Upload Resources (PDF, DOCX, PPTX):
+            <label className="block text-sm font-medium mb-1">
+              Upload Resources (PDF, DOCX, PPTX)
             </label>
             <input
               type="file"
               multiple
               accept=".pdf,.docx,.pptx"
-              onChange={handleFileChange}
+              onChange={handleResourceChange}
               className="w-full border px-3 py-2 rounded"
             />
           </div>
@@ -187,10 +274,11 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
                 name="is_preview"
                 checked={formData.is_preview}
                 onChange={handleChange}
-                disabled={formData.content_type!=="video"}
+                disabled={formData.content_type !== "video"}
               />
               <span>Preview</span>
             </label>
+
             <label className="flex items-center space-x-2 text-sm">
               <input
                 type="checkbox"
@@ -210,6 +298,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
             >
               Cancel
             </button>
+
             <button
               type="submit"
               disabled={submitting}
@@ -219,7 +308,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId,mode = "Add"}) => 
                   : "bg-yellow-600 hover:bg-yellow-700"
               }`}
             >
-              {submitting ? "Saving..." : "Save as Draft"}
+              {submitting ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

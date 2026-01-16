@@ -1,33 +1,15 @@
 import { useState } from "react";
-import axiosInstance from "../../api/axiosInstance";
-import { toast } from "react-toastify";
+import axiosInstance from "../../api/axiosInstance"
 
-export default function CourseChat({ courseId, isEnrolled, enrollLoading }) {
+const CourseChat = ({ courseId }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🔒 BLOCK UI IF NOT ENROLLED
-  if (enrollLoading) {
-    return (
-      <div className="p-4 border rounded-lg bg-gray-50">
-        Checking access to chatbot...
-      </div>
-    );
-  }
-
-  if (!isEnrolled) {
-    return (
-      <div className="p-4 border rounded-lg bg-gray-100 text-gray-700">
-        🔒 This AI assistant is available only for enrolled students.
-      </div>
-    );
-  }
-
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMsg = { role: "user", text: input };
+    const userMsg = { role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
@@ -35,24 +17,17 @@ export default function CourseChat({ courseId, isEnrolled, enrollLoading }) {
     try {
       const res = await axiosInstance.post("/ai/chat/", {
         course_id: courseId,
-        question: input,
+        question: userMsg.content,
       });
 
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: res.data.answer },
+        { role: "ai", content: res.data.answer },
       ]);
     } catch (err) {
-      // ✅ HANDLE 403 GRACEFULLY
-      if (err.response?.status === 403) {
-        toast.error("You are not enrolled in this course.");
-      } else {
-        toast.error("AI service unavailable.");
-      }
-
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "⚠️ Unable to fetch response." },
+        { role: "ai", content: "AI error. Please try again." },
       ]);
     } finally {
       setLoading(false);
@@ -60,46 +35,41 @@ export default function CourseChat({ courseId, isEnrolled, enrollLoading }) {
   };
 
   return (
-    <div className="border rounded-xl p-4 mt-6 bg-white shadow">
-      <h3 className="font-semibold text-lg mb-2">
-        🤖 Course AI Assistant
-      </h3>
+    <div className="border rounded-lg p-4 bg-white">
+      <h3 className="font-semibold mb-2">🤖 Course AI Assistant</h3>
 
-      <div className="h-64 overflow-y-auto border p-3 rounded bg-gray-50 mb-3">
+      <div className="h-64 overflow-y-auto border p-2 mb-3 space-y-2">
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`mb-2 ${
-              m.role === "user" ? "text-right" : "text-left"
+            className={`text-sm p-2 rounded ${
+              m.role === "user"
+                ? "bg-purple-100 text-right"
+                : "bg-gray-100"
             }`}
           >
-            <span className="inline-block px-3 py-2 rounded-lg bg-white shadow">
-              {m.text}
-            </span>
+            {m.content}
           </div>
         ))}
-        {loading && (
-          <div className="text-sm text-gray-500">AI is thinking…</div>
-        )}
+        {loading && <p className="text-sm text-gray-400">Thinking...</p>}
       </div>
 
       <div className="flex gap-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask a doubt from this course..."
           className="flex-1 border rounded px-3 py-2"
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          disabled={loading}
+          placeholder="Ask something from this course..."
         />
         <button
           onClick={sendMessage}
-          disabled={loading}
-          className="bg-indigo-600 text-white px-4 py-2 rounded disabled:opacity-50"
+          className="bg-purple-600 text-white px-4 rounded"
         >
           Send
         </button>
       </div>
     </div>
   );
-}
+};
+
+export default CourseChat;

@@ -17,6 +17,7 @@ import CourseListPage from "./pages/user/Courses";
 import UserCourseDetail from "./pages/user/UserCourseDetail";
 import About from "./pages/user/About"
 import MyCourses from "./pages/student/MyCourses";
+import StudentCourseDetail from "./pages/student/StudentCourseDetail";
 import StudentProfile from "./pages/student/StudentProfile"
 import MyPurchases from "./pages/student/MyPurchases";
 import ChatPage from "./pages/student/ChatPage"
@@ -65,6 +66,7 @@ function App() {
         }>
           <Route path="dashboard" element={<Dashboard/>}/>
           <Route path="mycourses" element={<MyCourses/>}/>
+          <Route path="mycourses/:id" element={<StudentCourseDetail/>}/>
           <Route path="myprofile" element={<StudentProfile/>} />
           <Route path="mypurchase" element={<MyPurchases/>}/>
           <Route path="chat/:courseId" element={<ChatPage/>}/>

@@ -244,13 +244,23 @@ class ApprovedCourseListView(generics.ListAPIView):
     search_fields = ['title','description']
     ordering_fields = ['price','title']
     ordering = ['title']
-
 class ApprovedCourseDetailView(generics.RetrieveAPIView):
     queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = UserCourseDetailSerializer
     permission_classes =[permissions.AllowAny]
 
+class MyEnrolledCourseDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = UserCourseDetailSerializer
 
+    def get_queryset(self):
+        return Course.objects.filter(
+            purchases__student=self.request.user,
+            status = 'approved',
+            is_active=True,
+            is_published=True
+        ).distinct()  
+    
 class ProfileView(APIView):
     permission_classes=[IsAuthenticated]
 

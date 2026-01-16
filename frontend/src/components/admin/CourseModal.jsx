@@ -15,6 +15,7 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add" }) => {
 
   const [preview, setPreview] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [isSubmitting,setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -75,17 +76,24 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add" }) => {
     }
   };
 
-  const handleSubmit = (e) => {
-    if (e) e.preventDefault();
-    const submitData = new FormData();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return; 
 
+    setIsSubmitting(true);
+
+    const submitData = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
       if (value !== null && value !== undefined) {
         submitData.append(key, value);
       }
     });
 
-    onSubmit(submitData, course?.id);
+    try {
+      await onSubmit(submitData, course?.id);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -184,9 +192,12 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add" }) => {
 
             <button
               type="submit"
-              className="px-4 py-2 bg-purple-600 text-white rounded"
+              disabled = {isSubmitting}
+              className={`px-4 py-2 rounded text-white
+                ${isSubmitting ? "bg-purple-400 cursor-not-allowed" : "bg-purple-600"}
+              `}
             >
-              Save
+              {isSubmitting ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

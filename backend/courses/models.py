@@ -81,14 +81,29 @@ class Module(models.Model):
         return f"{self.course.title} - {self.title}"
 
 class Lesson(models.Model):
-    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='lessons')
-    title = models.CharField(max_length=255)
-    content_type = models.CharField(max_length=20, choices=[
+    VIDEO_SOURCE_CHOICES = [
+        ('youtube', 'YouTube'),
+        ('cloud', 'Cloudinary'),
+    ]
+    CONTENT_TYPE_CHOICES = [
         ('video', 'Video'),
         ('text', 'Text'),
-    ], default='video')
-    content_url = models.URLField(blank=True,null=True) 
-    video_file = models.FileField(upload_to="lesson_videos/",storage=MediaCloudinaryStorage(),blank=True,null=True)
+    ]
+    module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name='lessons')
+    title = models.CharField(max_length=255)
+    content_type = models.CharField(
+        max_length=20,
+        choices=CONTENT_TYPE_CHOICES,
+    )
+    video_source = models.CharField(
+        max_length=20,
+        choices=VIDEO_SOURCE_CHOICES,
+        blank=True,
+        null=True
+    )
+    video_url = models.URLField(blank=True, null=True)
+    text_content = models.TextField(blank=True, null=True)
+    
     order = models.PositiveIntegerField(default=0)
     is_preview = models.BooleanField(default=False) 
     is_active = models.BooleanField(default=True) 
