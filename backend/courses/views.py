@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.filters import SearchFilter,OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
+from django.http import FileResponse
 from django.core.exceptions import PermissionDenied,ValidationError
 from rest_framework.parsers import MultiPartParser,FormParser
 from django.shortcuts import get_object_or_404
@@ -14,18 +15,21 @@ ModuleSerializer,LessonSerializer,LessonResourceSerializer,LessonProgressSeriali
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
-from .utils import issue_certificate_if_eligible,verify_certificate,get_course_progress
+from .utils import issue_certificate_if_eligible,verify_certificate,get_course_progress,generate_certificate_file
+from cloudinary_storage.storage import MediaCloudinaryStorage
 
 
 
 class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset=Course.objects.all().order_by('-created_at')
     serializer_class = AdminCourseSerializer
     permission_classes = [permissions.IsAdminUser]
     filter_backends=[DjangoFilterBackend,SearchFilter,OrderingFilter]
     filterset_fields = ['category','status','level']
     search_fields = ['title']
     ordering_fields = ['created_at']
+
+    def get_queryset(self):
+        return Course.objects.filter(is_active=True).exclude(status='draft').order_by('-created_at')
 
     @action(detail=True,methods=['patch'])
     def approve(self,request,pk=None):
@@ -94,8 +98,14 @@ class InstructorCourseViewSet(viewsets.ModelViewSet):
         if course.instructor != request.user:
             raise PermissionDenied("Not your course")
         
-        if course.status == "draft":
-            return Response({"detail":"Only draft courses can be submitted"},status=400)
+        # if course.status != "draft":
+        #     return Response({"detail":"Only draft courses can be submitted"},status=400)
+
+        if course.status not in ["draft", "rejected", "approved"]:
+            return Response(
+                {"detail": "Only draft, rejected, or approved courses can be submitted"},
+                status=400
+            )
 
         course.status = "submitted"
         course.is_published = False
@@ -145,23 +155,43 @@ class ModuleViewSet(viewsets.ModelViewSet):
             qs = qs.filter(course_id=course_id)
         return qs
     
-    def perform_create(self,serializer):
-        course = serializer.validated_data['course']
-        
-        if not self.request.user.is_staff and course.instructor != self.request.user:
-            raise PermissionDenied("You do not own this course.")
+    def perform_create(self, serializer):
+        module = serializer.validated_data.get('module', None)
+        course = module.course if module else serializer.validated_data['course']
 
-        serializer.save() 
+        if not self.request.user.is_staff and course.instructor != self.request.user:
+            raise PermissionDenied("You do not own this course")
+
+        obj = serializer.save()
+
+        if course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields=["status", "is_published"])
+
 
     def perform_update(self, serializer):
-        module = serializer.save()
-        
+        module = self.get_object()
+        course = module.course
+
+        if course.status in ["approved", "submitted"]:
+            raise PermissionDenied("Cannot edit modules of approved/submitted courses")
+
+        serializer.save()      
 
     def destroy(self, request, *args, **kwargs):
         module = self.get_object()
+        course = module.course
+
+        if course.status in ["approved", "submitted"]:
+            return Response(
+                {"detail": "Cannot delete modules of approved/submitted courses"},
+                status=403
+            )
+
         module.is_deleted = True
         module.save(update_fields=['is_deleted'])
-        return Response(status=204)   
+        return Response(status=204)
 
 class LessonViewSet(viewsets.ModelViewSet):
     serializer_class = LessonSerializer
@@ -178,23 +208,44 @@ class LessonViewSet(viewsets.ModelViewSet):
             qs = qs.filter(module_id=module_id)
         return qs
     
-    def perform_create(self,serializer):
-        module = serializer.validated_data['module']
-        course = module.course
+    def perform_create(self, serializer):
+        module = serializer.validated_data.get('module', None)
+        course = module.course if module else serializer.validated_data['course']
 
         if not self.request.user.is_staff and course.instructor != self.request.user:
             raise PermissionDenied("You do not own this course")
-        
-        serializer.save()
+
+        obj = serializer.save()
+
+        if course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields=["status", "is_published"])
+
 
     def perform_update(self, serializer):
-        lesson = serializer.save()
+        lesson = self.get_object()
+        course = lesson.module.course
+
+        if course.status in ["approved", "submitted"]:
+            raise PermissionDenied("Cannot edit lessons of approved/submitted courses")
+
+        serializer.save()
 
     def destroy(self, request, *args, **kwargs):
         lesson = self.get_object()
+        course = lesson.module.course
+
+        if course.status in ["approved", "submitted"]:
+            return Response(
+                {"detail": "Cannot delete lessons of approved/submitted courses"},
+                status=403
+            )
+
         lesson.is_deleted = True
         lesson.save(update_fields=['is_deleted'])
-        return Response(status=204)     
+        return Response(status=204)
+       
 class LessonResourceViewSet(viewsets.ModelViewSet):
     serializer_class = LessonResourceSerializer
     permission_classes = [permissions.IsAuthenticated,IsInstructorUser]
@@ -262,6 +313,8 @@ class CourseProgressViewSet(viewsets.ViewSet):
 class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CertificateSerializer
     permission_classes = [permissions.IsAuthenticated, IsStudentUser]
+    lookup_field = "certificate_id"
+    lookup_value_regex = "[^/]+"
 
     def get_queryset(self):
         return CourseCertificate.objects.filter(student=self.request.user)
@@ -275,4 +328,30 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
         if not result:
             return Response({"error":"Certificate not found"},status=404)
         return Response(result)
+    
+    # @action(detail=True, methods=["get"])
+    # def download(self, request, certificate_id=None):
+    #     certificate = self.get_object()
+
+    #     if not certificate.certificate_file:
+    #        generate_certificate_file(certificate)
+    #     return FileResponse(
+    #         certificate.certificate_file.open("rb"),
+    #         as_attachment=True,
+    #         filename=f"certificate_{certificate.certificate_id}.pdf"
+    #     )
+
+    @action(detail=True, methods=["get"])
+    def download(self, request, certificate_id=None):
+        certificate = self.get_object()
+
+        if not certificate.certificate_file:
+            return Response({"error": "Certificate file not found"}, status=404)
+
+        storage = MediaCloudinaryStorage()
+        public_id = certificate.certificate_file.name.replace("media/", "") 
+        url = storage.url(public_id) 
+
+        return Response({"download_url": url})
+
     

@@ -16,6 +16,7 @@ const InstructorCourses = () => {
   const [page,setPage] = useState(1);
   const [count,setCount] = useState(0);
   const [isLoading,setIsLoading] = useState(false);
+  const [submittingId,setSubmittingId] = useState(null);
 
   const navigate = useNavigate();
   
@@ -70,13 +71,18 @@ const InstructorCourses = () => {
   };
 
   const handleSubmitForReview = async (courseId) => {
+      if (submittingId === courseId) return;
       if (!window.confirm("Submit course for admin review?")) return;
 
       try {
+        setSubmittingId(courseId)
         await axiosInstance.post(`/instructor/courses/${courseId}/submit/`);
+        toast.success("Coure submitted for review")
         fetchCourses(); 
       } catch (err) {
-        alert(err.response?.data?.detail || "Failed to submit");
+        toast.error(err.response?.data?.detail || "Failed to submit");
+      } finally {
+        setSubmittingId(null);
       }
     };
 
@@ -140,7 +146,9 @@ const InstructorCourses = () => {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-20">Loading courses...</div>
+        <div className="flex justify-center py-20">
+          <span className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full"></span>
+        </div>
       ) : filteredCourses.length === 0 ? (
         <div className="text-center py-20">No courses found</div>
       ) : (
@@ -199,10 +207,15 @@ const InstructorCourses = () => {
 
                 {["draft", "rejected"].includes(course.status) && (
                   <button
+                    disabled={submittingId === course.id}
                     onClick={() => handleSubmitForReview(course.id)}
-                    className="px-3 py-1 bg-yellow-500 text-white rounded"
+                    className={`px-3 py-1 rounded text-white
+                      ${submittingId === course.id
+                        ? "bg-yellow-300 cursor-not-allowed"
+                        : "bg-yellow-500"}
+                    `}
                   >
-                    Submit for Review
+                    {submittingId === course.id ? "Submitting..." : "Submit for Review"}
                   </button>
                 )}
 

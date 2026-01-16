@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import { Users, Star, Clock, BookOpen } from "lucide-react";
-import CourseChat from "../../components/user/CourseChat";
+import CourseProgressBar from "../../components/student/CourseProgressBar";
 import { extractResults } from "../../api/api";
 
 const MyCourses = () => {
@@ -14,7 +14,15 @@ const MyCourses = () => {
     const fetchEnrolledCourses = async () => {
       try {
         const res = await axiosInstance.get("/payment/purchase/");
-        setCourses(extractResults(res));
+        const purchases = extractResults(res);
+
+        const coursesWithDetails = await Promise.all(
+          purchases.map(async (p)=>{
+            const courseRes = await axiosInstance.get(`/users/my-courses/${p.course.id}/`);
+            return courseRes.data;
+          })
+        )
+        setCourses(coursesWithDetails);
       } catch (err) {
         console.error("Failed to fetch enrolled courses", err);
       } finally {
@@ -85,6 +93,17 @@ const MyCourses = () => {
                 </div>
               </div>
 
+              <CourseProgressBar
+                percentage={course.progress_percentage ?? 0}
+              />
+
+              <button
+                onClick={() => navigate(`/student/mycourses/${course.id}`)}
+                className="mt-4 w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700"
+              >
+                View Course
+              </button>
+
               <button
                 onClick={() => navigate(`/courses`)}
                 className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-md flex items-center justify-center gap-2 hover:bg-indigo-700 transition"
@@ -93,9 +112,6 @@ const MyCourses = () => {
                 Continue Learning
               </button>
 
-              <div className="mt-4">
-                <CourseChat courseId={course.id} />
-              </div>
             </div>
           </div>
         ))}

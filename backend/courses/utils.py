@@ -24,7 +24,7 @@ def generate_certificate_file(certificate:CourseCertificate):
     p.setFont("Helvetica", 14)
     p.drawCentredString(300, 700, f"This is to certify that")
     p.setFont("Helvetica-Bold", 16)
-    p.drawCentredString(300, 675, certificate.student.get_full_name())
+    p.drawCentredString(300, 675, certificate.student.username)
     p.setFont("Helvetica", 14)
     p.drawCentredString(300, 650, f"has successfully completed the course")
     p.setFont("Helvetica-Bold", 16)
@@ -62,9 +62,8 @@ def issue_certificate_if_eligible(student, course):
         return
 
     # If course is paid, ensure it's purchased
-    if not course.is_free:
-        if not CoursePurchase.objects.filter(student=student, course=course, is_paid=True).exists():
-            return
+    if not CoursePurchase.objects.filter(student=student, course=course).exists():
+        return
 
     # All checks passed — issue certificate
     certificate = CourseCertificate.objects.create(student=student, course=course, issued_at=timezone.now(), certificate_id= generate_certificate_id())
@@ -74,7 +73,7 @@ def verify_certificate(certificate_id:str):
     try:
         cert = CourseCertificate.objects.get(certificate_id=certificate_id)
         return {
-            "student" : cert.student.get_full_name(),
+            "student" : cert.student.username,
             "course" : cert.course.title,
             "issued_at" : cert.issued_at,
             "certificate_url" : cert.certificate_file.url if cert.certificate_file else None,            

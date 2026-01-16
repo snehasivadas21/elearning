@@ -17,11 +17,15 @@ const getEmbedUrl = (url) => {
 };
 
 const LessonPreview = ({ lesson }) => {
-  if (lesson.content_type === "video" && lesson.content_url) {
+  if (
+    lesson.content_type === "video" &&
+    lesson.video_source === "youtube" &&
+    lesson.video_url
+  ) {
     return (
       <div className="mt-3 aspect-video w-full max-w-xl">
         <iframe
-          src={getEmbedUrl(lesson.content_url)}
+          src={getEmbedUrl(lesson.video_url)}
           className="w-full h-full rounded border"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -31,10 +35,25 @@ const LessonPreview = ({ lesson }) => {
     );
   }
 
-  if (lesson.content_type === "text" && lesson.content_url) {
+  if (
+    lesson.content_type === "video" &&
+    lesson.video_source === "upload" &&
+    lesson.video_url
+  ) {
+    return (
+      <video
+        src={lesson.video_url}
+        controls
+        preload="metadata"
+        className="mt-3 w-full max-w-xl rounded border"
+      />
+    );
+  }
+
+  if (lesson.content_type === "text" && lesson.text_content) {
     return (
       <p className="mt-2 text-sm text-gray-700 whitespace-pre-line">
-        {lesson.content_url}
+        {lesson.text_content}
       </p>
     );
   }
@@ -51,9 +70,8 @@ const CourseDetail = ({ course }) => {
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
 
-      {/* LEFT */}
       <div className="md:col-span-2">
-        {/* Image */}
+        
         <div className="relative mb-4">
           <img
             src={course.course_image}
@@ -83,7 +101,7 @@ const CourseDetail = ({ course }) => {
         </div>
         
         <div className="text-2xl font-bold">
-            {course.price === 0 ? "Free" : `₹${course.price}`}
+            ₹{course.price}
         </div>
 
         <div className="mt-4 flex items-center gap-4 text-lg text-gray-500">
@@ -109,10 +127,8 @@ const CourseDetail = ({ course }) => {
           ))}
         </div>
 
-        {/* TAB CONTENT */}
         <div className="mt-6 bg-white rounded-xl border shadow p-6">
 
-          {/* CURRICULUM */}
           {activeTab === "curriculum" && (
             <>
               <h2 className="text-lg font-bold mb-4">Course Curriculum</h2>
@@ -132,18 +148,9 @@ const CourseDetail = ({ course }) => {
                           <div className="flex justify-between items-center">
                             <span>
                               {i + 1}. {lesson.title}
-                              {lesson.is_preview && (
-                                <span className="ml-2 text-xs text-yellow-700 font-semibold">
-                                  PREVIEW
-                                </span>
-                              )}
-                            </span>
-                            <span className="text-sm text-gray-400">
-                              {lesson.content_type}
                             </span>
                           </div>
 
-                          {/* PREVIEW CONTENT */}
                           <LessonPreview lesson={lesson} />
 
                           {lesson.is_preview && lesson.content_type === "text" && (
@@ -152,7 +159,6 @@ const CourseDetail = ({ course }) => {
                             </p>
                           )}
 
-                          {/* RESOURCES */}
                           {lesson.resources?.length > 0 && (
                             <ul className="mt-2 text-sm text-gray-600">
                               {lesson.resources.map((res) => (
@@ -179,7 +185,6 @@ const CourseDetail = ({ course }) => {
             </>
           )}
 
-          {/* INSTRUCTOR */}
           {activeTab === "instructor" && (
             <>
               <h2 className="text-lg font-bold mb-4">Instructor</h2>
@@ -199,7 +204,6 @@ const CourseDetail = ({ course }) => {
             </>
           )}
 
-          {/* REVIEWS */}
           {activeTab === "reviews" && (
             <>
               <h2 className="text-lg font-bold mb-4">Reviews</h2>

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import (Course,CourseCategory,Module, Lesson,LessonResource,LessonProgress,CourseCertificate)
 from django.db import transaction
 from users.serializers import ProfileSerializer
+from .utils import get_course_progress
 
 class CourseCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,20 +35,20 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
             return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        validated_data.pop('instructor', None)
-        validated_data.pop('status', None)
+        request = self.context['request']
+        user = request.user
+
+        if instance.status == 'submitted':
+            raise serializers.ValidationError("Cannot edit course while under review.")
 
         if instance.status == 'approved':
-            instance.is_published = False
-            instance.status = 'submitted'
-            instance.save(update_fields=['status','is_published'])
+            for field in ['title', 'description', 'category', 'level', 'price', 'course_image']:
+                validated_data.pop(field, None)
         return super().update(instance, validated_data) 
 
     def get_instructor_profile(self, obj):
         profile = getattr(obj.instructor, "profile", None)
-        if not profile:
-            return None
-        return ProfileSerializer(profile).data
+        return ProfileSerializer(profile).data if profile else None
 class LessonResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonResource  
@@ -62,11 +63,55 @@ class LessonResourceSerializer(serializers.ModelSerializer):
              
 
 class LessonSerializer(serializers.ModelSerializer):
-    resources = LessonResourceSerializer(many=True,read_only=True)
+    resources = LessonResourceSerializer(many=True, read_only=True)
+    completed = serializers.SerializerMethodField()
+
     class Meta:
         model = Lesson
-        fields = ['id','module','title','content_type','content_url','video_file','order','is_preview','is_active','created_at','updated_at','resources']
-        read_only_fields = ['created_at','updated_at']    
+        fields = [
+            'id', 'module', 'title', 'content_type',
+            'video_source', 'video_url',
+            'text_content', 'order',
+            'is_preview', 'is_active',
+            'created_at', 'updated_at',
+            'resources', 'completed',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def validate(self, data):
+        content_type = data.get('content_type')
+        video_source = data.get('video_source')
+        video_url = data.get('video_url')
+        text_content = data.get('text_content')
+
+        if content_type == 'video':
+            if video_source not in ['youtube', 'cloud']:
+                raise serializers.ValidationError({
+                    "video_source": "Video source must be youtube or cloud"
+                })
+
+            if not video_url:
+                raise serializers.ValidationError({
+                    "video_url": "Video URL is required for video lessons"
+                })
+
+        if content_type == 'text' and not text_content:
+            raise serializers.ValidationError({
+                "text_content": "Text content is required for text lessons"
+            })
+
+        return data
+    
+    def get_completed(self, lesson):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+
+        return LessonProgress.objects.filter(
+            student=request.user,
+            lesson=lesson,
+            completed=True
+        ).exists()
 
 class ModuleSerializer(serializers.ModelSerializer):
     lessons = serializers.SerializerMethodField()
@@ -88,7 +133,7 @@ class ModuleSerializer(serializers.ModelSerializer):
 
     def get_lessons(self, obj):
         lessons = obj.lessons.filter(is_deleted=False)
-        return LessonSerializer(lessons, many=True).data
+        return LessonSerializer(lessons, many=True, context=self.context).data
     
 class AdminCourseSerializer(serializers.ModelSerializer):
     instructor_username = serializers.CharField(source='instructor.username', read_only=True)
@@ -119,6 +164,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
     course_image = serializers.ImageField(required=False, use_url=True)
     modules = serializers.SerializerMethodField()
     instructor_profile = serializers.SerializerMethodField()
+    progress_percentage = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -134,6 +180,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
             "category_name",
             "modules",
             "instructor_profile",
+            "progress_percentage",
         ]
 
     def get_modules(self, obj):
@@ -148,11 +195,18 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
         if not profile:
             return None
         return ProfileSerializer(profile).data
+    
+    def get_progress_percentage(self, obj):
+        request = self.context.get('request', None)
+        if request and request.user.is_authenticated:
+            return get_course_progress(request.user, obj)
+        return None
+
 class LessonProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonProgress 
         fields = ['id','student','lesson','completed','completed_at'] 
-        read_only_fields = fields
+        read_only_fields = ['id','studet','lesson']
 
 class CertificateSerializer(serializers.ModelSerializer):
     class Meta:

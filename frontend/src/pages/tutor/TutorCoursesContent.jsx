@@ -5,6 +5,7 @@ import { extractResults } from "../../api/api";
 import ModuleModal from "../../components/tutor/ModuleModal";
 import LessonModal from "../../components/tutor/LessonModal";
 
+
 const getEmbedUrl = (url) => {
   if (!url) return "";
 
@@ -19,12 +20,17 @@ const getEmbedUrl = (url) => {
   return url;
 };
 
+
 const LessonPreview = ({ lesson }) => {
-  if (lesson.content_type === "video" && lesson.content_url) {
+  if (
+    lesson.content_type === "video" &&
+    lesson.video_source === "youtube" &&
+    lesson.video_url
+  ) {
     return (
       <div className="mt-3 aspect-video w-full max-w-xl">
         <iframe
-          src={getEmbedUrl(lesson.content_url)}
+          src={getEmbedUrl(lesson.video_url)}
           className="w-full h-full rounded border"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -34,10 +40,25 @@ const LessonPreview = ({ lesson }) => {
     );
   }
 
-  if (lesson.content_type === "text" && lesson.content_url) {
+  if (
+    lesson.content_type === "video" &&
+    lesson.video_source === "upload" &&
+    lesson.video_url
+  ) {
+    return (
+      <video
+        src={lesson.video_url}
+        controls
+        preload="metadata"
+        className="mt-3 w-full max-w-xl rounded border"
+      />
+    );
+  }
+
+  if (lesson.content_type === "text" && lesson.text_content) {
     return (
       <p className="mt-2 text-sm text-gray-700 whitespace-pre-line">
-        {lesson.content_url}
+        {lesson.text_content}
       </p>
     );
   }
@@ -46,14 +67,17 @@ const LessonPreview = ({ lesson }) => {
 };
 
 const InstructorCourseContent = () => {
-  const { id: courseId } = useParams(); 
+  const { id: courseId } = useParams();
+
   const [modules, setModules] = useState([]);
   const [showModuleModal, setShowModuleModal] = useState(false);
   const [selectedModule, setSelectedModule] = useState(null);
+
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState(null);
 
-   const fetchModules = async () => {
+
+  const fetchModules = async () => {
     try {
       const res = await axiosInstance.get(`/modules/?course=${courseId}`);
       setModules(extractResults(res));
@@ -65,6 +89,7 @@ const InstructorCourseContent = () => {
   useEffect(() => {
     fetchModules();
   }, [courseId]);
+
 
   const handleAddModule = () => {
     setSelectedModule(null);
@@ -90,7 +115,7 @@ const InstructorCourseContent = () => {
 
   const handleEditLesson = (module, lesson) => {
     setSelectedModule(module);
-    setSelectedLesson(lesson)
+    setSelectedLesson(lesson);
     setShowLessonModal(true);
   };
 
@@ -137,7 +162,9 @@ const InstructorCourseContent = () => {
               </div>
             </div>
 
-            <p className="text-sm text-gray-600 mb-3">{mod.description}</p>
+            <p className="text-sm text-gray-600 mb-3">
+              {mod.description}
+            </p>
 
             <button
               onClick={() => handleAddLesson(mod)}
@@ -165,8 +192,15 @@ const InstructorCourseContent = () => {
                       <h5 className="font-medium">
                         {lesson.title}{" "}
                         <span className="text-xs text-gray-500">
-                          ({lesson.content_type})
+                          (
+                          {lesson.content_type === "video"
+                            ? lesson.video_source === "youtube"
+                              ? "YouTube Video"
+                              : "Uploaded Video"
+                            : "Text"}
+                          )
                         </span>
+
                         {lesson.is_preview && (
                           <span className="ml-2 text-xs font-semibold text-yellow-700">
                             PREVIEW
