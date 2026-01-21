@@ -2,7 +2,12 @@ import { useState } from "react";
 import axiosInstance from "../../api/axiosInstance"
 
 const CourseChat = ({ courseId }) => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      role: "ai",
+      content: "Hi! I’m your course assistant. Ask me anything from this course."
+    }
+  ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 

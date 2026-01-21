@@ -45,10 +45,12 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
             for field in ['title', 'description', 'category', 'level', 'price', 'course_image']:
                 validated_data.pop(field, None)
         return super().update(instance, validated_data) 
-
+    
     def get_instructor_profile(self, obj):
         profile = getattr(obj.instructor, "profile", None)
-        return ProfileSerializer(profile).data if profile else None
+        if not profile:
+            return None
+        return ProfileSerializer(profile).data
 class LessonResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonResource  

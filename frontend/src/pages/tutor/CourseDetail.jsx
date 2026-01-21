@@ -37,7 +37,7 @@ const LessonPreview = ({ lesson }) => {
 
   if (
     lesson.content_type === "video" &&
-    lesson.video_source === "upload" &&
+    lesson.video_source === "cloud" &&
     lesson.video_url
   ) {
     return (
@@ -64,6 +64,7 @@ const LessonPreview = ({ lesson }) => {
 const CourseDetail = ({ course }) => {
   const [activeTab, setActiveTab] = useState("curriculum");
   const modules = course?.modules || [];
+  const instructor = course?.instructor_profile || null;
 
   if (!course) return null;
 
@@ -106,7 +107,6 @@ const CourseDetail = ({ course }) => {
 
         <div className="mt-4 flex items-center gap-4 text-lg text-gray-500">
           <span>⭐ {course.rating || "4.5"} (12,000 students)</span>
-          <span>⏱ {course.duration || "15 hours"}</span>
           <span>🌍 English</span>
         </div>
 
@@ -164,14 +164,19 @@ const CourseDetail = ({ course }) => {
                               {lesson.resources.map((res) => (
                                 <li key={res.id}>
                                   📄 {res.title} –{" "}
-                                  <a
-                                    href={res.file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 underline"
+                                  <button
+                                    onClick={() => {
+                                      const link = document.createElement('a');
+                                      link.href = res.file + '?fl_attachment';  
+                                      link.download = res.title || 'resource';
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                    }}
+                                    className="text-blue-600 underline bg-transparent border-none cursor-pointer"
                                   >
                                     Download
-                                  </a>
+                                </button>
                                 </li>
                               ))}
                             </ul>
@@ -190,15 +195,16 @@ const CourseDetail = ({ course }) => {
               <h2 className="text-lg font-bold mb-4">Instructor</h2>
               <div className="flex items-center gap-4">
                 <img
-                  src={course.instructor?.profile_image || "/avatar.png"}
+                  src={instructor?.profile_image || "/avatar.png"}
                   className="w-16 h-16 rounded-full object-cover"
                 />
                 <div>
-                  <h1 className="text-xl font-bold">{course.instructor?.full_name}</h1>
-                  <p className="text-xl font-bold">{course.instructor?.headline}</p>
+                  <h1 className="text-xl font-bold">{instructor?.full_name}</h1>
+                  <p className="text-xl font-bold">{instructor?.headline}</p>
                   <p className="text-gray-600 text-sm">
-                    {course.instructor?.bio || "No bio available."}
+                    {instructor?.bio || "No bio available."}
                   </p>
+                  <p className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm border">{instructor?.skills}</p>
                 </div>
               </div>
             </>

@@ -16,6 +16,7 @@ services:
     depends_on:
       - db
       - redis
+      - ollama
 
   db:
     image: pgvector/pgvector:pg15
@@ -42,7 +43,8 @@ services:
       - ./backend/.env
     depends_on:
       - redis
-      - backend    
+      - backend  
+      - ollama  
 
   redis:
     image: redis:7
@@ -50,5 +52,14 @@ services:
     ports:
       - "6379:6379"
 
+  ollama:
+    image: ollama/ollama
+    container_name: pytech-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama    
+
 volumes:
   postgres_data:
+  ollama_data:

@@ -1,25 +1,32 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import { extractResults } from "../../api/api";
+import Pagination from "../../components/ui/Pagination";
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
+
+  const totalPages = Math.ceil(count / 10); 
 
   const fetchOrders = async () => {
     const res = await axiosInstance.get("/admin/orders/", {
       params: {
         status: status || undefined,
         search: search || undefined,
+        page,
       },
     });
     setOrders(extractResults(res));
+    setCount(res.data.count)
   };
 
   useEffect(() => {
     fetchOrders();
-  }, [status, search]);
+  }, [status, search, page]);
 
   return (
     <div className="p-6">
@@ -101,6 +108,11 @@ const AdminOrders = () => {
           </tbody>
         </table>
       </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
+      />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import CategoryModal from "../../components/admin/CategoryModal";
 import { extractResults } from "../../api/api";
+import Pagination from "../../components/ui/Pagination";
 
 const AdminCategories = () => {
   const [categories, setCategories] = useState([]);
@@ -9,19 +10,24 @@ const AdminCategories = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("Add");
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  const totalPages = Math.ceil(count / 10); 
 
   const fetchCategories = async () => {
     try {
-      const res = await axiosInstance.get("/categories/");
+      const res = await axiosInstance.get("/categories/",{params:{page}});
       setCategories(extractResults(res));
+      setCount(res.data.count)
     } catch (err) {
       console.error("Error fetching categories:", err);
     }
   };
+
+  useEffect(() => {
+    fetchCategories();
+  }, [page]);
 
   const handleAdd = () => {
     setSelectedCategory(null);
@@ -141,6 +147,11 @@ const AdminCategories = () => {
         onSubmit={handleModalSubmit}
         category={selectedCategory}
         mode={modalMode}
+      />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
       />
     </div>
   );

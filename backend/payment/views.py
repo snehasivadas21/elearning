@@ -92,7 +92,64 @@ class CreateRazorpayOrder(APIView):
             "course_id" : course.id,
             "key" : settings.RAZORPAY_KEY_ID
         })
-    
+
+class RetryRazorpayOrder(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsStudentUser]
+
+    def post(self, request):
+        old_order_id = request.data.get("order_id")
+
+        if not old_order_id:
+            return Response({"error": "order_id required"}, status=400)
+
+        try:
+            old_order = Order.objects.get(
+                order_id=old_order_id,
+                student=request.user
+            )
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found"}, status=404)
+
+        if CoursePurchase.objects.filter(
+            student=request.user,
+            course=old_order.course
+        ).exists():
+            return Response({"error": "Course already purchased"}, status=400)
+
+        Order.objects.filter(
+            student=request.user,
+            course=old_order.course
+        ).exclude(status="completed").update(status="failed")
+
+        amount_paise = int(old_order.amount * 100)
+
+        try:
+            razorpay_order = razorpay_client.order.create({
+                "amount": amount_paise,
+                "currency": "INR",
+                "payment_capture": 1
+            })
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=500
+            )
+
+        new_order = Order.objects.create(
+            student=request.user,
+            course=old_order.course,
+            order_id=razorpay_order["id"],
+            amount=old_order.amount,
+            status="pending"
+        )
+
+        return Response({
+            "razorpay_order_id": new_order.order_id,
+            "amount": amount_paise,
+            "currency": "INR",
+            "course_id": old_order.course.id,
+            "key": settings.RAZORPAY_KEY_ID
+        })
 
 class VerifyRazorpayPayment(APIView):
     permission_classes = [permissions.IsAuthenticated,IsStudentUser]
@@ -115,12 +172,13 @@ class VerifyRazorpayPayment(APIView):
             order = Order.objects.select_for_update().get(order_id=order_id, student=request.user)
 
             if order.status == 'completed':
-                return Response({"message":"Already processed"})
+                return Response({
+                    "message":"Already processed",
+                    "course_id":order.course.id})
 
-            purchase = CoursePurchase.objects.create(
+            purchase,created = CoursePurchase.objects.get_or_create(
                 student=request.user,
                 course=order.course,
-                order=order
             )
             
             order.purchase = purchase
@@ -128,15 +186,24 @@ class VerifyRazorpayPayment(APIView):
             order.status = 'completed'
             order.save()
 
-            invoice = Invoice.objects.create(
+            Order.objects.filter(
                 student = request.user,
-                purchase =  purchase,
-                invoice_number = generate_invoice_number(),
-            ) 
-            pdf_url = create_invoice_pdf(invoice)
-            invoice.pdf_file = pdf_url
-            invoice.save()
+                course = order.course
+            ).exclude(id=order.id).update(status="failed")
 
+            invoice, inv_created = Invoice.objects.get_or_create(
+                purchase=purchase,
+                defaults={
+                    "student": request.user,
+                    "invoice_number": generate_invoice_number()
+                }
+            )
+
+            if inv_created:
+                pdf_url = create_invoice_pdf(invoice)
+                invoice.pdf_file = pdf_url
+                invoice.save()
+                
         return Response({
             "message":"Payment success & invoice generated",
             "course_id":order.course.id,

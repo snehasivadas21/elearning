@@ -42,7 +42,7 @@ const LessonPreview = ({ lesson }) => {
 
   if (
     lesson.content_type === "video" &&
-    lesson.video_source === "upload" &&
+    lesson.video_source === "cloud" &&
     lesson.video_url
   ) {
     return (
@@ -69,13 +69,29 @@ const LessonPreview = ({ lesson }) => {
 const InstructorCourseContent = () => {
   const { id: courseId } = useParams();
 
+  const [course, setCourse] = useState(null)
+
   const [modules, setModules] = useState([]);
   const [showModuleModal, setShowModuleModal] = useState(false);
   const [selectedModule, setSelectedModule] = useState(null);
 
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState(null);
+  
+  const isSubmitted = course?.status === "submitted";
+  const isApproved = course?.status === "approved";
 
+  const canAddContent = course?.status === "draft" || isApproved;
+  const canEditContent = course?.status === "draft";
+
+  const fetchCourse = async () => {
+    try {
+      const res = await axiosInstance.get(`/instructor/courses/${courseId}/`);
+      setCourse(res.data);
+    } catch (err) {
+      console.error("Failed to load course", err);
+    }
+  };
 
   const fetchModules = async () => {
     try {
@@ -87,6 +103,7 @@ const InstructorCourseContent = () => {
   };
 
   useEffect(() => {
+    fetchCourse();
     fetchModules();
   }, [courseId]);
 
@@ -129,12 +146,29 @@ const InstructorCourseContent = () => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-purple-600">Course Content</h2>
+        
+        {isSubmitted && (
+          <div className="mb-4 rounded border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
+            🔒 Course is under review. Editing is disabled.
+          </div>
+        )}
+
+        {isApproved && (
+          <div className="mb-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-800">
+            ✅ Course is live. You can add new content, but existing content is locked.
+          </div>
+        )}
+
         <button
           onClick={handleAddModule}
-          className="bg-purple-600 text-white px-4 py-2 rounded"
+          disabled={!canAddContent}
+          className={`px-4 py-2 rounded text-white ${
+            canAddContent ? "bg-purple-600" : "bg-gray-400 cursor-not-allowed"
+          }`}
         >
           + Add Module
         </button>
+
       </div>
 
       {modules.length === 0 && (
@@ -146,20 +180,23 @@ const InstructorCourseContent = () => {
           <div key={mod.id} className="border rounded-lg p-4 bg-white">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-lg font-semibold">{mod.title}</h3>
-              <div className="space-x-2">
-                <button
-                  onClick={() => handleEditModule(mod)}
-                  className="text-blue-600 hover:underline"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteModule(mod.id)}
-                  className="text-red-600 hover:underline"
-                >
-                  Delete
-                </button>
-              </div>
+              {canEditContent && (
+                <div className="space-x-2">
+                  <button
+                    onClick={() => handleEditModule(mod)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteModule(mod.id)}
+                    className="text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+
             </div>
 
             <p className="text-sm text-gray-600 mb-3">
@@ -168,10 +205,14 @@ const InstructorCourseContent = () => {
 
             <button
               onClick={() => handleAddLesson(mod)}
-              className="mb-4 bg-gray-200 px-3 py-1 rounded text-sm"
+              disabled={!canAddContent}
+              className={`mb-4 px-3 py-1 rounded text-sm ${
+                canAddContent ? "bg-gray-200" : "bg-gray-300 cursor-not-allowed"
+              }`}
             >
               + Add Lesson
             </button>
+
 
             {mod.lessons?.length === 0 && (
               <p className="text-sm text-gray-400">No lessons yet.</p>
@@ -229,20 +270,23 @@ const InstructorCourseContent = () => {
                       )}
                     </div>
 
-                    <div className="ml-4 space-y-1 text-sm">
-                      <button
-                        onClick={() => handleEditLesson(mod, lesson)}
-                        className="block text-blue-600 hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteLesson(lesson.id)}
-                        className="block text-red-600 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                    {canEditContent && (
+                      <div className="ml-4 space-y-1 text-sm">
+                        <button
+                          onClick={() => handleEditLesson(mod, lesson)}
+                          className="block text-blue-600 hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteLesson(lesson.id)}
+                          className="block text-red-600 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+
                   </div>
                 </li>
               ))}

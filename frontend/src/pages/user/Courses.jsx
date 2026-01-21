@@ -136,10 +136,6 @@ const CourseListPage = () => {
                   <Users className="w-4 h-4" />
                   {course.students_count ?? "10,000"}
                 </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  {course.duration ?? "12h"}
-                </div>
               </div>
 
               <div className="text-gray-900 font-bold text-xl">

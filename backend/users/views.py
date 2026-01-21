@@ -135,19 +135,6 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     authentication_classes=[]
     serializer_class = CustomTokenObtainPairSerializer 
 
-    # def post(self, request, *args, **kwargs):
-    #     try:
-    #         return super().post(request, *args, **kwargs)
-    #     except PermissionDenied as e:
-    #         return Response({
-    #             'error': str(e),
-    #             'blocked': True
-    #         }, status=status.HTTP_403_FORBIDDEN)
-    #     except AuthenticationFailed as e:
-    #         return Response({
-    #             'error': str(e)
-    #         }, status=status.HTTP_401_UNAUTHORIZED) 
-
 class GoogleLoginView(APIView):
     permission_classes =[AllowAny]
 
@@ -205,6 +192,10 @@ class GoogleLoginView(APIView):
             email=email,
         ) 
 
+        if created:
+            user.username = name or email.split("@")[0]
+            user.save()
+
         print(f"✓ User {'created' if created else 'found'}: {email}")
 
         if not user.is_active:
@@ -217,6 +208,10 @@ class GoogleLoginView(APIView):
             )
 
         refresh = RefreshToken.for_user(user)
+
+        refresh["username"] = user.username or user.email.split("@")[0]
+        refresh["email"] = user.email
+        refresh["role"] = getattr(user, "role", "student")
 
         return Response({
             "access":str(refresh.access_token),
@@ -241,7 +236,7 @@ class ApprovedCourseListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
     filterset_fields = ['category','level']
-    search_fields = ['title','description']
+    search_fields = ['title']
     ordering_fields = ['price','title']
     ordering = ['title']
 class ApprovedCourseDetailView(generics.RetrieveAPIView):

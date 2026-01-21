@@ -71,15 +71,11 @@ const UserCourseDetail = () => {
             });
             toast.success("Payment successful! Course unlocked.");
             setIsEnrolled(true);
-            navigate(`/mycourses/${course.id}`)
+            navigate(`/student/mycourses/${course.id}`)
           } catch (err) {
             console.error("Verification failed", err);
             toast.error("Payment verification failed.");
           }
-        },
-        prefill: {
-          name: "Student",
-          email: "student@example.com",
         },
         theme: {
           color: "#6366f1",
@@ -130,8 +126,7 @@ const UserCourseDetail = () => {
 
         
         <div className="mt-6 text-sm text-gray-600 space-y-2">
-          <div>📺 {course.duration || "15 hours"} on-demand video</div>
-          <div>📄 8 downloadable resources</div>
+          <div>📄 downloadable resources</div>
           <div>📜 Certificate of completion</div>
           <div>🔒 Full lifetime access</div>
           <div>📱 Access on mobile and TV</div>
