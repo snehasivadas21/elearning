@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import { extractResults } from "../../api/api";
+import Pagination from "../../components/ui/Pagination";
 
 const TutorOrders = () => {
   const [orders, setOrders] = useState([]);
   const [search,setSearch] = useState("");
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
+
+  const totalPages = Math.ceil(count / 10); 
 
   const fetchOrders = async () => {
     try {
       const res = await axiosInstance.get(`/tutor/orders/`,{
         params:{
           search:search || undefined,
+          page,
         }
       });
       setOrders(extractResults(res));
+      setCount(res.data.count)
     } catch (err) {
       console.error("Failed to load tutor orders", err);
     }
@@ -21,7 +28,7 @@ const TutorOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  },[search]);
+  },[search,page]);
 
   return (
     <div className="p-6">
@@ -76,6 +83,11 @@ const TutorOrders = () => {
           </tbody>
         </table>
       </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
+      />
     </div>
   );
 };

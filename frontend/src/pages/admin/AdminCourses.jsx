@@ -2,27 +2,33 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance"; 
 import { extractResults } from "../../api/api";
 import { useNavigate } from "react-router-dom";
+import Pagination from "../../components/ui/Pagination";
 
 const AdminCourses = () => {
   const [courses, setCourses] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchStatus, setSearchStatus] = useState("");
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
+
+  const totalPages = Math.ceil(count / 10); 
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
-
   const fetchCourses = async () => {
     try {
-      const res = await axiosInstance.get("/admin/courses/"); 
+      const res = await axiosInstance.get("/admin/courses/",{params:{page}}); 
       setCourses(extractResults(res));
+      setCount(res.data.count);
     } catch (err) {
       console.error("Error fetching courses:", err);
       setCourses([])
     }
   };
+
+  useEffect(() => {
+    fetchCourses();
+  }, [page]);
 
   const toggleActive = async(course)=>{
     if (!window.confirm("Change course active status?")) return;
@@ -129,6 +135,11 @@ const AdminCourses = () => {
           </tbody>
         </table>
       </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
+      />
     </div>
   );
 };

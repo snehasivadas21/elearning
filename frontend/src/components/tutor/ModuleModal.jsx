@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const ModuleModal = ({ show, onClose, onSubmit, mode = "Add", moduleData = null }) => {
+const ModuleModal = ({ show, onClose, onSubmit, moduleData = null }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -65,7 +65,7 @@ const ModuleModal = ({ show, onClose, onSubmit, mode = "Add", moduleData = null 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
       <div className="bg-white p-6 rounded-lg shadow-lg w-[450px]">
-        <h3 className="text-xl font-bold mb-4">{mode} Module</h3>
+        <h3 className="text-xl font-bold mb-4">{moduleData ? "Edit Module" : "Add Module"}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             name="title"

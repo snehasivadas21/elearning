@@ -19,6 +19,8 @@ const InstructorCourses = () => {
   const [submittingId,setSubmittingId] = useState(null);
 
   const navigate = useNavigate();
+
+  const totalPages = Math.ceil(count / 10); 
   
   const fetchCourses = async () => {
     setIsLoading(true);
@@ -227,12 +229,6 @@ const InstructorCourses = () => {
                 </button>
                 
               </div>
-
-              {course.status === "rejected" && course.admin_feedback && (
-                <p className="mt-3 text-sm text-red-600">
-                  Feedback: {course.admin_feedback}
-                </p>
-              )}
             </div>
           ))}
         </div>
@@ -248,7 +244,11 @@ const InstructorCourses = () => {
         />
       )}
 
-      <Pagination page={page} setPage={setPage} count={count} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
+      />
     </div>
   );
 };

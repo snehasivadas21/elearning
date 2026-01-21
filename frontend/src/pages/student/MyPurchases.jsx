@@ -1,17 +1,78 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import { extractResults } from "../../api/api";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import Pagination from "../../components/ui/Pagination";
 
 const MyPurchases = () => {
   const [orders, setOrders] = useState([]);
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
+  const [retryingId, setRetryingId] = useState(null);
+
+  const totalPages = Math.ceil(count / 10); 
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const res = await axiosInstance.get("/payment/orders/");
+      const res = await axiosInstance.get("/payment/orders/",{params:{page}});
       setOrders(extractResults(res));
+      setCount(res.data.count);
     };
     fetchOrders();
-  }, []);
+  }, [page]);
+
+  const handleRetry = async (order) => {
+    if (retryingId) return;
+    try {
+      setRetryingId(order.order_id);
+
+      const res = await axiosInstance.post(
+        "payment/retry-order/",
+        { order_id: order.order_id }
+      );
+
+      const { key, amount, currency, razorpay_order_id } = res.data;
+
+      const options = {
+        key,
+        amount,
+        currency,
+        name: "PyTech",
+        description: order.course.title,
+        order_id: razorpay_order_id,
+
+        handler: async function (response) {
+          try {
+            await axiosInstance.post("payment/verify-payment/", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            toast.success("Payment successful");
+            navigate(`/student/mycourses/${order.course.id}`);
+          } catch {
+            toast.error("Payment verification failed");
+          } finally {
+            setRetryingId(null);
+          }
+        },
+        modal:{
+          ondismiss:()=>setRetryingId(null),
+        }
+      };
+
+      new window.Razorpay(options).open();
+
+    } catch (err) {
+      console.error("Retry error:", err.response?.data); 
+      toast.error(err.response?.data?.error || "Retry failed");
+      setRetryingId(null);
+    }
+  };
+
 
   const downloadInvoice = async (invoiceId) => {
     if (!invoiceId) return;
@@ -91,9 +152,13 @@ const MyPurchases = () => {
                     </button>
                   )}
 
-                  {o.status === "pending" && (
-                    <button className="bg-yellow-500 text-white px-3 py-1 rounded">
-                      Retry
+                  {o.status !== "completed" && (
+                    <button
+                      disabled={retryingId === o.id}
+                      onClick={() => handleRetry(o)}
+                      className="px-3 py-1 bg-yellow-500 text-white rounded"
+                    >
+                      Retry Payment
                     </button>
                   )}
 
@@ -109,6 +174,11 @@ const MyPurchases = () => {
 
         </table>
       </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
+      />
     </div>
   );
 };

@@ -44,7 +44,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
       setFormData({
         title: lessonData.title || "",
         content_type: lessonData.content_type || "video",
-        video_source: lessonData.video_source || "youtube",
+        video_source: lessonData.video_source === "cloud" ? "upload" : lessonData.video_source || "youtube",
         video_url: lessonData.video_url || "",
         video_file: null,
         text_content: lessonData.text_content || "",
@@ -114,7 +114,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
         alert("Video URL is required");
         return;
       }
-      if (formData.video_source === "upload" && !formData.video_file) {
+      if (formData.video_source === "cloud" && !formData.video_file) {
         alert("Please upload a video file");
         return;
       }
@@ -130,7 +130,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
 
       let finalVideoUrl = formData.video_url;
 
-      if (formData.content_type === "video" && formData.video_source === "upload") {
+      if (formData.content_type === "video" && formData.video_source === "cloud") {
         finalVideoUrl = await uploadVideoToCloudinary(formData.video_file);
       }
 
@@ -210,7 +210,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
                 className="w-full border px-3 py-2 rounded"
               >
                 <option value="youtube">YouTube / External URL</option>
-                <option value="upload">Upload Video</option>
+                <option value="cloud">Upload Video</option>
               </select>
 
               {formData.video_source === "youtube" && (
@@ -223,7 +223,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
                 />
               )}
 
-              {formData.video_source === "upload" && (
+              {formData.video_source === "cloud" && (
                 <input
                   type="file"
                   accept="video/*"
