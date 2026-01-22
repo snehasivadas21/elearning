@@ -73,7 +73,7 @@ const fetchCourse = async (id) => {
 const CourseChatModal = ({ courseId, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 bg-black/40">
-      <div className="absolute right-0 top-0 h-full w-full sm:w-[420px] bg-white shadow-xl flex flex-col">
+      <div className="absolute right-0 top-0 h-full w-full sm:w-[600px] lg:w-[800px] bg-white shadow-xl flex flex-col">
 
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="font-semibold text-lg">AI Tutor</h2>
@@ -152,7 +152,6 @@ const StudentCourseDetail = () => {
 
         <div className="mt-4 flex items-center gap-4 text-lg text-gray-500">
           <span>⭐ {course.rating || "4.5"} (12,000 students)</span>
-          <span>⏱ {course.duration || "15 hours"}</span>
           <span>🌍 English</span>
         </div>
       </div> 
@@ -216,7 +215,7 @@ const StudentCourseDetail = () => {
       ))}
       <button
         onClick={() => setShowChat(true)}
-        className="fixed bottom-20 right-20 bg-purple-600 hover:bg-purple-700 text-white p-4 animate-bounce rounded-full shadow-lg z-40"
+        className="fixed bottom-20 right-20 bg-purple-600 hover:bg-purple-700 text-white p-6 text-2xl animate-bounce rounded-full shadow-lg z-40"
         title="Ask AI Tutor"
       >
         🤖

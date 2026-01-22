@@ -240,7 +240,7 @@ class LessonResourceViewSet(viewsets.ModelViewSet):
         course = lesson.module.course
 
         resource = serializer.save()
-        if resource.file and resource.file.name.endswith(('.pdf', '.docx', '.pptx')):
+        if resource.file :
             index_lesson_resource(resource)
 
     def perform_update(self, serializer):
@@ -253,7 +253,7 @@ class LessonResourceViewSet(viewsets.ModelViewSet):
             )
 
         serializer.save()
-        if resource.file and resource.file.name.endswith(('.pdf', '.docx', '.pptx')):
+        if resource.file :
             index_lesson_resource(resource)
 
     def destroy(self, request, *args, **kwargs):

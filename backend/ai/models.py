@@ -9,7 +9,6 @@ class CourseEmbedding(models.Model):
     lesson = models.ForeignKey(Lesson,on_delete=models.SET_NULL,null=True,blank=True)
     resource = models.ForeignKey(LessonResource,on_delete=models.SET_NULL,null=True,blank=True)
     content = models.TextField()
-    embedding = VectorField(dimensions=384)
     source_type = models.CharField(
         max_length=20,
         choices=[
