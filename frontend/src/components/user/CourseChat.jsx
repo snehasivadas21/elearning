@@ -12,7 +12,7 @@ const CourseChat = ({ courseId }) => {
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
     const userMsg = { role: "user", content: input };
     setMessages((prev) => [...prev, userMsg]);
@@ -43,11 +43,11 @@ const CourseChat = ({ courseId }) => {
     <div className="border rounded-lg p-4 bg-white">
       <h3 className="font-semibold mb-2">🤖 Course AI Assistant</h3>
 
-      <div className="h-64 overflow-y-auto border p-2 mb-3 space-y-2">
+      <div className="h-[70vh] overflow-y-auto border p-3 mb-3 space-y-2">
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`text-sm p-2 rounded ${
+            className={`text-lg p-2 rounded ${
               m.role === "user"
                 ? "bg-purple-100 text-right"
                 : "bg-gray-100"
@@ -63,12 +63,15 @@ const CourseChat = ({ courseId }) => {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="flex-1 border rounded px-3 py-2"
-          placeholder="Ask something from this course..."
+          disabled={loading}
+          className="flex-1 border rounded px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          placeholder={loading ? "AI is thinking..." : "Ask something from this course..."}
         />
+
         <button
           onClick={sendMessage}
-          className="bg-purple-600 text-white px-4 rounded"
+          disabled={loading}
+          className="bg-purple-600 text-white px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Send
         </button>
