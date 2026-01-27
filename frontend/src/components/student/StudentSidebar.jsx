@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { LayoutDashboard, BookOpen, User, Award, Wallet } from "lucide-react";
 import { LayoutDashboard, BookOpen, User, FileText, CalendarCheck, Award } from "lucide-react";
 
 const navLinks = [

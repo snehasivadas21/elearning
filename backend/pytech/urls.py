@@ -23,6 +23,10 @@ urlpatterns = [
     path('api/users/', include('users.urls')),
     path('api/admin/',include('adminpanel.urls')),
     path('api/',include('courses.urls')),
+    path('api/ai/',include('ai.urls')),
+    path('api/payment/',include('payment.urls')), 
+    path('api/tutor/',include('instrpanel.urls')), 
+    path('api/chat/',include('chat.urls')), 
     
     path('api/auth/', include('dj_rest_auth.urls')),
     path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
