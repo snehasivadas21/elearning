@@ -70,6 +70,11 @@ function App() {
           <Route path="myprofile" element={<StudentProfile/>} />
           <Route path="mypurchase" element={<MyPurchases/>}/>
           <Route path="chat/:courseId" element={<ChatPage/>}/>
+          <Route path="mycourses" element={<MyCourses/>}/>
+          <Route path="mycourses/:id" element={<StudentCourseDetail/>}/>
+          <Route path="myprofile" element={<StudentProfile/>} />
+          <Route path="mypurchase" element={<MyPurchases/>}/>
+          <Route path="chat/:id" element={<ChatPage/>}/>
           <Route path="live-session/:sessionId" element={<LiveSessionPage />} />
           <Route path="certificate" element={<CertificatePage/>}/>
         </Route>
@@ -113,6 +118,10 @@ function App() {
         <Route path="profile" element={<StudentProfile/>} />
         <Route path="orders" element={<TutorOrders/>}/>
         <Route path="chat/:courseId" element={<ChatPage/>}/>
+        <Route path="courses/:id" element={<TutorCourseDetail />}/>
+        <Route path="profile" element={<StudentProfile/>} />
+        <Route path="orders" element={<TutorOrders/>}/>
+        <Route path="chat" element={<ChatPage/>}/>
       </Route>
 
       {/* Catch All */}

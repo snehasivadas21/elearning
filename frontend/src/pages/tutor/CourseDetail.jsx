@@ -164,19 +164,14 @@ const CourseDetail = ({ course }) => {
                               {lesson.resources.map((res) => (
                                 <li key={res.id}>
                                   📄 {res.title} –{" "}
-                                  <button
-                                    onClick={() => {
-                                      const link = document.createElement('a');
-                                      link.href = res.file + '?fl_attachment';  
-                                      link.download = res.title || 'resource';
-                                      document.body.appendChild(link);
-                                      link.click();
-                                      document.body.removeChild(link);
-                                    }}
-                                    className="text-blue-600 underline bg-transparent border-none cursor-pointer"
+                                  <a
+                                    href={res.file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 underline"
                                   >
-                                    Download
-                                </button>
+                                    {res.title}
+                                  </a>
                                 </li>
                               ))}
                             </ul>

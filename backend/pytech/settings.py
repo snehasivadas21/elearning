@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
 
     'users.apps.UsersConfig',
+    'chat.apps.ChatConfig',
 
 ]
 
