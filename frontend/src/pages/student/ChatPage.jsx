@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import ChatSidebar from "../../components/chat/ChatSidebar";
 import MessageList from "../../components/chat/MessageList";
 import MessageInput from "../../components/chat/MessageInput";
-import useWebSocket from "../../hooks/useWebSocket";
+import useWebSocket from "../../hooks/useLiveSessionSocket";
 import axiosInstance from "../../api/axiosInstance";
 
 export default function ChatPage() {
