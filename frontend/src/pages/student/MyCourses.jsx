@@ -4,9 +4,11 @@ import axiosInstance from "../../api/axiosInstance";
 import { Users, Star, Clock, BookOpen } from "lucide-react";
 import CourseProgressBar from "../../components/student/CourseProgressBar";
 import { extractResults } from "../../api/api";
+import LiveSessionBanner from "../../components/student/LiveSessionBanner";
 
 const MyCourses = () => {
   const [courses, setCourses] = useState([]);
+  const [liveSession,setliveSession] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -107,6 +109,10 @@ const MyCourses = () => {
                 <BookOpen className="w-4 h-4" />
                 Continue Learning
               </button>
+
+              {liveSession && liveSession.status !== "ended" && (
+                <LiveSessionBanner session={liveSession} />
+              )}
 
             </div>
           </div>

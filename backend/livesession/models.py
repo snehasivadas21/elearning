@@ -12,14 +12,20 @@ class LiveSession(models.Model):
     scheduled_at = models.DateTimeField(null=True, blank=True)
     started_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)
+    allow_early_join = models.BooleanField(default=False)
+    notification_sent = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS, default="scheduled")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_live_sessions")
     created_at = models.DateTimeField(auto_now_add=True)
 
 class LiveParticipant(models.Model):
+    ROLE_CHOICES = (
+        ("instructor","Instructor"),
+        ("student","Student"),
+    )
     session = models.ForeignKey(LiveSession, on_delete=models.CASCADE, related_name="participants")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    role = models.CharField(max_length=20, default="student")  
+    role = models.CharField(max_length=20,choices=ROLE_CHOICES, default="student")  
     joined_at = models.DateTimeField(null=True, blank=True)
     left_at = models.DateTimeField(null=True, blank=True)
     is_muted = models.BooleanField(default=False)

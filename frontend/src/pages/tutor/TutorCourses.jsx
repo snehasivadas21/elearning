@@ -146,52 +146,6 @@ const InstructorCourses = () => {
           <option value="rejected">Rejected</option>
         </select>
       </div>
-              <div className="flex flex-wrap gap-2 mt-4">
-                
-                {["draft", "rejected"].includes(course.status) && (
-                  <button
-                    onClick={() => handleEdit(course)}
-                    className="px-3 py-1 bg-blue-500 text-white rounded"
-                  >
-                    Edit
-                  </button>
-                )}
-
-                <button
-                  onClick={() =>
-                    navigate(`/tutor/courses/${course.id}/content`)
-                  }
-                  className="px-3 py-1 bg-purple-600 text-white rounded"
-                >
-                  Manage Content
-                </button>
-
-                {["draft", "rejected"].includes(course.status) && (
-                  <button
-                    disabled={submittingId === course.id}
-                    onClick={() => handleSubmitForReview(course.id)}
-                    className={`px-3 py-1 rounded text-white
-                      ${submittingId === course.id
-                        ? "bg-yellow-300 cursor-not-allowed"
-                        : "bg-yellow-500"}
-                    `}
-                  >
-                    {submittingId === course.id ? "Submitting..." : "Submit for Review"}
-                  </button>
-                )}
-
-                <button
-                  onClick={() => navigate(`/tutor/courses/${course.id}`)}
-                  className="px-3 py-1 bg-green-600 text-white rounded"
-                >
-                  View Details
-                </button>
-                
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {isLoading ? (
         <div className="flex justify-center py-20">
@@ -237,12 +191,14 @@ const InstructorCourses = () => {
 
               <div className="flex flex-wrap gap-2 mt-4">
                 
-                <button
-                  onClick={() => handleEdit(course)}
-                  className="px-3 py-1 bg-blue-500 text-white rounded"
-                >
-                  Edit
-                </button>
+                {["draft", "rejected"].includes(course.status) && (
+                  <button
+                    onClick={() => handleEdit(course)}
+                    className="px-3 py-1 bg-blue-500 text-white rounded"
+                  >
+                    Edit
+                  </button>
+                )}
 
                 <button
                   onClick={() =>
@@ -252,6 +208,20 @@ const InstructorCourses = () => {
                 >
                   Manage Content
                 </button>
+
+                {["draft", "rejected"].includes(course.status) && (
+                  <button
+                    disabled={submittingId === course.id}
+                    onClick={() => handleSubmitForReview(course.id)}
+                    className={`px-3 py-1 rounded text-white
+                      ${submittingId === course.id
+                        ? "bg-yellow-300 cursor-not-allowed"
+                        : "bg-yellow-500"}
+                    `}
+                  >
+                    {submittingId === course.id ? "Submitting..." : "Submit for Review"}
+                  </button>
+                )}
 
                 {["draft", "rejected"].includes(course.status) && (
                   <button
