@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'payment',
     'ai',
     'instrpanel',
+    'livesession',
 
     'django.contrib.sites',
 

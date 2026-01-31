@@ -17,17 +17,14 @@ const useWebRTC = ({
 
     peerRef.current = new RTCPeerConnection(ICE_SERVERS);
 
-    // Add local tracks
     localStream.getTracks().forEach(track => {
       peerRef.current.addTrack(track, localStream);
     });
 
-    // Receive remote stream
     peerRef.current.ontrack = (event) => {
       remoteVideoRef.current.srcObject = event.streams[0];
     };
 
-    // ICE candidate
     peerRef.current.onicecandidate = (event) => {
       if (event.candidate) {
         socket.send(JSON.stringify({
@@ -37,7 +34,6 @@ const useWebRTC = ({
       }
     };
 
-    // Socket messages
     socket.onmessage = async (e) => {
       const data = JSON.parse(e.data);
 
