@@ -12,7 +12,7 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
         if not self.user or not self.user.is_authenticated:
             return await self.close()
 
-        if not await self.can_join(self.session_id, self.user.id):
+        if not await self.can_join():
             return await self.close()
 
         await self.mark_joined()
@@ -64,6 +64,12 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
             "type": "hand",
             "user_id": event["user_id"],
             "hand_raised": event["hand_raised"],
+        })
+
+    async def participants_update(self, event):
+        await self.send_json({
+            "type": "participants",
+            "participants": event["participants"],
         })
 
     async def reaction_event(self, event):
@@ -134,6 +140,30 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
     async def signal_forward(self, event):
         await self.send_json(event)
 
+    async def handle_join(self):
+        await self.upsert_participant()
+        participants = await self.get_participants()
+
+        await self.channel_layer.group_send(
+            self.room_group,
+            {
+                "type": "participants.update",
+                "participants": participants,
+            },
+        )
+
+    async def handle_leave(self):
+        await self.mark_left()
+        participants = await self.get_participants()
+
+        await self.channel_layer.group_send(
+            self.room_group,
+            {
+                "type": "participants.update",
+                "participants": participants,
+            },
+        )    
+
     @database_sync_to_async
     def can_join(self):
         s = LiveSession.objects.get(id=self.session_id)
@@ -141,14 +171,6 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
             return False
         c = s.course
         return c.instructor_id == self.user.id or c.enrolled_students.filter(id=self.user.id).exists()
-
-    @database_sync_to_async
-    def mark_joined(self):
-        LiveParticipant.objects.update_or_create(
-            session_id=self.session_id,
-            user_id=self.user.id,
-            defaults={"joined_at": timezone.now(), "left_at": None}
-        )
 
     @database_sync_to_async
     def upsert_participant(self):
@@ -202,29 +224,5 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
             left_at__isnull=True
         ).update(hand_raised=raised)
         
-
-    async def handle_join(self):
-        await self.upsert_participant()
-        participants = await self.get_participants()
-
-        await self.channel_layer.group_send(
-            self.room_group,
-            {
-                "type": "participants.update",
-                "participants": participants,
-            },
-        )
-
-    async def handle_leave(self):
-        await self.mark_left()
-        participants = await self.get_participants()
-
-        await self.channel_layer.group_send(
-            self.room_group,
-            {
-                "type": "participants.update",
-                "participants": participants,
-            },
-        )
     
         

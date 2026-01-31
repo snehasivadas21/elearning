@@ -4,12 +4,15 @@ from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 from .models import LiveSession, LiveParticipant
 from .serializers import LiveSessionSerializer, LiveParticipantSerializer
 from .permissions import IsEnrolledOrInstructor
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from courses.models import Course
+from .tasks import schedule_session_reminder
 
 
 class LiveSessionCreateView(generics.CreateAPIView):
@@ -25,8 +28,7 @@ class LiveSessionCreateView(generics.CreateAPIView):
         session = serializer.save(created_by=self.request.user)
 
         if session.scheduled_at:
-            from .tasks import schedule_session_reminder
-            eta = session.scheduled_at - timezone.timedelta(minutes=10)
+            eta = session.scheduled_at - timezone.timedelta(minutes=5)
             if eta > timezone.now():
                 schedule_session_reminder.apply_async(args=[str(session.id)], eta=eta)
 
@@ -104,6 +106,55 @@ def end_session(request, id):
 
     return Response({"message": "Session ended"})
 
+@api_view(["POST"])
+def cancel_session(request, id):
+    session = get_object_or_404(LiveSession, id=id)
+
+    if session.course.instructor_id != request.user.id:
+        return Response(status=403)
+
+    if session.status != "scheduled":
+        return Response({"detail": "Cannot cancel"}, status=400)
+
+    session.status = "cancelled"
+    session.save(update_fields=["status"])
+
+    return Response({"message": "Session cancelled"})
+
+class LiveSessionListView(generics.ListAPIView):
+    serializer_class = LiveSessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ["status", "course"]
+    search_fields = ["title"]
+
+    def get_queryset(self):
+        return LiveSession.objects.filter(
+            created_by=self.request.user
+        ).order_by("-created_at")
+
+class LiveSessionDetailView(generics.RetrieveAPIView):
+    queryset = LiveSession.objects.select_related("course")
+    serializer_class = LiveSessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+
+class LiveSessionUpdateView(generics.UpdateAPIView):
+    serializer_class = LiveSessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+    queryset = LiveSession.objects.all()
+
+    def perform_update(self, serializer):
+        session = self.get_object()
+
+        if session.course.instructor_id != self.request.user.id:
+            raise PermissionDenied("Only instructor can edit")
+
+        if session.status != "scheduled":
+            raise PermissionDenied("Cannot edit once live started")
+
+        serializer.save()
 
 class LiveSessionParticipantsView(generics.ListAPIView):
     serializer_class = LiveParticipantSerializer

@@ -22,6 +22,7 @@ import StudentProfile from "./pages/student/StudentProfile"
 import MyPurchases from "./pages/student/MyPurchases";
 import ChatPage from "./pages/student/ChatPage"
 import LiveSessionPage from "./pages/live/LiveSessionPage";
+import LiveWaitingPage from "./pages/live/LiveWaitingPage";
 import CertificatePage from "./pages/student/CertificatePage";
 
 // Admin
@@ -76,7 +77,8 @@ function App() {
           <Route path="myprofile" element={<StudentProfile/>} />
           <Route path="mypurchase" element={<MyPurchases/>}/>
           <Route path="chat/:id" element={<ChatPage/>}/>
-          <Route path="live/:sessionId" element={<LiveSessionPage />} />
+          <Route path="live/:id" element={<LiveSessionPage />} />
+          <Route path="live/:id/wait" element={<LiveWaitingPage />} />
           <Route path="certificate" element={<CertificatePage/>}/>
         </Route>
       </Route>
@@ -124,6 +126,8 @@ function App() {
         <Route path="orders" element={<TutorOrders/>}/>
         <Route path="chat" element={<ChatPage/>}/>
         <Route path="live" element={<InstructorLiveListPage/>}/>
+        <Route path="live/:id/wait" element={<LiveWaitingPage />} />
+        <Route path="live/:id" element={<LiveSessionPage />} />
       </Route>
 
       {/* Catch All */}

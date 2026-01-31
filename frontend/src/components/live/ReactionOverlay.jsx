@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-
 const ReactionOverlay = ({ reactions }) => {
   return (
     <div className="pointer-events-none absolute inset-0">
