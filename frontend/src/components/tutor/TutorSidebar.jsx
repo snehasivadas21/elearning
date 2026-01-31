@@ -7,7 +7,7 @@ const navLinks = [
   { name: "My Profile", icon: <User size={18} />, path: "/tutor/profile" },
   { name: "Community", icon: <MessageCircle size={18} />, path: "/tutor/chat" },
   { name: "Orders", icon: <Wallet size={18} />, path: "/tutor/orders" },
-  { name: "Live", icon: <VideoIcon size={18} />, path: "/tutor/orders" },
+  { name: "Live", icon: <VideoIcon size={18} />, path: "/tutor/live" },
 ];
 
 const TutorSidebar = () => {

@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import useCourseNotifySocket from "../hooks/useCourseNotifySocket";
-import axiosPublic from "../../../api/axiosPublic";
+import useCourseNotifySocket from "../../hooks/useCourseNotifySocket"
+import axiosInstance from "../../api/axiosInstance";
 
 const LiveWaitingPage = () => {
-  const { sessionId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [session, setSession] = useState(null);
   const [canJoin, setCanJoin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // fetch live session details
+
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const res = await axiosPublic.get(`/live/${sessionId}/`);
+        const res = await axiosInstance.get(`/live/${id}/`);
         setSession(res.data);
 
         if (res.data.status === "ongoing") {
@@ -29,9 +29,8 @@ const LiveWaitingPage = () => {
     };
 
     fetchSession();
-  }, [sessionId]);
+  }, [id]);
 
-  // course notification socket
   const { notification } = useCourseNotifySocket(session?.course);
 
   useEffect(() => {
@@ -39,11 +38,11 @@ const LiveWaitingPage = () => {
 
     if (
       notification.event === "session_reminder" &&
-      notification.session_id === sessionId
+      notification.session_id === id
     ) {
-      setCanJoin(true);
+      navigate(`/live/${id}`);
     }
-  }, [notification, sessionId]);
+  }, [notification, id]);
 
   if (loading) return <p>Loading live session...</p>;
   if (!session) return <p>Session not found</p>;
@@ -73,7 +72,7 @@ const LiveWaitingPage = () => {
 
       <button
         disabled={!canJoin}
-        onClick={() => navigate(`/student/live/${sessionId}`)}
+        onClick={() => navigate(`/tutor/live/${id}`)}
         className={`mt-8 w-full py-3 rounded-lg font-medium ${
           canJoin
             ? "bg-blue-600 text-white hover:bg-blue-700"

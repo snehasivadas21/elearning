@@ -4,7 +4,7 @@ from django.conf import settings
 from courses.models import Course
 
 class LiveSession(models.Model):
-    STATUS = (("scheduled","Scheduled"), ("ongoing","Ongoing"), ("ended","Ended"))
+    STATUS = (("scheduled","Scheduled"), ("ongoing","Ongoing"), ("ended","Ended"), ("cancelled", "Cancelled"))
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="live_sessions")
     title = models.CharField(max_length=255)
