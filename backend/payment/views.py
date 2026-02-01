@@ -9,6 +9,7 @@ from .models import Order,CoursePurchase,Invoice
 from .serializers import OrderSerializer,CoursePurchaseSerializer,InvoiceSerializer
 from users.permissions import IsStudentUser
 from courses.models import Course
+from revenue.services import credit_instructor_wallet
 from django.db import transaction
 import razorpay
 import hmac
@@ -185,6 +186,8 @@ class VerifyRazorpayPayment(APIView):
             order.payment_id = payment_id
             order.status = 'completed'
             order.save()
+
+            credit_instructor_wallet(order)
 
             Order.objects.filter(
                 student = request.user,
