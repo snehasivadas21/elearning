@@ -34,6 +34,8 @@ import AdminCourses from "./pages/admin/AdminCourses";
 import AdminCourseDetail from "./pages/admin/AdminCourseDetail";
 import AdminCategories from "./pages/admin/AdminCategories";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminRevenuePage from "./pages/admin/AdminRevenuePage";
+import AdminPayoutPage from "./pages/admin/AdminPayoutPage";
 
 // Tutor
 import TutorLayout from "./components/tutor/TutorLayout";
@@ -43,6 +45,7 @@ import TutorCoursesContent from "./pages/tutor/TutorCoursesContent";
 import TutorCourseDetail from "./pages/tutor/TutorCourseDetail";
 import TutorOrders from "./pages/tutor/TutorOrders";
 import InstructorLiveListPage from "./pages/tutor/InstructorLiveListPage";
+import WalletPage from "./pages/tutor/WalletPage";
 
 // Routes
 import PrivateRoute from "./routes/PrivateRoute";
@@ -105,6 +108,8 @@ function App() {
         <Route path="courses/:id" element={<AdminCourseDetail />}/>
         <Route path="categories" element={<AdminCategories />} />
         <Route path="orders" element={<AdminOrders/>}/>
+        <Route path="payouts" element={<AdminPayoutPage/>}/>
+        <Route path="revenue" element={<AdminRevenuePage/>}/>
       </Route>
 
       {/* Tutor Section */}
@@ -128,6 +133,7 @@ function App() {
         <Route path="live" element={<InstructorLiveListPage/>}/>
         <Route path="live/:id/wait" element={<LiveWaitingPage />} />
         <Route path="live/:id" element={<LiveSessionPage />} />
+        <Route path="wallet" element={<WalletPage/>}/>
       </Route>
 
       {/* Catch All */}

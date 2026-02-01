@@ -223,20 +223,6 @@ const InstructorCourses = () => {
                   </button>
                 )}
 
-                {["draft", "rejected"].includes(course.status) && (
-                  <button
-                    disabled={submittingId === course.id}
-                    onClick={() => handleSubmitForReview(course.id)}
-                    className={`px-3 py-1 rounded text-white
-                      ${submittingId === course.id
-                        ? "bg-yellow-300 cursor-not-allowed"
-                        : "bg-yellow-500"}
-                    `}
-                  >
-                    {submittingId === course.id ? "Submitting..." : "Submit for Review"}
-                  </button>
-                )}
-
                 <button
                   onClick={() => navigate(`/tutor/courses/${course.id}`)}
                   className="px-3 py-1 bg-green-600 text-white rounded"
