@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'full_name']
     
     def get_full_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}".strip() or obj.username
+        return obj.username
     
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -42,6 +42,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
     course_title = serializers.CharField(source="course.title", read_only=True)
     participants_count = serializers.SerializerMethodField()
     last_message = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
 
     class Meta:
         model = ChatRoom
@@ -51,6 +52,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
             "course_title",
             "participants_count",
             "last_message",
+            "unread_count",
             "created_at",
             "is_active",
         ]
@@ -62,10 +64,18 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         return obj.course.purchases.count() + 1
 
     def get_last_message(self, obj):
-        message = obj.messages.order_by("-created_at").first()
+        message = obj.messages.filter(is_system=False).order_by("-created_at").first()
         if message:
             return MessageSerializer(
                 message,
                 context=self.context
             ).data
         return None
+    
+    def get_unread_count(self, obj):
+        user = self.context["request"].user
+        return obj.messages.filter(
+            is_system=False,
+            is_read=False
+        ).exclude(sender=user).count()
+
