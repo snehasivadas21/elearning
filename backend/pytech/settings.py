@@ -252,3 +252,4 @@ GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 OLLAMA_MODEL = "llama3.2:3b"
 OLLAMA_BASE_URL = "http://ollama:11434"
 
+DEFAULT_PROFILE_IMAGE = "https://res.cloudinary.com/dgqjlqivb/image/upload/v1770222854/profile-avatar.jpg"

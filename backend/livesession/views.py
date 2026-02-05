@@ -104,6 +104,14 @@ def end_session(request, id):
         }
     )
 
+    async_to_sync(channel_layer.group_send)(
+        f"webrtc_{session.id}",                                    # matches consumer's room_group
+        {
+            "type": "session.ended",                               # dots → underscores = session_ended method
+            "session_id": str(session.id),
+        }
+    )
+
     return Response({"message": "Session ended"})
 
 @api_view(["POST"])

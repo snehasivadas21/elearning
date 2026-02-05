@@ -7,6 +7,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed,PermissionDenied
+from django.conf import settings
 
 User = get_user_model()
 
@@ -127,11 +128,17 @@ class ProfileLinkSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     links = ProfileLinkSerializer(many=True, required=False)
-    profile_image = serializers.ImageField(required=False, use_url=True)
+    profile_image = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
         fields = ["id","user","full_name","bio","headline","profile_image","date_of_birth","location","experience","resume","skills","links",]
 
+    def get_profile_image(self, obj):
+        if obj.profile_image:
+            return obj.profile_image.url
+        return settings.DEFAULT_PROFILE_IMAGE
+        
     def update(self, instance, validated_data):
         links_data = validated_data.pop("links", None)
 

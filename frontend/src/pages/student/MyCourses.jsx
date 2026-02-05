@@ -8,7 +8,6 @@ import LiveSessionBanner from "../../components/student/LiveSessionBanner";
 
 const MyCourses = () => {
   const [courses, setCourses] = useState([]);
-  const [liveSession,setliveSession] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -110,10 +109,9 @@ const MyCourses = () => {
                 Continue Learning
               </button>
 
-              {liveSession && liveSession.status !== "ended" && (
-                <LiveSessionBanner session={liveSession} />
+              {course.live_session && (
+                <LiveSessionBanner session={course.live_session} />
               )}
-
             </div>
           </div>
         ))}

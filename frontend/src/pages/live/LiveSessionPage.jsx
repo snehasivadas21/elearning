@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import useLiveSessionSocket from "../../hooks/useLiveSessionSocket";
-import useLocalMedia from "../../hooks/useLocalMedia"
+import useLocalMedia from "../../hooks/useLocalMedia";
 import useWebRTC from "../../hooks/useWebRTC";
 import LiveControlsBar from "../../components/live/LiveControlsBar";
 import ParticipantsPanel from "../../components/live/ParticipantsPanel";
@@ -14,14 +14,18 @@ const LiveSessionPage = () => {
 
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [reactions,setReactions] = useState([]);
   const [showParticipants, setShowParticipants] = useState(true);
+  const [handRaised, setHandRaised] = useState(false);
 
   const {
-    socket,
+    sendSignal,
+    sendRaw,
+    addMessageListener,
     connected,
     participants,
     userRole,
+    reactions,
+    sessionEnded,       // FIX 7: server pushes this when tutor ends
   } = useLiveSessionSocket(sessionId);
 
   const {
@@ -34,21 +38,20 @@ const LiveSessionPage = () => {
   } = useLocalMedia();
 
   const { remoteVideoRef, startCall } = useWebRTC({
-    socket,
+    sendRaw,
+    addMessageListener,
     localStream,
     isInstructor: userRole === "tutor",
   });
 
+  // Fetch session info once on mount
   useEffect(() => {
     const fetchSession = async () => {
       try {
         const res = await axiosInstance.get(`/live/${sessionId}/`);
         setSession(res.data);
 
-        if (
-          res.data.status !== "ongoing" &&
-          userRole === "student"
-        ) {
+        if (res.data.status !== "ongoing" && userRole === "student") {
           navigate(`/live/${sessionId}/wait`);
         }
       } catch (err) {
@@ -61,39 +64,38 @@ const LiveSessionPage = () => {
     fetchSession();
   }, [sessionId, navigate, userRole]);
 
+  // Tutor starts the WebRTC call once everything is ready
   useEffect(() => {
-    if (!socket || !connected) return;
-
-    socket.send(JSON.stringify({ type: "join" }));
-
-    return () => {
-      socket.send(JSON.stringify({ type: "leave" }));
-      socket.close();
-    };
-  }, [socket, connected]);
-
-  useEffect(() => {
-    if (connected && userRole === "tutor") {
+    if (connected && userRole === "tutor" && localStream) {
       startCall();
     }
-  }, [connected, userRole]);
+  }, [connected, userRole, localStream]);
+
+  // FIX 7: if server pushes session_ended, navigate all students away
+  useEffect(() => {
+    if (sessionEnded) {
+      navigate("/");
+    }
+  }, [sessionEnded, navigate]);
 
   const raiseHand = () => {
-    socket?.send(JSON.stringify({ type: "toggle-hand",raised: true ,}));
+    const next = !handRaised;
+    setHandRaised(next);
+    sendSignal({ type: "toggle-hand", raised: next });
   };
 
   const sendReaction = (emoji) => {
-    socket?.send(
-      JSON.stringify({ type: "reaction", emoji })
-    );
+    sendSignal({ type: "reaction", emoji });
   };
 
   const leaveSession = async () => {
     if (userRole === "tutor") {
       await axiosInstance.post(`/live/${sessionId}/end/`);
+      // end_session API now broadcasts session_ended to the webrtc room.
+      // Students will get it via the useEffect above and navigate away.
+      // Tutor navigates immediately after the API call returns.
     }
-    socket?.send(JSON.stringify({ type: "leave" }));
-    socket?.close();
+    sendSignal({ type: "leave" });
     navigate("/");
   };
 
@@ -103,7 +105,7 @@ const LiveSessionPage = () => {
   return (
     <div className="h-screen flex bg-gray-900 text-white">
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 flex items-center justify-center p-4">
+        <div className="flex-1 flex items-center justify-center p-4 relative">
           <video
             ref={localVideoRef}
             autoPlay
@@ -116,7 +118,7 @@ const LiveSessionPage = () => {
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="absolute bottom-4 right-4 w-48 rounded-md"
+            className="absolute bottom-4 right-4 w-48 rounded-md border border-gray-600 bg-black"
           />
 
           <ReactionOverlay reactions={reactions} />
@@ -125,7 +127,7 @@ const LiveSessionPage = () => {
         <LiveControlsBar
           micOn={micOn}
           cameraOn={cameraOn}
-          handRaised={false}
+          handRaised={handRaised}
           onToggleMic={toggleMic}
           onToggleCamera={toggleCamera}
           onRaiseHand={raiseHand}
