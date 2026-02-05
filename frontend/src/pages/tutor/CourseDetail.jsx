@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { format } from "date-fns";
+import CourseReviews from "../../components/user/CourseReviews";
 
+const DEFAULT_AVATAR =
+  "https://res.cloudinary.com/dgqjlqivb/image/upload/v1770222854/profile-avatar.jpg";
 
 const getEmbedUrl = (url) => {
   if (!url) return "";
@@ -190,7 +193,7 @@ const CourseDetail = ({ course }) => {
               <h2 className="text-lg font-bold mb-4">Instructor</h2>
               <div className="flex items-center gap-4">
                 <img
-                  src={instructor?.profile_image || "/avatar.png"}
+                  src={instructor?.profile_image || DEFAULT_AVATAR}
                   className="w-16 h-16 rounded-full object-cover"
                 />
                 <div>
@@ -206,20 +209,9 @@ const CourseDetail = ({ course }) => {
           )}
 
           {activeTab === "reviews" && (
-            <>
-              <h2 className="text-lg font-bold mb-4">Reviews</h2>
-
-              {course.reviews?.length > 0 ? (
-                course.reviews.map((rev) => (
-                  <div key={rev.id} className="border-b py-3">
-                    <p className="font-medium">{rev.user_name}</p>
-                    <p className="text-sm text-gray-600">{rev.comment}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500">No reviews yet.</p>
-              )}
-            </>
+            <CourseReviews
+              courseId={course.id}
+            />
           )}
 
         </div>

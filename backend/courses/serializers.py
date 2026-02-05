@@ -1,8 +1,10 @@
 from rest_framework import serializers
-from .models import (Course,CourseCategory,Module, Lesson,LessonResource,LessonProgress,CourseCertificate)
+from .models import (Course,CourseCategory,Module, Lesson,LessonResource,LessonProgress,CourseCertificate,Review)
 from django.db import transaction
 from users.serializers import ProfileSerializer
 from .utils import get_course_progress
+from livesession.models import LiveSession
+from livesession.serializers import LiveSessionSerializer
 
 class CourseCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -167,6 +169,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
     modules = serializers.SerializerMethodField()
     instructor_profile = serializers.SerializerMethodField()
     progress_percentage = serializers.SerializerMethodField()
+    live_session = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -183,6 +186,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
             "modules",
             "instructor_profile",
             "progress_percentage",
+            "live_session",
         ]
 
     def get_modules(self, obj):
@@ -203,7 +207,24 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return get_course_progress(request.user, obj)
         return None
+    
+    def get_live_session(self, obj):
+        session = (
+            obj.live_sessions
+            .filter(status__in=["scheduled", "ongoing"])
+            .order_by("scheduled_at")
+            .first()
+        )
+        if not session:
+            return None
 
+        return {
+            "id": session.id,
+            "title": session.title,
+            "status": session.status,
+            "scheduled_at": session.scheduled_at,
+            "allow_early_join": session.allow_early_join,
+        }
 class LessonProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonProgress 
@@ -220,3 +241,25 @@ class CertificateSerializer(serializers.ModelSerializer):
             "issued_at",
         ]
         read_only_fields = fields
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source="user.username", read_only=True)
+    class Meta:
+        model = Review
+        fields = [
+            "id",
+            "user",
+            "user_name",
+            "course",
+            "rating",
+            "comment",
+            "created_at",
+        ]
+        read_only_fields = ["user"]
+
+    def validate_rating(self, value):
+        if value is None:
+            raise serializers.ValidationError("Rating is required")
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5")
+        return value

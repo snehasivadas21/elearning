@@ -72,7 +72,7 @@ const LiveWaitingPage = () => {
 
       <button
         disabled={!canJoin}
-        onClick={() => navigate(`/tutor/live/${id}`)}
+        onClick={() => navigate(`/student/live/${id}`)}
         className={`mt-8 w-full py-3 rounded-lg font-medium ${
           canJoin
             ? "bg-blue-600 text-white hover:bg-blue-700"

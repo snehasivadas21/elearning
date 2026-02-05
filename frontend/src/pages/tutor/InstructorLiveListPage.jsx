@@ -68,14 +68,14 @@ const InstructorLiveListPage = () => {
               <th className="p-2">Course</th>
               <th className="p-2">Scheduled At</th>
               <th className="p-2">Status</th>
-              <th className="px-6 py-3">Actions</th>
+              <th className="p-2">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {sessions.map(s => (
               <tr key={s.id} className="border-t">
                 <td className="p-2">{s.title}</td>
-                <td className="p-2">{s.course}</td>
+                <td className="p-2">{s.course_title}</td>
                 <td className="p-2">
                   {s.scheduled_at
                     ? new Date(s.scheduled_at).toLocaleString()
@@ -90,13 +90,13 @@ const InstructorLiveListPage = () => {
 
                   {s.status === "ongoing" && (
                     <span className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-full font-semibold">
-                      LIVE
+                      ONGOING
                     </span>
                   )}
 
                   {s.status === "ended" && (
                     <span className="px-3 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">
-                      Ended
+                      ENDED
                     </span>
                   )}
                 </td>
@@ -134,7 +134,7 @@ const InstructorLiveListPage = () => {
                     {s.status === "ongoing" && (
                       <>
                         <button
-                          onClick={() => navigate(`/tutor/live/${s.id}/wait`)}
+                          onClick={() => navigate(`/tutor/live/${s.id}/`)}
                           className="px-3 py-1 text-sm bg-red-600 text-white rounded"
                         >
                           Enter Live

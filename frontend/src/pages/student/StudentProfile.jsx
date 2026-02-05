@@ -7,6 +7,8 @@ const StudentProfile = () => {
   const [open, setOpen] = useState(false);
   const [loading,setLoading] = useState(true);
   const skills = profile?.skills ? profile.skills.split(",") : [];
+  const DEFAULT_AVATAR =
+  "https://res.cloudinary.com/dgqjlqivb/image/upload/v1770222854/profile-avatar.jpg";
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -37,7 +39,7 @@ const StudentProfile = () => {
 
       <div className="flex items-center gap-6 bg-white p-6 rounded-xl shadow">
         <img
-          src={profile.profile_image || "/avatar.png"}
+          src={profile.profile_image || DEFAULT_AVATAR}
           alt="profile"
           className="w-28 h-28 rounded-full object-cover"
         />
