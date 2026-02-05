@@ -1,4 +1,4 @@
-from rest_framework import viewsets,permissions,status
+from rest_framework import viewsets,permissions,status,generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter,OrderingFilter
@@ -9,9 +9,10 @@ from django.core.exceptions import PermissionDenied,ValidationError
 from rest_framework.parsers import MultiPartParser,FormParser
 from django.shortcuts import get_object_or_404
 
-from .models import (Course,CourseCategory,Module,Lesson,LessonResource,LessonProgress,CourseCertificate)
+from .models import (Course,CourseCategory,Module,Lesson,LessonResource,LessonProgress,CourseCertificate,Review)
+from payment.models import CoursePurchase
 from .serializers import (AdminCourseSerializer,InstructorCourseSerializer,CourseCategorySerializer,
-ModuleSerializer,LessonSerializer,LessonResourceSerializer,LessonProgressSerializer,CertificateSerializer)
+ModuleSerializer,LessonSerializer,LessonResourceSerializer,LessonProgressSerializer,CertificateSerializer,ReviewSerializer)
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
@@ -344,5 +345,69 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
         url = storage.url(public_id) 
 
         return Response({"download_url": url})
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    queryset = Review.objects.select_related("user", "course")
 
-    
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy", "review_status"]:
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        course_id = self.request.query_params.get("course")
+        if course_id:
+            qs = qs.filter(course_id=course_id)
+
+        return qs
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        course = serializer.validated_data["course"]
+
+        if not CoursePurchase.objects.filter(
+            student=user,
+            course=course
+        ).exists():
+            raise PermissionDenied("Only enrolled students can review this course")
+
+        serializer.save(user=user)
+
+    def perform_update(self, serializer):
+        review = self.get_object()
+        if review.user != self.request.user:
+            raise PermissionDenied("You can edit only your own review")
+        serializer.save()
+
+    def destroy(self, request, *args, **kwargs):
+        review = self.get_object()
+        if review.user != request.user:
+            raise PermissionDenied("You can delete only your own review")
+        review.delete()
+        return Response({"message":"Review deleted successfully"},status=204)
+
+    @action(detail=False, methods=["get"])
+    def review_status(self, request):
+        course_id = request.query_params.get("course")
+
+        if not course_id:
+            return Response({"detail": "course is required"}, status=400)
+
+        is_enrolled = CoursePurchase.objects.filter(
+            student=request.user,
+            course_id=course_id
+        ).exists()
+
+        review = Review.objects.filter(
+            user=request.user,
+            course_id=course_id
+        ).first()
+
+        return Response({
+            "is_enrolled": is_enrolled,
+            "has_reviewed": bool(review),
+            "review": ReviewSerializer(review).data if review else None,
+            "can_review": is_enrolled,
+        })

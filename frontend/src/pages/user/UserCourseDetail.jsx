@@ -32,22 +32,40 @@ const UserCourseDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    if (!isLoggedIn || !course?.id) return;
+    if (!isLoggedIn || !course?.id) {
+      setIsEnrolled(false);
+      return
+    };
 
     const checkEnrollment = async () => {
       try {
         const res = await axiosInstance.get("/payment/purchase/",{
             params: { course_id : course.id},
         })
-        setIsEnrolled(res.data.length > 0);
+        console.log("Enrollment check response:", res.data);
+        
+        const isEnrolledNow = res.data.count > 0;
+        
+        console.log("Is enrolled:", isEnrolledNow); 
+        setIsEnrolled(isEnrolledNow);
       } catch (err) {
         console.error("Enrollment check failed", err);
+        console.error("Error response:",err.response);
+        setIsEnrolled(false);
       }
     };
       checkEnrollment();
   }, [course?.id, isLoggedIn]);
 
   const handleBuyNow = async () => {
+    if (!isLoggedIn){
+      navigate("/login");
+      return;
+    }
+    if (isEnrolled){
+      toast.info("You are already enrolled");
+      return;
+    }
     try {
       const res = await axiosInstance.post("payment/create-order/", {
         course_id: course.id,
@@ -86,52 +104,68 @@ const UserCourseDetail = () => {
       rzp.open();
     } catch (err) {
       console.error("Buy now failed", err);
-      toast.error("Payment failed or canceled.");
+
+      if (err.response?.status === 400 && err.response?.data?.detail) {
+        toast.error(err.response.data.detail);
+        setIsEnrolled(true);
+      } else {
+        toast.error("Payment failed or canceled.");
+      }
     }
   };
+  
+  console.log("Current state - isEnrolled:", isEnrolled, "isLoggedIn:", isLoggedIn); 
 
   if (loading) return <p className="p-6">Loading...</p>;
   if (!course) return <p className="p-6">Course not found</p>;
 
   return (
     <>
-      <CourseDetail course={course} role="user"/>
+      <CourseDetail course={course} role="user" isEnrolled={isEnrolled}/>
       
       <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="bg-white border shadow rounded-xl p-6 h-fit">
-        <div className="text-3xl font-bold text-gray-900">
-          ₹ {course.price}
-        </div>
+        <div className="bg-white border shadow rounded-xl p-6 h-fit">
+          <div className="text-3xl font-bold text-gray-900">
+            ₹ {course.price}
+          </div>
 
-        {!isLoggedIn ? (
-          <button onClick={() => navigate("/login")} className="w-full py-3 bg-gray-500 text-white rounded">
-            Login to Enroll
-          </button>
-        ) : isEnrolled === null ? (
-          <button className="w-full py-3 bg-gray-200 rounded cursor-wait">
-            Checking enrollment...
-          </button>
-        ) : isEnrolled ? (
-          <button disabled className="w-full py-3 bg-gray-400 text-white rounded">
-            Already Enrolled
-          </button>
-        ) : (
-          <button
-            onClick={handleBuyNow}
-            className="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Buy Now ₹ {course.price}
-          </button>
-        )}
+          {!isLoggedIn ? (
+            <button onClick={() => navigate("/login")} className="w-full py-3 bg-gray-500 text-white rounded">
+              Login to Enroll
+            </button>
+          ) : isEnrolled === null ? (
+            <button disabled className="w-full py-3 bg-gray-200 rounded cursor-wait">
+              Checking enrollment...
+            </button>
+          ) : isEnrolled ? (
+            <div className="space-y-2">
+              <button disabled className="w-full py-3 bg-gray-400 text-white rounded">
+                Already Enrolled
+              </button>
+              <button
+                onClick={() => navigate(`/student/mycourses/${course.id}`)}
+                className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+              >
+                Go to Course
+              </button>
+            </div>  
+            ) : (
+              <button
+                onClick={handleBuyNow}
+                className="w-full py-3 bg-green-600 text-white rounded hover:bg-green-700"
+              >
+                Buy Now ₹ {course.price}
+              </button>
+          )}
 
-        
-        <div className="mt-6 text-sm text-gray-600 space-y-2">
-          <div>📄 downloadable resources</div>
-          <div>📜 Certificate of completion</div>
-          <div>🔒 Full lifetime access</div>
-          <div>📱 Access on mobile and TV</div>
+          
+          <div className="mt-6 text-sm text-gray-600 space-y-2">
+            <div>📄 downloadable resources</div>
+            <div>📜 Certificate of completion</div>
+            <div>🔒 Full lifetime access</div>
+            <div>📱 Access on mobile and TV</div>
+          </div>
         </div>
-      </div>
       </div>
     </>
   );
