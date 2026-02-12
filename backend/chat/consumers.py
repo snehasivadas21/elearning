@@ -82,6 +82,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 return
 
             message = await self.save_message(content)
+            await self.create_chat_notifications(message)
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -179,3 +180,33 @@ class ChatConsumer(AsyncWebsocketConsumer):
             content=text,
             is_system=True
         )
+    
+    @database_sync_to_async
+    def create_chat_notifications(self, message):
+        from .models import ChatRoom
+        from instrpanel.models import Notification
+
+        room = message.room
+        sender = message.sender
+
+        participants = set()
+
+        students = room.course.purchases.values_list("student", flat=True)
+        participants.update(students)
+
+        participants.add(room.course.instructor_id)
+
+        participants.discard(sender.id)
+
+        notifications = []
+        for user_id in participants:
+            notifications.append(
+                Notification(
+                    user_id=user_id,
+                    title="New chat message",
+                    message=f"{sender.username}: {message.content[:50]}",
+                    notification_type="chat",
+                )
+            )
+
+        Notification.objects.bulk_create(notifications)

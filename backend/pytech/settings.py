@@ -249,7 +249,15 @@ RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 
-OLLAMA_MODEL = "llama3.2:3b"
-OLLAMA_BASE_URL = "http://ollama:11434"
-
 DEFAULT_PROFILE_IMAGE = "https://res.cloudinary.com/dgqjlqivb/image/upload/v1770222854/profile-avatar.jpg"
+
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

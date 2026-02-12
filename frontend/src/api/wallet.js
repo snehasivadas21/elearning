@@ -6,8 +6,8 @@ export const getWalletSummary = () =>
 export const getWalletTransactions = () =>
   axiosInstance.get("/revenue/tutor/wallet/transactions/");
 
-export const requestPayout = (amount) =>
-  axiosInstance.post("/revenue/tutor/payout/request/", { amount });
+export const requestPayout = (data) =>
+  axiosInstance.post("/revenue/tutor/payout/request/", data );
 
 export const getPayoutHistory = () =>
   axiosInstance.get("/revenue/tutor/payouts/");

@@ -20,3 +20,6 @@ export const getAdminPayouts = (status = "") => {
 
 export const markPayoutPaid = (id) =>
   axiosInstance.post(`/revenue/admin/payout/${id}/mark-paid/`);
+
+export const markPayoutReject = (id) =>
+  axiosInstance.post(`/revenue/admin/payout/${id}/reject/`);

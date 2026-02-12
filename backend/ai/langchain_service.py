@@ -12,7 +12,7 @@ def get_course_chain(course_id):
 
     retriever = vectorstore.as_retriever(
         search_kwargs={
-            "k": 4,  
+            "k": 1,  
             "filter": {
                 "course_id": str(course_id)
             }

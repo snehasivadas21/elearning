@@ -15,6 +15,7 @@ class InstructorWallet(models.Model):
     instructor = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="wallet",limit_choices_to={'role':'instructor'})
     available_balance = models.DecimalField(max_digits=10,decimal_places=2,default=0)
     total_earned = models.DecimalField(max_digits=10,decimal_places=2,default=0)
+    pending_balance = models.DecimalField(max_digits=10,decimal_places=2,default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -59,3 +60,23 @@ class PayoutRequest(models.Model):
 
     def __str__(self):
         return f"Payout {self.id} - {self.instructor.email}"
+
+class PaymentAccount(models.Model):
+    instructor = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="payment_account")
+    account_holder_name = models.CharField(max_length=100, blank=True)
+    account_number = models.CharField(max_length=30, blank=True)
+    ifsc_code = models.CharField(max_length=20, blank=True)
+    upi_id = models.CharField(max_length=100, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def has_valid_details(self):
+        if self.upi_id:
+            return True
+        if self.account_number and self.ifsc_code:
+            return True
+        return False
+
+    def __str__(self):
+        return f"{self.instructor.username} Payment Account"

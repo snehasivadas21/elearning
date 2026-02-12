@@ -89,8 +89,16 @@ const CourseDetail = ({ course }) => {
           )}
         </div>
 
-        <h1 className="text-2xl font-bold">{course.title}</h1>
-        <p className="text-gray-600 mt-2">{course.description}</p>
+        <div className="p-4 space-y-3">
+          <h1 className="text-2xl font-bold">
+            {course.title}
+          </h1>
+
+          <p className="text-gray-600 leading-relaxed">
+            {course.description}
+          </p>
+        </div>
+
         <div className="flex gap-4 text-sm text-gray-500">
           <span className="bg-gray-300 text-sm px-3 py-1 rounded-full">{course.level}</span>
           <span className="bg-gray-300 text-sm px-3 py-1 rounded-full">📜 Certificate</span>
@@ -109,7 +117,9 @@ const CourseDetail = ({ course }) => {
         </div>
 
         <div className="mt-4 flex items-center gap-4 text-lg text-gray-500">
-          <span>⭐ {course.rating || "4.5"} (12,000 students)</span>
+          <span>⭐ {course.avg_rating ? course.avg_rating.toFixed(1) : "No ratings"} -
+            ({course.review_count} reviews)
+          </span>
           <span>🌍 English</span>
         </div>
 
@@ -196,9 +206,9 @@ const CourseDetail = ({ course }) => {
                   src={instructor?.profile_image || DEFAULT_AVATAR}
                   className="w-16 h-16 rounded-full object-cover"
                 />
-                <div>
+                <div className="p-4 space-y-2">
                   <h1 className="text-xl font-bold">{instructor?.full_name}</h1>
-                  <p className="text-xl font-bold">{instructor?.headline}</p>
+                  <p className="text-gray-600 leading-relaxed">{instructor?.headline}</p>
                   <p className="text-gray-600 text-sm">
                     {instructor?.bio || "No bio available."}
                   </p>

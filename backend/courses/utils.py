@@ -1,5 +1,7 @@
 import os,io
 import uuid 
+import cloudinary.uploader
+from cloudinary import CloudinaryImage
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.utils import timezone
@@ -40,46 +42,55 @@ def generate_certificate_file(certificate:CourseCertificate):
 
     buffer.seek(0)
 
-    # Save to Cloudinary via FileField
-    certificate.certificate_file.save(
-        f"{certificate.certificate_id}.pdf",
-        ContentFile(buffer.read()),
-        save=True
+    upload = cloudinary.uploader.upload(
+        buffer,
+        resource_type="raw",
+        folder="media/certificates",
+        public_id=f"{certificate.certificate_id}.pdf", 
+        overwrite=True
     )
+
+    certificate.certificate_file.name = upload["public_id"]
+    certificate.save(update_fields=["certificate_file"])
+
     buffer.close()
     return certificate
 
 
 def issue_certificate_if_eligible(student, course):
-    # Already issued?
     if CourseCertificate.objects.filter(student=student, course=course).exists():
         return
 
-    # All lessons completed?
     total_lessons = Lesson.objects.filter(module__course=course, is_active=True).count()
     completed_lessons = LessonProgress.objects.filter(student=student, lesson__module__course=course,completed=True).count()
     if total_lessons == 0 or completed_lessons < total_lessons:
         return
 
-    # If course is paid, ensure it's purchased
     if not CoursePurchase.objects.filter(student=student, course=course).exists():
         return
 
-    # All checks passed — issue certificate
     certificate = CourseCertificate.objects.create(student=student, course=course, issued_at=timezone.now(), certificate_id= generate_certificate_id())
     return generate_certificate_file(certificate)
 
-def verify_certificate(certificate_id:str):
+def verify_certificate(certificate_id: str):
     try:
         cert = CourseCertificate.objects.get(certificate_id=certificate_id)
+        
+        certificate_url = None
+        if cert.certificate_file:
+            certificate_url = CloudinaryImage(cert.certificate_file.name).build_url(
+                resource_type="raw",
+                secure=True
+            )
+        
         return {
-            "student" : cert.student.username,
-            "course" : cert.course.title,
-            "issued_at" : cert.issued_at,
-            "certificate_url" : cert.certificate_file.url if cert.certificate_file else None,            
+            "student": cert.student.username,
+            "course": cert.course.title,
+            "issued_at": cert.issued_at,
+            "certificate_url": certificate_url,            
         } 
     except CourseCertificate.DoesNotExist:
-        return None    
+        return None   
     
 def get_course_progress(student,course):
     total_lessons = course.modules.all().prefetch_related("lesson").aggregate(
