@@ -1,4 +1,12 @@
+import { useNavigate } from "react-router-dom";
+
 const RevenueByInstructorTable = ({ data }) => {
+  const navigate = useNavigate();
+
+  const viewTransactions = (instructorId) =>{
+    navigate(`/admin/transactions?instructor=${instructorId}`)
+  }
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -13,6 +21,7 @@ const RevenueByInstructorTable = ({ data }) => {
               <th className="px-6 py-3">Total Earned</th>
               <th className="px-6 py-3">Paid</th>
               <th className="px-6 py-3">Pending</th>
+              <th className="px-6 py-3">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -22,6 +31,14 @@ const RevenueByInstructorTable = ({ data }) => {
                 <td className="px-6 py-4">₹{row.total_earned}</td>
                 <td className="px-6 py-4">₹{row.paid_amount}</td>
                 <td className="px-6 py-4">₹{row.pending_amount}</td>
+                <td className="px-6 py-4">
+                  <button
+                    onClick={() => viewTransactions(row.instructor_id)}
+                    className="text-purple-600 hover:underline text-sm"
+                  >
+                    View transactions
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

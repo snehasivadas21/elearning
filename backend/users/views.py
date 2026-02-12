@@ -22,7 +22,7 @@ from django.core.mail import send_mail
 from courses.models import Course,Lesson,LessonProgress,LessonResource
 from payment.models import CoursePurchase
 from courses.serializers import AdminCourseSerializer,UserCourseDetailSerializer
-from django.db.models import Avg,Sum
+from django.db.models import Avg,Count
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.parsers import MultiPartParser,FormParser
@@ -239,6 +239,13 @@ class ApprovedCourseListView(generics.ListAPIView):
     search_fields = ['title']
     ordering_fields = ['price','title']
     ordering = ['title']
+    
+    def get_queryset(self):
+        return Course.objects.annotate(
+            avg_rating=Avg("reviews__rating"),
+            review_count=Count("reviews")
+        )
+
 class ApprovedCourseDetailView(generics.RetrieveAPIView):
     queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = UserCourseDetailSerializer
@@ -254,6 +261,9 @@ class MyEnrolledCourseDetailView(generics.RetrieveAPIView):
             status = 'approved',
             is_active=True,
             is_published=True
+        ).annotate(
+            avg_rating = Avg("reviews__rating"),
+            review_count = Count("reviews")
         ).distinct()  
     
 class ProfileView(APIView):

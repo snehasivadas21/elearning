@@ -1,11 +1,10 @@
-from langchain_community.llms import Ollama
+from langchain_openai import ChatOpenAI
 from django.conf import settings
 
-
 def get_llm():
-    return Ollama(
-        model=settings.OLLAMA_MODEL,
-        base_url=settings.OLLAMA_BASE_URL,
+    return ChatOpenAI(
+        model="gpt-3.5-turbo",
         temperature=0.2,
-        timeout=120,
+        api_key=settings.OPENAI_API_KEY,
+        max_tokens=1024,
     )

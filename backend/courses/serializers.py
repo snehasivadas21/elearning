@@ -22,11 +22,14 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.filter(is_active=True))
     instructor_profile = serializers.SerializerMethodField()
+    avg_rating = serializers.FloatField(read_only=True)
+    review_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Course
         fields = [
-            'id','title','description','category','category_name','level','price','course_image','status','updated_at','instructor_profile',
+            'id','title','description','category','category_name','level','price','course_image',
+            'status','updated_at','instructor_profile','avg_rating','review_count'
         ]
         read_only_fields = ['status']
 
@@ -145,10 +148,13 @@ class AdminCourseSerializer(serializers.ModelSerializer):
     course_image = serializers.ImageField(required=False, use_url=True)
     category = serializers.PrimaryKeyRelatedField(queryset=CourseCategory.objects.all())
     instructor_profile = serializers.SerializerMethodField()
+    avg_rating = serializers.FloatField(read_only=True)
+    review_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model=Course
-        fields=['id','title','price','level','status','is_active','is_published','admin_feedback','instructor_username','category_name','created_at','course_image','category','updated_at','instructor_profile',]  
+        fields=['id','title','price','level','status','is_active','is_published','admin_feedback','instructor_username',
+                'category_name','created_at','course_image','category','updated_at','instructor_profile','avg_rating','review_count']  
         read_only_fields = fields
 
     def validate_category(self,value):
@@ -170,6 +176,8 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
     instructor_profile = serializers.SerializerMethodField()
     progress_percentage = serializers.SerializerMethodField()
     live_session = serializers.SerializerMethodField()
+    avg_rating = serializers.FloatField(read_only=True)
+    review_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Course
@@ -187,6 +195,8 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
             "instructor_profile",
             "progress_percentage",
             "live_session",
+            "avg_rating",
+            "review_count",
         ]
 
     def get_modules(self, obj):

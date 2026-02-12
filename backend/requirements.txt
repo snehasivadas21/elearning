@@ -139,3 +139,8 @@ xxhash==3.6.0
 yarl==1.22.0
 zope.interface==7.2
 zstandard==0.25.0
+google-generativeai
+langchain-google-genai
+langchain-openai
+openai
+

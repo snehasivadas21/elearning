@@ -12,7 +12,7 @@ from .permissions import IsEnrolledOrInstructor
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from courses.models import Course
-from .tasks import schedule_session_reminder
+from .utils import notify_course_students
 
 
 class LiveSessionCreateView(generics.CreateAPIView):
@@ -27,11 +27,11 @@ class LiveSessionCreateView(generics.CreateAPIView):
 
         session = serializer.save(created_by=self.request.user)
 
-        if session.scheduled_at:
-            eta = session.scheduled_at - timezone.timedelta(minutes=5)
-            if eta > timezone.now():
-                schedule_session_reminder.apply_async(args=[str(session.id)], eta=eta)
-
+        notify_course_students(
+            course=course,
+            title="New live session scheduled",
+            message=f"{session.title} scheduled on {session.scheduled_at.strftime('%d %b %Y, %I:%M %p')}",
+        )
 
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
@@ -47,6 +47,12 @@ def start_session(request, id):
     session.status = "ongoing"
     session.started_at = timezone.now()
     session.save(update_fields=["status", "started_at"])
+    
+    notify_course_students(
+        course=session.course,
+        title="Live session started",
+        message=f"{session.title} is live now. Join immediately!",
+    )
 
     LiveParticipant.objects.get_or_create(
         session=session,
@@ -126,6 +132,12 @@ def cancel_session(request, id):
 
     session.status = "cancelled"
     session.save(update_fields=["status"])
+
+    notify_course_students(
+        course=session.course,
+        title="Live session cancelled",
+        message=f"{session.title} has been cancelled by instructor",
+    )
 
     return Response({"message": "Session cancelled"})
 

@@ -79,15 +79,10 @@ const MyCourses = () => {
                 By {course.instructor_username}
               </p>
 
-              <div className="flex items-center text-sm gap-4 text-gray-500 mt-2">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  {course.rating ?? "4.5"}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  {course.students_count ?? "10,000"}
-                </div>
+              <div className="mt-4 flex items-center gap-4 text-sm text-gray-500">
+                <span>⭐ {course.avg_rating ? course.avg_rating.toFixed(1) : "No ratings"} -
+                  ({course.review_count} reviews)
+                </span>
               </div>
 
               <CourseProgressBar

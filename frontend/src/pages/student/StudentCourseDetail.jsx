@@ -133,8 +133,17 @@ const StudentCourseDetail = () => {
               </span>
             )}
         </div>
-        <h1 className="text-2xl font-bold">{course.title}</h1>
-        <p className="text-gray-600 mt-2">{course.description}</p>
+
+        <div className="p-4 space-y-3">
+          <h1 className="text-2xl font-bold">
+            {course.title}
+          </h1>
+
+          <p className="text-gray-600 leading-relaxed">
+            {course.description}
+          </p>
+        </div>
+
         <div className="flex gap-4 text-sm text-gray-500">
           <span className="bg-gray-300 text-sm px-3 py-1 rounded-full">{course.level}</span>
           <span className="bg-gray-300 text-sm px-3 py-1 rounded-full">📜 Certificate</span>
@@ -153,7 +162,9 @@ const StudentCourseDetail = () => {
         </div>
 
         <div className="mt-4 flex items-center gap-4 text-lg text-gray-500">
-          <span>⭐ {course.rating || "4.5"} (12,000 students)</span>
+          <span>⭐ {course.avg_rating ? course.avg_rating.toFixed(1) : "No ratings"} - 
+            {course.review_count} reviews
+          </span>
           <span>🌍 English</span>
         </div>
       </div> 
@@ -222,9 +233,6 @@ const StudentCourseDetail = () => {
         title="Open course community"
         
       >
-      <span className="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full px-2">
-        3
-      </span>
         💬
       </button>
 

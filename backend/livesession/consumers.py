@@ -16,35 +16,25 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
         if not await self.can_join():
             return await self.close()
 
-        # FIX 6: was self.mark_joined() — method did not exist.
-        # upsert_participant() is the correct method AND now sets role.
         await self.upsert_participant()
 
         await self.channel_layer.group_add(self.room_group, self.channel_name)
         await self.accept()
 
-        # FIX 1: send the user's own role back to THEM directly (not to group).
-        # Frontend useLiveSessionSocket listens for { type: "joined", role }
-        # to set userRole. Without this, userRole is always null and the
-        # tutor never calls startCall().
         role = await self.get_user_role()
         await self.send_json({
             "type": "joined",
-            "role": role,                                          # "tutor" or "student"
+            "role": role,                                         
             "user_id": self.user.id,
         })
 
-        # FIX 4: wrap user_id + name inside a "participant" object.
-        # Frontend does: [...prev, data.participant]
-        # Before this fix, data.participant was undefined because the keys
-        # were at the top level.
         await self.channel_layer.group_send(
             self.room_group,
             {
                 "type": "participant.event",
                 "event": "joined",
                 "user_id": self.user.id,
-                "participant": {                                   # <-- wrapper added
+                "participant": {                               
                     "user_id": self.user.id,
                     "name": self.user.get_full_name() or self.user.email,
                     "role": role,
@@ -68,12 +58,8 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
 
         await self.channel_layer.group_discard(self.room_group, self.channel_name)
 
-    # ──────────────────────────────────────────────
-    # Group-level message handlers (called by channel layer)
-    # ──────────────────────────────────────────────
-
     async def participant_event(self, event):
-        # FIX 4: forward the "participant" wrapper when present
+       
         msg = {
             "type": "participant",
             "event": event["event"],
@@ -113,17 +99,11 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
             "emoji": event["emoji"],
         })
 
-    # FIX 7 (consumer side): handler for session_ended broadcast.
-    # end_session view will now also group_send to "webrtc_{session_id}".
     async def session_ended(self, event):
         await self.send_json({
             "type": "session_ended",
             "session_id": event["session_id"],
         })
-
-    # ──────────────────────────────────────────────
-    # Incoming messages from the client
-    # ──────────────────────────────────────────────
 
     async def receive_json(self, content, **kwargs):
         t = content.get("type")
@@ -134,21 +114,12 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
         elif t == "leave":
             await self.handle_leave()
 
-        # FIX 3: WebRTC signals must NOT broadcast to the group.
-        # group_send sends to ALL clients in the room including the sender.
-        # The sender then receives its own offer/answer/ice-candidate back,
-        # which corrupts the peer connection (especially ice-candidates —
-        # both sides were adding each other's AND their own candidates).
-        # Use self.send_json() to send only to the OTHER side.
-        # In a 1-to-1 session (tutor ↔ student) this is correct:
-        # the other side is everyone in the group EXCEPT the sender.
-        # We broadcast to group but skip self in the handler below.
         elif t in ("offer", "answer", "ice-candidate"):
             await self.channel_layer.group_send(
                 self.room_group,
                 {
                     "type": "signal.forward",
-                    "from_user_id": self.user.id,       # track who sent it
+                    "from_user_id": self.user.id,     
                     "signal_type": t,
                     "payload": {k: v for k, v in content.items() if k != "type"},
                 }
@@ -193,20 +164,14 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
                     }
                 )
 
-    # FIX 3: signal_forward now skips the sender.
-    # If this consumer IS the sender, do not forward back to them.
     async def signal_forward(self, event):
         if event["from_user_id"] == self.user.id:
-            return                                                 # skip sender
+            return                                                
 
         await self.send_json({
-            "type": event["signal_type"],                          # "offer" / "answer" / "ice-candidate"
+            "type": event["signal_type"],                       
             **event["payload"],
         })
-
-    # ──────────────────────────────────────────────
-    # Internal helpers
-    # ──────────────────────────────────────────────
 
     async def handle_join(self):
         await self.upsert_participant()
@@ -232,10 +197,6 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
             },
         )
 
-    # ──────────────────────────────────────────────
-    # DB helpers (sync wrapped)
-    # ──────────────────────────────────────────────
-
     @database_sync_to_async
     def can_join(self):
         try:
@@ -247,11 +208,6 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
         c = s.course
         return c.instructor_id == self.user.id or c.enrolled_students.filter(id=self.user.id).exists()
 
-    # FIX 2: upsert_participant now determines and sets role.
-    # If the user is the course instructor → "tutor", else → "student".
-    # Uses defaults so it only sets role on CREATE. If start_session
-    # already created the instructor row with role="instructor", this
-    # won't overwrite it (update_or_create defaults only apply on create).
     @database_sync_to_async
     def upsert_participant(self):
         session = LiveSession.objects.get(id=self.session_id)
@@ -264,13 +220,12 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
             defaults={
                 "joined_at": timezone.now(),
                 "left_at": None,
-                "role": role,                                      # FIX 2: role is set
+                "role": role,                                   
             },
         )
 
     @database_sync_to_async
     def get_user_role(self):
-        """Return this user's role string for the current session."""
         try:
             p = LiveParticipant.objects.get(
                 session_id=self.session_id,
@@ -289,9 +244,6 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
             left_at__isnull=True
         ).update(left_at=timezone.now())
 
-    # FIX 5: .values() with select_related produces keys like "user__id".
-    # Frontend expects "user_id". Use .annotate() + F() to rename,
-    # or just remap in Python after the query.
     @database_sync_to_async
     def get_participants(self):
         rows = (
@@ -308,7 +260,7 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
                 "is_muted",
             )
         )
-        # Remap Django's double-underscore keys to what frontend expects
+    
         return [
             {
                 "user_id": row["user__id"],

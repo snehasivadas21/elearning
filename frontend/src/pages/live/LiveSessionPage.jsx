@@ -25,7 +25,7 @@ const LiveSessionPage = () => {
     participants,
     userRole,
     reactions,
-    sessionEnded,       // FIX 7: server pushes this when tutor ends
+    sessionEnded,       
   } = useLiveSessionSocket(sessionId);
 
   const {
@@ -44,7 +44,7 @@ const LiveSessionPage = () => {
     isInstructor: userRole === "tutor",
   });
 
-  // Fetch session info once on mount
+ 
   useEffect(() => {
     const fetchSession = async () => {
       try {
@@ -64,14 +64,14 @@ const LiveSessionPage = () => {
     fetchSession();
   }, [sessionId, navigate, userRole]);
 
-  // Tutor starts the WebRTC call once everything is ready
+ 
   useEffect(() => {
     if (connected && userRole === "tutor" && localStream) {
       startCall();
     }
   }, [connected, userRole, localStream]);
 
-  // FIX 7: if server pushes session_ended, navigate all students away
+  
   useEffect(() => {
     if (sessionEnded) {
       navigate("/");
@@ -91,9 +91,6 @@ const LiveSessionPage = () => {
   const leaveSession = async () => {
     if (userRole === "tutor") {
       await axiosInstance.post(`/live/${sessionId}/end/`);
-      // end_session API now broadcasts session_ended to the webrtc room.
-      // Students will get it via the useEffect above and navigate away.
-      // Tutor navigates immediately after the API call returns.
     }
     sendSignal({ type: "leave" });
     navigate("/");

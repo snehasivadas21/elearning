@@ -36,6 +36,7 @@ import AdminCategories from "./pages/admin/AdminCategories";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminRevenuePage from "./pages/admin/AdminRevenuePage";
 import AdminPayoutPage from "./pages/admin/AdminPayoutPage";
+import AdminPlatformCommissionPage from "./pages/admin/AdminPlatformCommissionPage";
 
 // Tutor
 import TutorLayout from "./components/tutor/TutorLayout";
@@ -51,6 +52,7 @@ import WalletPage from "./pages/tutor/WalletPage";
 import PrivateRoute from "./routes/PrivateRoute";
 import RoleRoute from "./routes/RoleRoute";
 import StudentLayout from "./components/student/StudentLayout";
+
 
 
 function App() {
@@ -110,6 +112,7 @@ function App() {
         <Route path="orders" element={<AdminOrders/>}/>
         <Route path="payouts" element={<AdminPayoutPage/>}/>
         <Route path="revenue" element={<AdminRevenuePage/>}/>
+        <Route path="transactions" element={<AdminPlatformCommissionPage/>}/>
       </Route>
 
       {/* Tutor Section */}

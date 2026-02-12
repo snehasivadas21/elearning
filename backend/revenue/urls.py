@@ -1,7 +1,7 @@
 from django.urls import path,include
 from rest_framework.routers import DefaultRouter
-from .views import ( TutorRequestPayoutAPIView,AdminPayoutViewSet,
-                    TutorWalletSummaryAPIView,TutorWalletTransactionsAPIView, TutorPayoutHistoryAPIView,
+from .views import ( TutorRequestPayoutAPIView,AdminPayoutViewSet,TutorWalletSummaryAPIView,
+                    TutorWalletTransactionsAPIView, TutorPayoutHistoryAPIView,AdminRevenueTransactionsAPIView,
                     AdminTotalRevenueAPIView,AdminRevenueByCourseAPIView,AdminRevenueByInstructorAPIView,)
 
 router = DefaultRouter()
@@ -16,6 +16,7 @@ urlpatterns = [
     path("admin/revenue/total/", AdminTotalRevenueAPIView.as_view(),name="admin-revenue"),
     path("admin/revenue/by-course/", AdminRevenueByCourseAPIView.as_view(),name="admin-course-revenue"),
     path("admin/revenue/by-instructor/", AdminRevenueByInstructorAPIView.as_view(),name="admin-tutor-revenue"),
+    path("admin/revenue/transactions/",AdminRevenueTransactionsAPIView.as_view(),name="admin-revenue-transactions"),
 
     path('', include(router.urls)),
 
