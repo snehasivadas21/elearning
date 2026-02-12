@@ -34,30 +34,48 @@ def send_live_created_email(session_id, student_ids):
         )
 
 @shared_task
-def schedule_session_reminder(session_id):
+def send_live_started_email(session_id, student_ids):
     try:
-        s = LiveSession.objects.select_related("course").get(
-            id=session_id, status="scheduled", notification_sent=False
-        )
+        session = LiveSession.objects.select_related("course").get(id=session_id)
     except LiveSession.DoesNotExist:
         return
 
-    if not s.scheduled_at or s.scheduled_at < timezone.now():
+    students = User.objects.filter(id__in=student_ids)
+
+    for student in students:
+        send_mail(
+            subject=f"🚀 Live Session Started: {session.title}",
+            message=(
+                f"Hi {student.username},\n\n"
+                f"The live session has started now.\n\n"
+                f"🎓 Course: {session.course.title}\n"
+                f"📢 Join immediately to attend.\n\n"
+                f"See you there!"
+            ),
+            from_email="noreply@pytech.com",
+            recipient_list=[student.email],
+            fail_silently=True,
+        )
+
+@shared_task
+def send_live_cancelled_email(session_id, student_ids):
+    try:
+        session = LiveSession.objects.select_related("course").get(id=session_id)
+    except LiveSession.DoesNotExist:
         return
 
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f"course_notify_{s.course_id}",
-        {
-            "type": "notify.message",
-            "payload": {
-                "event": "session_reminder",
-                "session_id": str(s.id),
-                "course_id": s.course_id,
-                "starts_at": s.scheduled_at.isoformat(),
-            }
-        }
-    )
+    students = User.objects.filter(id__in=student_ids)
 
-    s.notification_sent = True
-    s.save(update_fields=["notification_sent"])
+    for student in students:
+        send_mail(
+            subject=f"❌ Live Session Cancelled: {session.title}",
+            message=(
+                f"Hi {student.username},\n\n"
+                f"Unfortunately, the live session has been cancelled.\n\n"
+                f"🎓 Course: {session.course.title}\n"
+                f"We’ll notify you if it is rescheduled."
+            ),
+            from_email="noreply@pytech.com",
+            recipient_list=[student.email],
+            fail_silently=True,
+        )

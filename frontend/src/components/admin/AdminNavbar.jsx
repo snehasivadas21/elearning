@@ -1,10 +1,8 @@
 import { useEffect, useState, useRef, useContext } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 const AdminNavbar = ({ title }) => {
   const {user,logoutUser} = useContext(AuthContext)
-  const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const [openDropdown, setOpenDropdown] = useState(false);
 
@@ -26,14 +24,6 @@ const AdminNavbar = ({ title }) => {
       </div>
 
       <div className="flex items-center space-x-16">
-        <div className="hidden md:flex items-center">
-          <input
-            type="text"
-            placeholder="Search"
-            className="px-6 py-2 rounded-full border border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-64 shadow-sm"
-          />
-        </div>
-
         <div className="relative" ref={dropdownRef}>
           {user?.username && (
             <>

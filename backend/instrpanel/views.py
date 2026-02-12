@@ -1,7 +1,8 @@
 from rest_framework import viewsets,permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
-from .serializers import TutorOrderSerializer
+from .models import Notification
+from .serializers import TutorOrderSerializer,NotificationSerializer
 from users.permissions import IsInstructorUser
 from payment.models import Order
 
@@ -16,3 +17,10 @@ class TutorOrderViewSet(viewsets.ReadOnlyModelViewSet):
             course__instructor=self.request.user,
             status="completed"
         ).select_related("course", "student").order_by("-created_at")
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by("-created_at")

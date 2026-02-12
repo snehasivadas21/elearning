@@ -7,7 +7,7 @@ const useLiveSessionSocket = (sessionId) => {
   const [participants, setParticipants] = useState([]);
   const [userRole, setUserRole] = useState(null);
   const [reactions, setReactions] = useState([]);
-  const [sessionEnded, setSessionEnded] = useState(false); // FIX 7: track server-pushed end
+  const [sessionEnded, setSessionEnded] = useState(false); 
 
   useEffect(() => {
     if (!sessionId) return;
@@ -15,7 +15,7 @@ const useLiveSessionSocket = (sessionId) => {
     const protocol =
       window.location.protocol === "https:" ? "wss" : "ws";
 
-    const wsUrl = `${protocol}://${window.location.host}/ws/live/${sessionId}/`;
+    const wsUrl = `${protocol}://localhost:8000/ws/live/${sessionId}/`;
 
     const socket = new WebSocket(wsUrl);
     socketRef.current = socket;
@@ -34,8 +34,6 @@ const useLiveSessionSocket = (sessionId) => {
     socket.onmessage = (e) => {
       const data = JSON.parse(e.data);
 
-      // FIX 1: server now sends this directly to the connecting user
-      // after connect(). Sets userRole so tutor can startCall().
       if (data.type === "joined" && data.role) {
         setUserRole(data.role);
         return;
@@ -49,7 +47,7 @@ const useLiveSessionSocket = (sessionId) => {
       if (data.type === "participant") {
         if (data.event === "joined") {
           setParticipants((prev) => {
-            // FIX 4: data.participant now exists (server wraps it)
+          
             if (!data.participant) return prev;
             if (prev.find((p) => p.user_id === data.participant.user_id)) return prev;
             return [...prev, data.participant];
@@ -103,8 +101,6 @@ const useLiveSessionSocket = (sessionId) => {
         return;
       }
 
-      // FIX 7: tutor called end_session API → server broadcasts this
-      // to the webrtc room → all students receive it here.
       if (data.type === "session_ended") {
         setSessionEnded(true);
         return;
@@ -153,7 +149,7 @@ const useLiveSessionSocket = (sessionId) => {
     participants,
     userRole,
     reactions,
-    sessionEnded,       // FIX 7: LiveSessionPage can watch this and navigate away
+    sessionEnded,       
     sendSignal,
     sendRaw,
     addMessageListener,

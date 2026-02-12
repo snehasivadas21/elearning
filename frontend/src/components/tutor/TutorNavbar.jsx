@@ -1,12 +1,20 @@
 import { useEffect, useState, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
+import { MessageCircle } from "lucide-react";
+import useChatNotifySocket from "../../hooks/useChatNotifySocket";
 
 const TutorNavbar = ({ title }) => {
   const {user,logoutUser} = useContext(AuthContext)
   const navigate = useNavigate();
   const dropdownRef = useRef();
   const [openDropdown, setOpenDropdown] = useState(false);
+
+  const userId = user?.id || null;
+  const { unreadChats } = useChatNotifySocket(userId);
+
+  const unreadCount = Object.keys(unreadChats).length;
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -26,15 +34,19 @@ const TutorNavbar = ({ title }) => {
       </div>
 
       <div className="flex items-center space-x-16">
-        <div className="hidden md:flex items-center">
-          <input
-            type="text"
-            placeholder="Search"
-            className="px-6 py-2 rounded-full border border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm w-64 shadow-sm"
-          />
-        </div>
+        <div className="relative hidden md:flex items-center space-x-4" ref={dropdownRef}>
+          <div className="relative cursor-pointer"
+              onClick={() => navigate("/tutor/chat")}
+          >
+            <MessageCircle className="w-6 h-6 text-gray-600 hover:text-blue-600" />
 
-        <div className="relative" ref={dropdownRef}>
+            {unreadCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 rounded-full">
+                {unreadCount}
+              </span>
+            )}
+          </div>
+
           {user?.username && (
             <>
               <div

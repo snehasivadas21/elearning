@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import useCourseNotifySocket from "../../hooks/useCourseNotifySocket"
+import useLiveNotifySocket from "../../hooks/useLiveNotifySocket";
 import axiosInstance from "../../api/axiosInstance";
 
 const LiveWaitingPage = () => {
@@ -31,7 +31,7 @@ const LiveWaitingPage = () => {
     fetchSession();
   }, [id]);
 
-  const { notification } = useCourseNotifySocket(session?.course);
+  const { notification } = useLiveNotifySocket(session?.course);
 
   useEffect(() => {
     if (!notification) return;

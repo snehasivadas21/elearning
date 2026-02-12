@@ -2,6 +2,9 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { Menu, X } from "lucide-react";
+import useLiveNotifySocket from "../../hooks/useLiveNotifySocket";
+import useChatNotifySocket from "../../hooks/useChatNotifySocket";
+import NotificationBell from "./NotificationBell";
 
 const Navbar = () => {
   const { user, logoutUser } = useContext(AuthContext);
@@ -10,8 +13,15 @@ const Navbar = () => {
   const dropdownRef = useRef();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const enrolledCourseId =
+  user?.role === "student" ? user?.enrolled_courses || [] : [];
 
-  // Close dropdown when clicking outside
+  const liveNotifications = useLiveNotifySocket(enrolledCourseId);
+
+  const userId = user?.id || null;
+  const { unreadChats, markChatRead } = useChatNotifySocket(userId);
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -22,7 +32,6 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close dropdown on route change
   useEffect(() => {
     setOpenDropdown(false);
   }, [location]);
@@ -43,23 +52,63 @@ const Navbar = () => {
 
         {/* Desktop Menu */}
         <div className="hidden md:flex space-x-6 items-center">
-          <Link to="/" className="text-gray-600 hover:text-blue-600 font-bold">Home</Link> 
-          <Link to="/courses" className="text-gray-600 hover:text-blue-600 font-bold">Courses</Link>
-          <Link to="/about" className="text-gray-600 hover:text-blue-600 font-bold">About</Link>
-          <Link to="/services" className="text-gray-600 hover:text-blue-600 font-bold">Services</Link>
-          <Link to="/certification" className="text-gray-600 hover:text-blue-600 font-bold">Certification</Link>
+          <Link to="/" className="text-gray-600 hover:text-blue-600 font-bold">
+            Home
+          </Link>
+          <Link to="/courses" className="text-gray-600 hover:text-blue-600 font-bold">
+            Courses
+          </Link>
+          <Link to="/about" className="text-gray-600 hover:text-blue-600 font-bold">
+            About
+          </Link>
         </div>
 
         {/* Auth/Profile - Desktop */}
-        <div className="relative hidden md:block" ref={dropdownRef}>
+        <div className="relative hidden md:flex items-center space-x-4" ref={dropdownRef}>
+          {user?.role === "student" ? (
+            <NotificationBell
+              liveNotifications={user.role === "student" ? liveNotifications : []}
+              chatNotifications={unreadChats}
+              onChatOpen={(roomId) => {
+                markChatRead(roomId);
+                navigate(`/chat/${roomId}`);
+              }}
+            />
+          ) : null}
+
+          {/* User Profile */}
           {user && user.username ? (
-            <div
-              className="cursor-pointer w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-center font-extrabold"
-              onClick={() => setOpenDropdown(!openDropdown)}
-              title={user.username}
-            >
-              {user.username.charAt(0).toUpperCase()}
-            </div>
+            <>
+              <div
+                className="cursor-pointer w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white flex items-center justify-center font-extrabold"
+                onClick={() => setOpenDropdown(!openDropdown)}
+                title={user.username}
+              >
+                {user.username.charAt(0).toUpperCase()}
+              </div>
+
+              {/* Dropdown */}
+              {openDropdown && (
+                <div className="absolute right-0 mt-2 w-44 bg-white shadow-lg rounded-lg py-2 z-50 top-12">
+                  <div className="px-4 py-2 text-gray-700 font-medium capitalize">
+                    {user.username} - {user.role}
+                  </div>
+                  <hr />
+                  <button
+                    onClick={handleDashboard}
+                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={logoutUser}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="space-x-4">
               <Link
@@ -74,28 +123,6 @@ const Navbar = () => {
               >
                 Register
               </Link>
-            </div>
-          )}
-
-          {/* Dropdown */}
-          {openDropdown && user?.username && (
-            <div className="absolute right-0 mt-2 w-44 bg-white shadow-lg rounded-lg py-2 z-50">
-              <div className="px-4 py-2 text-gray-700 font-medium capitalize">
-                {user.username} - {user.role}
-              </div>
-              <hr />
-              <button
-                onClick={handleDashboard}
-                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={logoutUser}
-                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-              >
-                Logout
-              </button>
             </div>
           )}
         </div>
@@ -117,11 +144,27 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden px-4 pb-4 space-y-2 bg-white shadow">
-          <Link to="/" onClick={() => setMenuOpen(false)} className="block text-gray-700 font-medium">Home</Link>
-          <Link to="/about" onClick={() => setMenuOpen(false)} className="block text-gray-700 font-medium">About</Link>
-          <Link to="/courses" onClick={() => setMenuOpen(false)} className="block text-gray-700 font-medium">Courses</Link>
-          <Link to="/services" onClick={() => setMenuOpen(false)} className="block text-gray-700 font-medium">Services</Link>
-          <Link to="/certification" onClick={() => setMenuOpen(false)} className="block text-gray-700 font-medium">Certification</Link>
+          <Link
+            to="/"
+            onClick={() => setMenuOpen(false)}
+            className="block text-gray-700 font-medium"
+          >
+            Home
+          </Link>
+          <Link
+            to="/about"
+            onClick={() => setMenuOpen(false)}
+            className="block text-gray-700 font-medium"
+          >
+            About
+          </Link>
+          <Link
+            to="/courses"
+            onClick={() => setMenuOpen(false)}
+            className="block text-gray-700 font-medium"
+          >
+            Courses
+          </Link>
 
           <hr />
 
@@ -151,8 +194,20 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="block text-blue-600">Login</Link>
-              <Link to="/register" onClick={() => setMenuOpen(false)} className="block text-blue-600">Register</Link>
+              <Link
+                to="/login"
+                onClick={() => setMenuOpen(false)}
+                className="block text-blue-600"
+              >
+                Login
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMenuOpen(false)}
+                className="block text-blue-600"
+              >
+                Register
+              </Link>
             </>
           )}
         </div>

@@ -8,6 +8,8 @@ from django.http import FileResponse
 from django.core.exceptions import PermissionDenied,ValidationError
 from rest_framework.parsers import MultiPartParser,FormParser
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
+from django.db.models import Avg,Count
 
 from .models import (Course,CourseCategory,Module,Lesson,LessonResource,LessonProgress,CourseCertificate,Review)
 from payment.models import CoursePurchase
@@ -18,6 +20,7 @@ from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
 from .utils import issue_certificate_if_eligible,verify_certificate,get_course_progress,generate_certificate_file
 from cloudinary_storage.storage import MediaCloudinaryStorage
+from cloudinary import CloudinaryImage
 from ai.pdf_ingestion import index_lesson_resource
 
 
@@ -30,7 +33,13 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
     ordering_fields = ['created_at']
 
     def get_queryset(self):
-        return Course.objects.filter(is_active=True).exclude(status='draft').order_by('-created_at')
+        return Course.objects.filter(
+            is_active=True
+            ).exclude(status='draft'
+            ).annotate(
+                avg_rating=Avg("reviews__rating"),
+                review_count=Count("reviews")
+            ).order_by('-created_at')
 
     @action(detail=True,methods=['patch'])
     def approve(self,request,pk=None):
@@ -79,7 +88,12 @@ class InstructorCourseViewSet(viewsets.ModelViewSet):
     filterset_fields =['category']
 
     def get_queryset(self):
-        return Course.objects.filter(instructor=self.request.user,is_active=True).order_by('-created_at')
+        return Course.objects.filter(
+            instructor=self.request.user,is_active=True
+            ).annotate(
+                avg_rating=Avg("reviews__rating"),
+                review_count=Count("reviews")
+            ).order_by('-created_at')
     
     def destroy(self, request, *args, **kwargs):
         course = self.get_object()
@@ -340,11 +354,11 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
         if not certificate.certificate_file:
             return Response({"error": "Certificate file not found"}, status=404)
 
-        storage = MediaCloudinaryStorage()
-        public_id = certificate.certificate_file.name.replace("media/", "") 
-        url = storage.url(public_id) 
-
-        return Response({"download_url": url})
+        download_url = CloudinaryImage(certificate.certificate_file.name).build_url(
+            resource_type="raw",
+            secure=True
+        )      
+        return redirect(download_url)
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     queryset = Review.objects.select_related("user", "course")
