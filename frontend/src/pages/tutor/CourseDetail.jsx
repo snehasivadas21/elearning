@@ -19,7 +19,15 @@ const getEmbedUrl = (url) => {
   return url;
 };
 
-const LessonPreview = ({ lesson }) => {
+const LessonPreview = ({ lesson, canViewContent }) => {
+  if (!canViewContent || (!lesson.video_url && !lesson.text_content)) {
+    return (
+      <div className="mt-3 p-4 bg-gray-50 rounded border border-gray-200 text-center">
+        <span className="text-gray-500 text-sm">🔒 Enroll to access this lesson</span>
+      </div>
+    );
+  }
+
   if (
     lesson.content_type === "video" &&
     lesson.video_source === "youtube" &&
@@ -64,12 +72,18 @@ const LessonPreview = ({ lesson }) => {
   return null;
 };
 
-const CourseDetail = ({ course }) => {
+const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
   const [activeTab, setActiveTab] = useState("curriculum");
   const modules = course?.modules || [];
   const instructor = course?.instructor_profile || null;
 
   if (!course) return null;
+
+  const canViewLesson = (lesson) => {
+    if (role === "admin" || role === "tutor") return true;
+    if (isEnrolled === true) return true;
+    return lesson.is_preview === true;
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -156,41 +170,45 @@ const CourseDetail = ({ course }) => {
                     </h3>
                     <p className="text-sm text-gray-600 mb-3">{mod.description}</p>
                     <ul className="space-y-3 pl-4 border-l-2 border-purple-200">
-                      {mod.lessons?.map((lesson, i) => (
-                        <li key={lesson.id} className="text-gray-700">
-                          <div className="flex justify-between items-center">
-                            <span>
-                              {i + 1}. {lesson.title}
-                            </span>
-                          </div>
+                      {mod.lessons?.map((lesson, i) => {
+                        const canView = canViewLesson(lesson);
+                        
+                        return (
+                          <li key={lesson.id} className="text-gray-700">
+                            <div className="flex justify-between items-center">
+                              <span className="flex items-center gap-2">
+                                {canView ? "🎬" : "🔒"} {i + 1}. {lesson.title}
+                                {lesson.is_preview && (
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                    Free Preview
+                                  </span>
+                                )}
+                              </span>
+                            </div>
 
-                          <LessonPreview lesson={lesson} />
+                            <LessonPreview lesson={lesson} canViewContent={canView} />
 
-                          {lesson.is_preview && lesson.content_type === "text" && (
-                            <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                              {lesson.content_url}
-                            </p>
-                          )}
-
-                          {lesson.resources?.length > 0 && (
-                            <ul className="mt-2 text-sm text-gray-600">
-                              {lesson.resources.map((res) => (
-                                <li key={res.id}>
-                                  📄 {res.title} –{" "}
-                                  <a
-                                    href={res.file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 underline"
-                                  >
-                                    {res.title}
-                                  </a>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </li>
-                      ))}
+                            {/* Show resources only if user can view lesson */}
+                            {canView && lesson.resources?.length > 0 && (
+                              <ul className="mt-2 text-sm text-gray-600">
+                                {lesson.resources.map((res) => (
+                                  <li key={res.id}>
+                                    📄 {res.title} –{" "}
+                                    <a
+                                      href={res.file}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 underline"
+                                    >
+                                      Download
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 ))

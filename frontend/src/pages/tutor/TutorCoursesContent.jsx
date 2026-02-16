@@ -4,7 +4,7 @@ import axiosInstance from "../../api/axiosInstance";
 import { extractResults } from "../../api/api";
 import ModuleModal from "../../components/tutor/ModuleModal";
 import LessonModal from "../../components/tutor/LessonModal";
-
+import { toast } from "react-toastify";
 
 const getEmbedUrl = (url) => {
   if (!url) return "";
@@ -303,9 +303,11 @@ const InstructorCourseContent = () => {
           onSubmit={async (data, id) => {
             if (id) {
               await axiosInstance.patch(`/modules/${id}/`, data);
+              toast.success("Module updated successfully 🎉");
             } else {
               data.set("course", courseId);
               await axiosInstance.post("/modules/", data);
+              toast.success("Module created successfully 🎉");
             }
             setShowModuleModal(false);
             fetchModules();

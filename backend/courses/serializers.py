@@ -77,7 +77,7 @@ class LessonSerializer(serializers.ModelSerializer):
         model = Lesson
         fields = [
             'id', 'module', 'title', 'content_type',
-            'video_source', 'video_url',
+            'video_source', 'video_url','duration',
             'text_content', 'order',
             'is_preview', 'is_active',
             'created_at', 'updated_at',
@@ -238,7 +238,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
 class LessonProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonProgress 
-        fields = ['id','student','lesson','completed','completed_at'] 
+        fields = ['id','student','lesson','completed','completed_at','watched_seconds'] 
         read_only_fields = ['id','studet','lesson']
 
 class CertificateSerializer(serializers.ModelSerializer):

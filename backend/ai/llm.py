@@ -1,10 +1,10 @@
 from langchain_openai import ChatOpenAI
-from django.conf import settings
+import os
 
 def get_llm():
     return ChatOpenAI(
-        model="gpt-3.5-turbo",
+        model="openai/gpt-3.5-turbo",
+        openai_api_key=os.getenv("OPENROUTER_API_KEY"),
+        base_url="https://openrouter.ai/api/v1",
         temperature=0.2,
-        api_key=settings.OPENAI_API_KEY,
-        max_tokens=1024,
     )
