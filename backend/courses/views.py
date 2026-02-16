@@ -19,6 +19,7 @@ from rest_framework.permissions import IsAuthenticated,AllowAny
 from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
 from .utils import issue_certificate_if_eligible,verify_certificate,get_course_progress,generate_certificate_file
+from instrpanel.utils.youtube_duration import get_youtube_duration
 from cloudinary_storage.storage import MediaCloudinaryStorage
 from cloudinary import CloudinaryImage
 from ai.pdf_ingestion import index_lesson_resource
@@ -217,7 +218,29 @@ class LessonViewSet(viewsets.ModelViewSet):
         course = module.course 
         if not self.request.user.is_staff and course.instructor != self.request.user: 
             raise PermissionDenied("You do not own this course") 
-        serializer.save()
+        
+        # FIX: Auto-detect video source based on URL
+        if serializer.validated_data.get('content_type') == 'video':
+            video_url = serializer.validated_data.get('video_url', '')
+            
+            # If URL contains cloudinary, it's a cloud upload
+            if 'cloudinary.com' in video_url:
+                serializer.validated_data['video_source'] = 'cloud'
+            # Otherwise treat as youtube
+            elif video_url:
+                serializer.validated_data['video_source'] = 'youtube'
+        
+        lesson = serializer.save()
+
+        # Only fetch YouTube duration for actual YouTube videos
+        if lesson.content_type == "video" and lesson.video_source == "youtube" and 'youtube.com' in lesson.video_url:
+            try:
+                duration = get_youtube_duration(lesson.video_url)
+                if duration:
+                    lesson.duration = duration
+                    lesson.save(update_fields=["duration"])
+            except Exception as e:
+                print("Youtube duration error:",e)        
 
 
     def perform_update(self, serializer):
@@ -227,7 +250,28 @@ class LessonViewSet(viewsets.ModelViewSet):
         if course.status in ["approved", "submitted"]:
             raise PermissionDenied("Cannot edit lessons of approved/submitted courses")
 
-        serializer.save()
+        # FIX: Auto-detect video source based on URL
+        if serializer.validated_data.get('content_type') == 'video':
+            video_url = serializer.validated_data.get('video_url', '')
+            
+            # If URL contains cloudinary, it's a cloud upload
+            if 'cloudinary.com' in video_url:
+                serializer.validated_data['video_source'] = 'cloud'
+            # Otherwise treat as youtube
+            elif video_url:
+                serializer.validated_data['video_source'] = 'youtube'
+
+        lesson = serializer.save()
+
+        # Only fetch YouTube duration for actual YouTube videos
+        if lesson.content_type == "video" and lesson.video_source == "youtube" and 'youtube.com' in lesson.video_url:
+            try:
+                duration = get_youtube_duration(lesson.video_url)
+                if duration:
+                    lesson.duration = duration
+                    lesson.save(update_fields=["duration"])
+            except Exception as e:
+                print("Youtube duration error:",e)    
 
     def destroy(self, request, *args, **kwargs):
         lesson = self.get_object()
@@ -293,29 +337,39 @@ class LessonProgressViewSet(viewsets.GenericViewSet):
     def get_queryset(self):
         return LessonProgress.objects.filter(student=self.request.user) 
     
-    @action(detail=False, methods=["post"], url_path="lessons/(?P<lesson_id>[^/.]+)/toggle")
-    def toggle_complete(self, request, lesson_id=None):
+    @action(detail=False, methods=["post"], url_path="lessons/(?P<lesson_id>[^/.]+)/watch")
+    def update_watch_progress(self, request, lesson_id=None):
         lesson = get_object_or_404(Lesson, id=lesson_id)
+
+        watched_seconds = int(request.data.get("watched_seconds", 0))
 
         progress, _ = LessonProgress.objects.get_or_create(
             student=request.user,
             lesson=lesson
         )
 
-        progress.completed = not progress.completed
-        progress.completed_at = timezone.now() if progress.completed else None
-        progress.save()
+        if watched_seconds > progress.watched_seconds:
+            progress.watched_seconds = watched_seconds
 
-        issue_certificate_if_eligible(
-            student=request.user,
-            course=lesson.module.course
-        )
+        if lesson.duration > 0:
+            completion_threshold = lesson.duration * 0.9
+            if progress.watched_seconds >= completion_threshold:
+                if not progress.completed:
+                    progress.completed = True
+                    progress.completed_at = timezone.now()
+                    issue_certificate_if_eligible(
+                        student=request.user,
+                        course=lesson.module.course
+                    )
+
+        progress.save()
 
         return Response({
             "lesson_id": lesson.id,
+            "watched_seconds": progress.watched_seconds,
             "completed": progress.completed
         })
- 
+
 class CourseProgressViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 

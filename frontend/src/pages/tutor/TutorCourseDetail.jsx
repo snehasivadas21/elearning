@@ -28,7 +28,7 @@ const TutorCourseDetail = () => {
     fetchCourseAndModules();
   }, [id]);
 
-  return <CourseDetail course={course} />;
+  return <CourseDetail course={course} role="tutor" />;
 };
 
 export default TutorCourseDetail;

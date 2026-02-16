@@ -31,7 +31,6 @@ const RequestPayoutModal = ({ balance, onSuccess }) => {
     try {
       setLoading(true);
 
-      // Only send non-empty fields
       const payload = {
         amount: Number(amount),
       };
@@ -62,13 +61,12 @@ const RequestPayoutModal = ({ balance, onSuccess }) => {
       setIfsc("");
       onSuccess();
     } catch (err) {
-      // Better error handling
       const errorMsg = err.response?.data?.detail || 
                       err.response?.data?.error ||
                       JSON.stringify(err.response?.data) ||
                       "Payout failed";
       toast.error(errorMsg);
-      console.error("Payout error:", err.response?.data); // Debug
+      console.error("Payout error:", err.response?.data);
     } finally {
       setLoading(false);
     }

@@ -60,7 +60,7 @@ const AdminCourseDetail = () => {
   return (
     <div className="space-y-10 pb-10">
 
-      <CourseDetail course={course} />
+      <CourseDetail course={course} role="admin"/>
 
       {course.status === "submitted" && (
         <div className="max-w-6xl mx-auto bg-white border rounded-xl shadow p-6">

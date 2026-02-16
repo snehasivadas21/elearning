@@ -93,14 +93,17 @@ def verify_certificate(certificate_id: str):
         return None   
     
 def get_course_progress(student,course):
-    total_lessons = course.modules.all().prefetch_related("lesson").aggregate(
-        total = models.Count("lessons")
-    )["total"] or 0
-
-    completed_lessons = LessonProgress.objects.filter(
-        student = student,lesson__module__course =course,completed = True
+    total_lessons = Lesson.objects.filter(
+        module__course=course,
+        duration__gt=0
     ).count()
 
+    completed_lessons = LessonProgress.objects.filter(
+        student=student,
+        lesson__module__course=course,
+        lesson__duration__gt=0,
+        completed=True
+    ).count()
 
     if total_lessons == 0 :
         return 0
