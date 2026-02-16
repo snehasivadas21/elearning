@@ -1,21 +1,24 @@
 import { useEffect, useState } from "react";
 import axiosPublic from "../../api/axiosPublic";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search, Users, Star, Clock, BookOpen, Filter } from "lucide-react";
+import { Search, BookOpen } from "lucide-react";
 import { extractResults } from "../../api/api";
+import Pagination from "../../components/ui/Pagination";
 
 const CourseListPage = () => {
   const [courses, setCourses] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
   const [params,setParams] = useSearchParams()
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
+
+  const totalPages = Math.ceil(count / 10); 
 
   const filters = {
     search: params.get("search") || "",
     category: params.get("category") || "",
     level: params.get("level") || "",
     ordering: params.get("ordering") || "-created_at",
-    page: Number(params.get("page") || 1),
   }
 
   useEffect(() => {
@@ -23,9 +26,8 @@ const CourseListPage = () => {
   }, []);
 
   useEffect(() => {
-    fetchCategories();
     fetchCourses();
-  }, [params]);
+  }, [params,page]);
 
   const fetchCategories = async () => {
     try {
@@ -36,11 +38,17 @@ const CourseListPage = () => {
     }
   };
 
-  const fetchCourses = async()=>{
-    const res = await axiosPublic.get("/users/approved/",{params:filters});
+  const fetchCourses = async () => {
+    const res = await axiosPublic.get("/users/approved/", {
+      params: {
+        ...filters,
+        page: page,
+      },
+    });
+
     setCourses(extractResults(res));
-    setTotalCount(res.data.count || 0);
-  }
+    setCount(res.data.count);
+  };
 
   const updateFilter = (key,value) =>{
     const newParams = Object.fromEntries(params.entries());
@@ -92,7 +100,7 @@ const CourseListPage = () => {
             <option value="-created_at">Newest</option>
             <option value="price">Price: Low - High</option>
             <option value="-price">Price: High - Low</option>
-            <option value="-rating">Top Rated</option>
+            <option value="-avg_rating">Top Rated</option>
           </select>
         </div>
       </div>
@@ -146,22 +154,11 @@ const CourseListPage = () => {
         ))}
       </div>
 
-      <div className="flex justify-center gap-3 mt-8">
-        <button
-          disabled={filters.page === 1}
-          onClick={()=>updateFilter("page",filters.page -1)}
-          className="px-4 py-2 border rounded disabled:opacity-50"
-          >
-          Prev
-        </button>
-        <button
-          disabled={courses.length < 10}
-          onClick={()=>updateFilter("page",filters.page +1)}
-          className="px-4 py-2 border rounded"
-          >
-          Next
-        </button>
-      </div>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
+      />
     </div>
   );
 };

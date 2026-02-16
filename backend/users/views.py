@@ -231,17 +231,21 @@ class LogoutView(APIView):
         return Response({"detail":"Logged out"})
        
 class ApprovedCourseListView(generics.ListAPIView):
-    queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
     serializer_class = UserCourseDetailSerializer
     permission_classes = [permissions.AllowAny]
-    filter_backends = [DjangoFilterBackend,filters.SearchFilter,filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category','level']
     search_fields = ['title']
-    ordering_fields = ['price','title']
+    ordering_fields = ['price','title','avg_rating']
     ordering = ['title']
-    
+
     def get_queryset(self):
-        return Course.objects.annotate(
+        return Course.objects.filter(
+            status='approved',
+            is_active=True,
+            is_published=True,
+            category__is_active=True
+        ).annotate(
             avg_rating=Avg("reviews__rating"),
             review_count=Count("reviews")
         )

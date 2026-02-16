@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 from cloudinary.models import CloudinaryField
 from cloudinary_storage.storage import MediaCloudinaryStorage
+from django.db.models import Sum
 
 class CourseCategory(models.Model):
     name = models.CharField(max_length=255,unique=True)
@@ -64,6 +65,12 @@ class Course(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def get_total_duration(self):
+        total = 0
+        for module in self.modules.all():
+            total += module.get_total_duration()
+        return total
 
 class Module(models.Model):
     course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='modules')
@@ -79,6 +86,12 @@ class Module(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"
+    
+    def get_total_duration(self):
+        total = self.lessons.aggregate(
+            total=Sum("duration")
+        )["total"]
+        return total or 0
 
 class Lesson(models.Model):
     VIDEO_SOURCE_CHOICES = [
@@ -102,6 +115,7 @@ class Lesson(models.Model):
         null=True
     )
     video_url = models.URLField(blank=True, null=True)
+    duration = models.PositiveIntegerField(null=True,blank=True,help_text="Duration in seconds")
     text_content = models.TextField(blank=True, null=True)
     
     order = models.PositiveIntegerField(default=0)
@@ -130,6 +144,7 @@ class LessonProgress(models.Model):
     lesson = models.ForeignKey(Lesson,on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True,blank=True)
+    watched_seconds = models.PositiveIntegerField(default=0)
 
     class Meta:
         unique_together = ('student','lesson')

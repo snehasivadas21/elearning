@@ -17,6 +17,7 @@ const InstructorCourses = () => {
   const [count,setCount] = useState(0);
   const [isLoading,setIsLoading] = useState(false);
   const [submittingId,setSubmittingId] = useState(null);
+  const [confirmCourseId, setConfirmCourseId] = useState(null);
 
   const navigate = useNavigate();
 
@@ -72,19 +73,19 @@ const InstructorCourses = () => {
     } 
   };
 
-  const handleSubmitForReview = async (courseId) => {
-      if (submittingId === courseId) return;
-      if (!window.confirm("Submit course for admin review?")) return;
+  const handleSubmitForReview = async () => {
+      if (!confirmCourseId) return;
 
       try {
-        setSubmittingId(courseId)
-        await axiosInstance.post(`/instructor/courses/${courseId}/submit/`);
+        setSubmittingId(confirmCourseId)
+        await axiosInstance.post(`/instructor/courses/${confirmCourseId}/submit/`);
         toast.success("Coure submitted for review")
         fetchCourses(); 
       } catch (err) {
         toast.error(err.response?.data?.detail || "Failed to submit");
       } finally {
         setSubmittingId(null);
+        setConfirmCourseId(null);
       }
     };
 
@@ -212,7 +213,7 @@ const InstructorCourses = () => {
                 {["draft", "rejected"].includes(course.status) && (
                   <button
                     disabled={submittingId === course.id}
-                    onClick={() => handleSubmitForReview(course.id)}
+                    onClick={() => setConfirmCourseId(course.id)}
                     className={`px-3 py-1 rounded text-white
                       ${submittingId === course.id
                         ? "bg-yellow-300 cursor-not-allowed"
@@ -244,6 +245,43 @@ const InstructorCourses = () => {
           course={selectedCourse}
           mode={selectedCourse ? "Edit":"Add"}
         />
+      )}
+
+      {confirmCourseId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[500px]">
+            <h3 className="text-xl font-bold mb-4">
+              Submit Course for Review
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to submit this course for admin review?
+              You won’t be able to edit it until reviewed.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmCourseId(null)}
+                className="px-4 py-2 bg-gray-300 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleSubmitForReview}
+                disabled={submittingId === confirmCourseId}
+                className={`px-4 py-2 text-white rounded ${
+                  submittingId === confirmCourseId
+                    ? "bg-yellow-300 cursor-not-allowed"
+                    : "bg-yellow-500"
+                }`}
+              >
+                {submittingId === confirmCourseId
+                  ? "Submitting..."
+                  : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <Pagination

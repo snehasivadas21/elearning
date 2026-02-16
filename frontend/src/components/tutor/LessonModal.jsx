@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import axiosInstance from "../../api/axiosInstance";
 import { toast } from "react-toastify";
 
-
 const uploadVideoToCloudinary = async (file) => {
   const data = new FormData();
   data.append("file", file);
@@ -18,10 +17,15 @@ const uploadVideoToCloudinary = async (file) => {
   );
 
   const result = await res.json();
+  console.log("Cloudinary upload response:", result);
   if (!result.secure_url) {
     throw new Error("Video upload failed");
   }
-  return result.secure_url;
+  return {
+    url: result.secure_url,
+    duration: Math.floor(result.duration)
+  };
+
 };
 const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
   const [formData, setFormData] = useState({
@@ -131,7 +135,9 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
       let finalVideoUrl = formData.video_url;
 
       if (formData.content_type === "video" && formData.video_source === "cloud") {
-        finalVideoUrl = await uploadVideoToCloudinary(formData.video_file);
+        const uploadData = await uploadVideoToCloudinary(formData.video_file);
+        finalVideoUrl = uploadData.url;
+        var videoDuration = uploadData.duration;
       }
 
       const payload = new FormData();
@@ -144,7 +150,10 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
 
       if (formData.content_type === "video") {
         payload.append("video_source", formData.video_source === "upload"?"cloud":"youtube");
-        payload.append("video_url",finalVideoUrl)
+        payload.append("video_url",finalVideoUrl);
+        if (formData.video_source === "upload" && videoDuration) {
+          payload.append("duration", videoDuration);
+        }
       }
 
       if (formData.content_type === "text") {
@@ -165,6 +174,10 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
 
         await axiosInstance.post("/lesson-resources/", fd);
       }
+
+      toast.success(
+        lessonData ? "Lesson updated successfully!" : "Lesson created successfully!"
+      );
 
       setResourceFiles([]);
       onClose();

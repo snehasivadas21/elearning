@@ -143,4 +143,7 @@ google-generativeai
 langchain-google-genai
 langchain-openai
 openai
+google-api-python-client
+isodate
+
 

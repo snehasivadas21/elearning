@@ -121,7 +121,7 @@ const UserCourseDetail = () => {
 
   return (
     <>
-      <CourseDetail course={course} role="user" isEnrolled={isEnrolled}/>
+      <CourseDetail course={course} role="user" isEnrolled={course.is_enrolled}/>
       
       <div className="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white border shadow rounded-xl p-6 h-fit">
