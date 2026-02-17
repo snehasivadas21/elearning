@@ -160,15 +160,21 @@ class TutorRequestPayoutAPIView(APIView):
             
             withdrawable = wallet.available_balance - wallet.pending_balance
 
-            if withdrawable < amount:
+            if amount <= 0:
+                return Response({"error": "Invalid amount"}, status=400)
+
+            if withdrawable <= 0:
+                return Response({"error": "No withdrawable balance"}, status=400)
+
+            if amount > withdrawable:
                 return Response(
                     {
                         "error": "Insufficient withdrawable balance",
                         "available_balance": str(wallet.available_balance),
                         "pending_balance": str(wallet.pending_balance),
-                        "withdrawable_balance": str(withdrawable)
+                        "withdrawable_balance": str(withdrawable),
                     },
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=400,
                 )
             
             # Get or create payment account
@@ -199,6 +205,12 @@ class TutorRequestPayoutAPIView(APIView):
                 amount=amount,
                 status=PayoutRequest.PENDING
             )
+
+            wallet.pending_balance += amount
+
+            if wallet.pending_balance > wallet.available_balance:
+               raise Exception("Invalid wallet state: pending exceeds available")
+            wallet.save()
         
         return Response(
             {

@@ -3,6 +3,7 @@ import ChatSidebar from "../../components/chat/ChatSidebar";
 import MessageList from "../../components/chat/MessageList";
 import MessageInput from "../../components/chat/MessageInput";
 import useWebSocket from "../../hooks/useWebSocket";
+import useChatNotifySocket from "../../hooks/useChatNotifySocket";
 import axiosInstance from "../../api/axiosInstance";
 import { AuthContext } from "../../context/AuthContext";
 
@@ -11,6 +12,9 @@ export default function ChatPage() {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [messages, setMessages] = useState([]);
 
+  const userId = user?.user_id;
+  const { unreadChats, markChatRead } = useChatNotifySocket(userId);
+
   const { sendMessage } = useWebSocket(
     selectedRoom?.id,
     (data) => {
@@ -18,7 +22,6 @@ export default function ChatPage() {
 
       setMessages((prev) => {
         if (prev.some((m) => m.id === data.message.id)) return prev;
-
         return [...prev, data.message].sort(
           (a, b) => new Date(a.created_at) - new Date(b.created_at)
         );
@@ -26,6 +29,11 @@ export default function ChatPage() {
     }
   );
 
+  const handleSelectRoom = (room) => {
+    setSelectedRoom(room);
+    // ✅ Clear unread count for this room when user opens it
+    markChatRead(room.id);
+  };
 
   useEffect(() => {
     if (!selectedRoom) return;
@@ -37,15 +45,15 @@ export default function ChatPage() {
   }, [selectedRoom]);
 
   return (
-    <div className="h-[calc(100vh-64px)] flex"> 
+    <div className="h-[calc(100vh-64px)] flex">
       <ChatSidebar
-        onSelectRoom={setSelectedRoom}
-        onRoomLoaded={setSelectedRoom}
+        onSelectRoom={handleSelectRoom}
+        onRoomLoaded={handleSelectRoom}
         activeRoomId={selectedRoom?.id}
+        unreadChats={unreadChats}
       />
-      
-      <div className="flex flex-col flex-1 min-h-0"> 
 
+      <div className="flex flex-col flex-1 min-h-0">
         <div className="flex-1 overflow-y-auto px-4 py-2">
           <MessageList
             messages={messages}
@@ -59,9 +67,7 @@ export default function ChatPage() {
             onSend={sendMessage}
           />
         </div>
-
       </div>
     </div>
-
   );
 }
