@@ -17,7 +17,7 @@ const Navbar = () => {
   const enrolledCourseId =
   user?.role === "student" ? user?.enrolled_courses || [] : [];
 
-  const liveNotifications = useLiveNotifySocket(enrolledCourseId);
+  const { notifications: liveNotifications, dismiss: dismissLiveNotification, dismissAll: dismissAllLive } = useLiveNotifySocket(enrolledCourseId);
 
   const userId = user?.user_id || null;
   const { unreadChats, markChatRead } = useChatNotifySocket(userId);
@@ -66,9 +66,19 @@ const Navbar = () => {
         {/* Auth/Profile - Desktop */}
         <div className="relative hidden md:flex items-center space-x-4" ref={dropdownRef}>
           {user?.role === "student" ? (
+            // <NotificationBell
+            //   liveNotifications={user.role === "student" ? liveNotifications : []}
+            //   chatNotifications={unreadChats}
+            //   onChatOpen={(roomId) => {
+            //     markChatRead(roomId);
+            //     navigate(`/student/chat/${roomId}`);
+            //   }}
+            // />
             <NotificationBell
-              liveNotifications={user.role === "student" ? liveNotifications : []}
+              liveNotifications={liveNotifications}
               chatNotifications={unreadChats}
+              onDismiss={dismissLiveNotification}
+              onDismissAll={dismissAllLive}
               onChatOpen={(roomId) => {
                 markChatRead(roomId);
                 navigate(`/student/chat/${roomId}`);

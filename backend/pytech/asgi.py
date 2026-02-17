@@ -19,12 +19,16 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pytech.settings")
 django_asgi_app = get_asgi_application()
 
 import chat.routing
+import livesession.routing
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     "websocket": AllowedHostsOriginValidator(
         JWTAuthMiddleware(
-            URLRouter(chat.routing.websocket_urlpatterns)
+            URLRouter(
+                chat.routing.websocket_urlpatterns + 
+                livesession.routing.websocket_urlpatterns
+            )
         )    
     ),
 })

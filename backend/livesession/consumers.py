@@ -24,7 +24,7 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
         role = await self.get_user_role()
         await self.send_json({
             "type": "joined",
-            "role": role,                                         
+            "role": role,
             "user_id": self.user.id,
         })
 
@@ -34,9 +34,9 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
                 "type": "participant.event",
                 "event": "joined",
                 "user_id": self.user.id,
-                "participant": {                               
+                "participant": {
                     "user_id": self.user.id,
-                    "name": self.user.get_full_name() or self.user.email,
+                    "username": self.user.username or self.user.email,  # ✅ username not name
                     "role": role,
                     "hand_raised": False,
                     "is_muted": False,
@@ -45,21 +45,21 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
         )
 
     async def disconnect(self, code):
-        await self.mark_left()
+        if hasattr(self, "room_group"):
+            await self.mark_left()
 
-        await self.channel_layer.group_send(
-            self.room_group,
-            {
-                "type": "participant.event",
-                "event": "left",
-                "user_id": self.user.id,
-            }
-        )
+            await self.channel_layer.group_send(
+                self.room_group,
+                {
+                    "type": "participant.event",
+                    "event": "left",
+                    "user_id": self.user.id,
+                }
+            )
 
-        await self.channel_layer.group_discard(self.room_group, self.channel_name)
+            await self.channel_layer.group_discard(self.room_group, self.channel_name)
 
     async def participant_event(self, event):
-       
         msg = {
             "type": "participant",
             "event": event["event"],
@@ -119,7 +119,7 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
                 self.room_group,
                 {
                     "type": "signal.forward",
-                    "from_user_id": self.user.id,     
+                    "from_user_id": self.user.id,
                     "signal_type": t,
                     "payload": {k: v for k, v in content.items() if k != "type"},
                 }
@@ -153,7 +153,6 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
 
         elif t == "reaction":
             emoji = content.get("emoji")
-
             if emoji:
                 await self.channel_layer.group_send(
                     self.room_group,
@@ -166,10 +165,10 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
 
     async def signal_forward(self, event):
         if event["from_user_id"] == self.user.id:
-            return                                                
+            return
 
         await self.send_json({
-            "type": event["signal_type"],                       
+            "type": event["signal_type"],
             **event["payload"],
         })
 
@@ -200,17 +199,21 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
     @database_sync_to_async
     def can_join(self):
         try:
-            s = LiveSession.objects.get(id=self.session_id)
+            s = LiveSession.objects.select_related("course").get(id=self.session_id)
         except LiveSession.DoesNotExist:
             return False
         if s.status != "ongoing":
             return False
         c = s.course
-        return c.instructor_id == self.user.id or c.enrolled_students.filter(id=self.user.id).exists()
+        # ✅ fixed: filter by student FK, not purchase id
+        return (
+            c.instructor_id == self.user.id or
+            c.purchases.filter(student=self.user).exists()
+        )
 
     @database_sync_to_async
     def upsert_participant(self):
-        session = LiveSession.objects.get(id=self.session_id)
+        session = LiveSession.objects.select_related("course").get(id=self.session_id)
         is_instructor = session.course.instructor_id == self.user.id
         role = "tutor" if is_instructor else "student"
 
@@ -220,7 +223,7 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
             defaults={
                 "joined_at": timezone.now(),
                 "left_at": None,
-                "role": role,                                   
+                "role": role,
             },
         )
 
@@ -260,7 +263,7 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
                 "is_muted",
             )
         )
-    
+
         return [
             {
                 "user_id": row["user__id"],
@@ -287,3 +290,24 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
             user_id=self.user.id,
             left_at__isnull=True
         ).update(hand_raised=raised)
+
+class NotifyConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        self.user = self.scope["user"]
+
+        if not self.user or not self.user.is_authenticated:
+            return await self.close()
+
+        self.course_id = self.scope["url_route"]["kwargs"]["course_id"]
+        self.group_name = f"course_notify_{self.course_id}"
+
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, code):
+        if hasattr(self, "group_name"):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    # Called by group_send with type "notify.message"
+    async def notify_message(self, event):
+        await self.send_json(event["payload"])

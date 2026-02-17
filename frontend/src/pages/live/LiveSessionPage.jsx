@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import useLiveSessionSocket from "../../hooks/useLiveSessionSocket";
@@ -25,7 +25,8 @@ const LiveSessionPage = () => {
     participants,
     userRole,
     reactions,
-    sessionEnded,       
+    sessionEnded,   
+    studentJoined,    
   } = useLiveSessionSocket(sessionId);
 
   const {
@@ -43,7 +44,8 @@ const LiveSessionPage = () => {
     localStream,
     isInstructor: userRole === "tutor",
   });
-
+  
+  const hasCalledRef = useRef(false);
  
   useEffect(() => {
     const fetchSession = async () => {
@@ -66,11 +68,27 @@ const LiveSessionPage = () => {
 
  
   useEffect(() => {
-    if (connected && userRole === "tutor" && localStream) {
+    if (userRole === "tutor" && localStream && studentJoined) {
+      console.log("Student joined — tutor sending offer");
+      hasCalledRef.current = false; // reset so new offer goes out
       startCall();
     }
-  }, [connected, userRole, localStream]);
+  }, [studentJoined]); // only fires when studentJoined toggles
 
+  // ✅ Fallback: if tutor connects and student is already in the room
+  useEffect(() => {
+    if (
+      connected &&
+      userRole === "tutor" &&
+      localStream &&
+      participants.some((p) => p.role === "student") &&
+      !hasCalledRef.current
+    ) {
+      console.log("Tutor connected, student already present — sending offer");
+      hasCalledRef.current = true;
+      startCall();
+    }
+  }, [connected, userRole, localStream, participants]);
   
   useEffect(() => {
     if (sessionEnded) {
