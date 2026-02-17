@@ -39,7 +39,7 @@ const WalletPage = () => {
       <WalletSummary summary={summary} />
 
       <RequestPayoutModal
-        balance={summary.available_balance}
+        balance={summary}
         onSuccess={loadData}
       />
 

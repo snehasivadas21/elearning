@@ -41,7 +41,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         has_joined = cache.get(self.user_room_key)
         
         if not has_joined:
-            cache.set(self.user_room_key, True, timeout=3600)
+            cache.set(self.user_room_key, True, timeout=86400)
             
             await self.send_system_message(
                 f"{self.user.username} joined the community"
@@ -57,10 +57,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name
-            )
-
-        if hasattr(self, "user_room_key"):
-            cache.delete(self.user_room_key)    
+            )   
 
     async def receive(self, text_data):
         try:
@@ -82,7 +79,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 return
 
             message = await self.save_message(content)
-            await self.create_chat_notifications(message)
+            participants = await self.get_participants(message)
+
+            await self.create_chat_notifications(message,participants)
+
+            for user_id in participants:
+                await self.channel_layer.group_send(
+                    f"user_{user_id}",
+                    {
+                        "type": "chat_notification",
+                        "room_id": str(self.room.id),
+                    }
+                )
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -112,6 +120,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "type": "chat_message",
             "message": event["message"]
         }))
+
+    async def chat_notification(self, event):
+        pass    
+
 
     @database_sync_to_async
     def get_room(self):
@@ -159,32 +171,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             "is_system": message.is_system,
         }
     
-    async def send_system_message(self, text):
-        message = await self.create_system_message(text)
-
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "chat_message",
-                "message": await self.serialize_message(message)
-            }
-        )
-
     @database_sync_to_async
-    def create_system_message(self, text):
-        from .models import Message
-
-        return Message.objects.create(
-            room=self.room,
-            sender=self.user,
-            content=text,
-            is_system=True
-        )
-    
-    @database_sync_to_async
-    def create_chat_notifications(self, message):
-        from .models import ChatRoom
-        from instrpanel.models import Notification
+    def get_participants(self, message):
 
         room = message.room
         sender = message.sender
@@ -198,15 +186,73 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         participants.discard(sender.id)
 
-        notifications = []
-        for user_id in participants:
-            notifications.append(
-                Notification(
-                    user_id=user_id,
-                    title="New chat message",
-                    message=f"{sender.username}: {message.content[:50]}",
-                    notification_type="chat",
-                )
+        return list(participants)
+    
+    @database_sync_to_async
+    def create_chat_notifications(self, message, participants):
+        from instrpanel.models import Notification
+
+        notifications = [
+            Notification(
+                user_id=user_id,
+                title="New chat message",
+                message=f"{message.sender.username}: {message.content[:50]}",
+                notification_type="chat",
             )
+            for user_id in participants
+        ]
 
         Notification.objects.bulk_create(notifications)
+    
+    @database_sync_to_async
+    def create_system_message(self, text):
+        from .models import Message
+
+        return Message.objects.create(
+            room=self.room,
+            sender=self.user,
+            content=text,
+            is_system=True
+        )
+    
+    async def send_system_message(self, text):
+        message = await self.create_system_message(text)
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "chat_message",
+                "message": await self.serialize_message(message)
+            }
+        )
+
+class UserNotificationConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.user = self.scope["user"]
+
+        if not self.user.is_authenticated:
+            await self.close()
+            return
+
+        self.group_name = f"user_{self.user.id}"
+
+        await self.channel_layer.group_add(
+            self.group_name,
+            self.channel_name
+        )
+
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        if hasattr(self, "group_name"):
+            await self.channel_layer.group_discard(
+                self.group_name,
+                self.channel_name
+            )
+
+    async def chat_notification(self, event):
+        await self.send(text_data=json.dumps({
+            "event": "new_message",
+            "room_id": event["room_id"],
+        }))
+  

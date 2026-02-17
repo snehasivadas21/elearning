@@ -19,7 +19,7 @@ const Navbar = () => {
 
   const liveNotifications = useLiveNotifySocket(enrolledCourseId);
 
-  const userId = user?.id || null;
+  const userId = user?.user_id || null;
   const { unreadChats, markChatRead } = useChatNotifySocket(userId);
 
   useEffect(() => {
@@ -71,7 +71,7 @@ const Navbar = () => {
               chatNotifications={unreadChats}
               onChatOpen={(roomId) => {
                 markChatRead(roomId);
-                navigate(`/chat/${roomId}`);
+                navigate(`/student/chat/${roomId}`);
               }}
             />
           ) : null}

@@ -5,16 +5,27 @@ import { MessageCircle } from "lucide-react";
 import useChatNotifySocket from "../../hooks/useChatNotifySocket";
 
 const TutorNavbar = ({ title }) => {
-  const {user,logoutUser} = useContext(AuthContext)
+  const { user, logoutUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const dropdownRef = useRef();
   const [openDropdown, setOpenDropdown] = useState(false);
 
-  const userId = user?.id || null;
-  const { unreadChats } = useChatNotifySocket(userId);
+  const userId = user?.user_id;
+  const { unreadChats, markChatRead } = useChatNotifySocket(userId);
 
-  const unreadCount = Object.keys(unreadChats).length;
+  // ✅ Count total messages across all rooms, not just unique rooms
+  const unreadCount = Object.values(unreadChats).reduce(
+    (sum, count) => sum + count,
+    0
+  );
 
+  // Cap badge at 99+
+  const badgeLabel = unreadCount > 99 ? "99+" : unreadCount;
+
+  const handleChatClick = () => {
+    navigate("/tutor/chat");
+    Object.keys(unreadChats).forEach((roomId) => markChatRead(roomId));
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -34,19 +45,25 @@ const TutorNavbar = ({ title }) => {
       </div>
 
       <div className="flex items-center space-x-16">
-        <div className="relative hidden md:flex items-center space-x-4" ref={dropdownRef}>
-          <div className="relative cursor-pointer"
-              onClick={() => navigate("/tutor/chat")}
+        <div
+          className="relative hidden md:flex items-center space-x-4"
+          ref={dropdownRef}
+        >
+          {/* Chat icon with unread badge */}
+          <div
+            className="relative cursor-pointer"
+            onClick={handleChatClick}
           >
             <MessageCircle className="w-6 h-6 text-gray-600 hover:text-blue-600" />
 
             {unreadCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 rounded-full">
-                {unreadCount}
+              <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs px-1.5 rounded-full min-w-[18px] text-center">
+                {badgeLabel}
               </span>
             )}
           </div>
 
+          {/* User avatar + dropdown */}
           {user?.username && (
             <>
               <div
