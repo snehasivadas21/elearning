@@ -8,14 +8,16 @@ const useLiveSessionSocket = (sessionId) => {
   const [userRole, setUserRole] = useState(null);
   const [reactions, setReactions] = useState([]);
   const [sessionEnded, setSessionEnded] = useState(false); 
+  const [studentJoined, setStudentJoined] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
 
     const protocol =
       window.location.protocol === "https:" ? "wss" : "ws";
-
-    const wsUrl = `${protocol}://localhost:8000/ws/live/${sessionId}/`;
+    
+    const token = localStorage.getItem("access");
+    const wsUrl = `${protocol}://${window.location.host}/ws/live/${sessionId}/?token=${token}`;
 
     const socket = new WebSocket(wsUrl);
     socketRef.current = socket;
@@ -52,6 +54,10 @@ const useLiveSessionSocket = (sessionId) => {
             if (prev.find((p) => p.user_id === data.participant.user_id)) return prev;
             return [...prev, data.participant];
           });
+
+          if (data.participant?.role === "student") {
+            setStudentJoined((prev) => !prev); // toggle to trigger effect
+          }
           return;
         }
 
@@ -97,7 +103,17 @@ const useLiveSessionSocket = (sessionId) => {
       }
 
       if (data.type === "reaction") {
-        setReactions((prev) => [...prev, data]);
+        // ✅ add unique id + random x position for overlay
+        const reaction = {
+          ...data,
+          id: `${Date.now()}-${Math.random()}`,
+          x: Math.random() * 80 + 10,
+        };
+        setReactions((prev) => [...prev, reaction]);
+        // ✅ auto-remove after 3s so overlay doesn't accumulate
+        setTimeout(() => {
+          setReactions((prev) => prev.filter((r) => r.id !== reaction.id));
+        }, 3000);
         return;
       }
 
@@ -149,7 +165,8 @@ const useLiveSessionSocket = (sessionId) => {
     participants,
     userRole,
     reactions,
-    sessionEnded,       
+    sessionEnded, 
+    studentJoined,      
     sendSignal,
     sendRaw,
     addMessageListener,

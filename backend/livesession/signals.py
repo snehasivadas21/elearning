@@ -25,7 +25,7 @@ def live_session_created(sender, instance, created, **kwargs):
     async_to_sync(channel_layer.group_send)(
         f"course_{instance.course.id}",
         {
-            "type": "notify",
+            "type": "notify.message",
             "data": {
                 "event": "live_created",
                 "session_id": str(instance.id),
@@ -55,7 +55,7 @@ def live_session_status_changed(sender, instance, created, **kwargs):
         async_to_sync(channel_layer.group_send)(
             f"course_{instance.course.id}",
             {
-                "type": "notify",
+                "type": "notify.message",
                 "data": {
                     "event": "live_started",
                     "session_id": str(instance.id),
@@ -79,7 +79,7 @@ def live_session_status_changed(sender, instance, created, **kwargs):
         async_to_sync(channel_layer.group_send)(
             f"course_{instance.course.id}",
             {
-                "type": "notify",
+                "type": "notify.message",
                 "data": {
                     "event": "live_cancelled",
                     "session_id": str(instance.id),

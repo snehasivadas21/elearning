@@ -21,27 +21,36 @@ const useLiveNotifySocket = (courseIds = []) => {
       socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
 
-        if (
-          data.event === "live_created" ||
-          data.event === "live_started"
-        ) {
+        if (data.event === "live_created" || data.event === "live_started") {
           setNotifications((prev) => {
-            if (prev.some((n) => n.session_id === data.session_id)) {
-              return prev;
+            // if already exists, update it (e.g. created → started)
+            const exists = prev.some((n) => n.session_id === data.session_id);
+            if (exists) {
+              return prev.map((n) =>
+                n.session_id === data.session_id ? { ...n, ...data } : n
+              );
             }
             return [data, ...prev];
           });
         }
 
         if (data.event === "live_cancelled") {
-          setNotifications((prev) =>
-            prev.filter((n) => n.session_id !== data.session_id)
-          );
+          // replace with cancelled entry briefly, then auto-remove after 5s
+          setNotifications((prev) => {
+            const filtered = prev.filter((n) => n.session_id !== data.session_id);
+            return [{ ...data }, ...filtered];
+          });
+          setTimeout(() => {
+            setNotifications((prev) =>
+              prev.filter((n) => n.session_id !== data.session_id)
+            );
+          }, 5000);
         }
       };
 
       socket.onclose = () => {
         delete socketsRef.current[courseId];
+        setConnected(false);
       };
 
       socket.onerror = (err) => {
@@ -52,16 +61,19 @@ const useLiveNotifySocket = (courseIds = []) => {
     });
 
     return () => {
-      Object.values(socketsRef.current).forEach((socket) => socket.close());
+      Object.values(socketsRef.current).forEach((s) => s.close());
       socketsRef.current = {};
       setConnected(false);
     };
   }, [courseIds]);
 
-  return {
-    connected,
-    notifications,
+  const dismiss = (sessionId) => {
+    setNotifications((prev) => prev.filter((n) => n.session_id !== sessionId));
   };
+
+  const dismissAll = () => setNotifications([]);
+
+  return { connected, notifications, dismiss, dismissAll };
 };
 
 export default useLiveNotifySocket;
