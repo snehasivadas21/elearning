@@ -3,7 +3,7 @@ import { MessageCircle, Loader2 } from "lucide-react";
 import axiosInstance from "../../api/axiosInstance";
 import { extractResults } from "../../api/api";
 
-export default function ChatSidebar({ onSelectRoom, activeRoomId, onRoomLoaded }) {
+export default function ChatSidebar({ onSelectRoom, activeRoomId, onRoomLoaded, unreadChats = {} }) {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -81,50 +81,59 @@ export default function ChatSidebar({ onSelectRoom, activeRoomId, onRoomLoaded }
           </div>
         ) : (
           <div className="py-2">
-            {rooms.map((room) => (
-              <div
-                key={room.id}
-                onClick={() => onSelectRoom(room)}
-                className={`mx-2 mb-1 px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-                  activeRoomId === room.id
-                    ? "bg-blue-50 border border-blue-200"
-                    : "hover:bg-gray-50 border border-transparent"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
-                    activeRoomId === room.id
-                      ? "bg-blue-600 text-white"
-                      : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600"
-                  }`}>
-                    {(room.course_title || room.name)?.charAt(0).toUpperCase()}
-                  </div>
+            {rooms.map((room) => {
+              // ✅ Live unread count from WebSocket, falls back to API count
+              const liveUnread = unreadChats[room.id];
+              const unreadCount = activeRoomId === room.id
+                ? 0                                          // always 0 for active room
+                : liveUnread ?? room.unread_count ?? 0;    // live count or API fallback
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`font-medium text-sm truncate ${
-                        activeRoomId === room.id ? "text-blue-900" : "text-gray-800"
-                      }`}>
-                        {room.course_title || room.name}
-                      </span>
-                      
-                      {room.unread_count > 0 && (
-                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-blue-600 text-white rounded-full shrink-0">
-                          {room.unread_count}
-                        </span>
-                      )}
+              return (
+                <div
+                  key={room.id}
+                  onClick={() => onSelectRoom(room)}
+                  className={`mx-2 mb-1 px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
+                    activeRoomId === room.id
+                      ? "bg-blue-50 border border-blue-200"
+                      : "hover:bg-gray-50 border border-transparent"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
+                      activeRoomId === room.id
+                        ? "bg-blue-600 text-white"
+                        : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600"
+                    }`}>
+                      {(room.course_title || room.name)?.charAt(0).toUpperCase()}
                     </div>
 
-                    {room.last_message && (
-                      <p className="text-xs text-gray-500 mt-1 truncate">
-                        <span className="font-medium">{room.last_message.sender.username}:</span>{" "}
-                        {room.last_message.content}
-                      </p>
-                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`font-medium text-sm truncate ${
+                          activeRoomId === room.id ? "text-blue-900" : "text-gray-800"
+                        }`}>
+                          {room.course_title || room.name}
+                        </span>
+
+                        {/* ✅ Live unread badge — clears when room is active */}
+                        {unreadCount > 0 && (
+                          <span className="px-2 py-0.5 text-[10px] font-semibold bg-blue-600 text-white rounded-full shrink-0">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        )}
+                      </div>
+
+                      {room.last_message && (
+                        <p className="text-xs text-gray-500 mt-1 truncate">
+                          <span className="font-medium">{room.last_message.sender.username}:</span>{" "}
+                          {room.last_message.content}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
