@@ -139,6 +139,19 @@ def cancel_session(request, id):
         message=f"{session.title} has been cancelled by instructor",
     )
 
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"course_notify_{session.course_id}",
+        {
+            "type": "notify.message",
+            "payload": {
+                "event": "live_cancelled",
+                "session_id": str(session.id),
+                "title": session.title,
+            }
+        }
+    )
+
     return Response({"message": "Session cancelled"})
 
 class LiveSessionListView(generics.ListAPIView):
