@@ -5,6 +5,13 @@ import CourseReviews from "../../components/user/CourseReviews";
 const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dgqjlqivb/image/upload/v1770222854/profile-avatar.jpg";
 
+const formatDuration = (seconds) => {
+  if (!seconds) return "";
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}m ${secs}s`;
+};
+
 const getEmbedUrl = (url) => {
   if (!url) return "";
 
@@ -116,14 +123,17 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
         <div className="flex gap-4 text-sm text-gray-500">
           <span className="bg-gray-300 text-sm px-3 py-1 rounded-full">{course.level}</span>
           <span className="bg-gray-300 text-sm px-3 py-1 rounded-full">📜 Certificate</span>
-          <span className="bg-gray-300 text-sm px-3 py-1 rounded-full">🔒 Lifetime Access</span>
           <span className="bg-gray-300 text-sm px-3 py-1 rounded-full">📄 Downloadable resources</span>
-
-            {course.updated_at && (
-              <p className="bg-gray-300 text-sm px-3 py-1 rounded-full">
-              Updated on {format(new Date(course.updated_at), "dd/MM/yyyy")}
-              </p>
-            )}
+          {course.total_duration && (
+            <span className="bg-gray-200 px-3 py-1 rounded-full">
+              ⏱ {formatDuration(course.total_duration)}
+            </span>
+          )}
+          {course.updated_at && (
+            <p className="bg-gray-300 text-sm px-3 py-1 rounded-full">
+            Updated on {format(new Date(course.updated_at), "dd/MM/yyyy")}
+            </p>
+          )}
         </div>
         
         <div className="text-2xl font-bold">
@@ -178,6 +188,13 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
                             <div className="flex justify-between items-center">
                               <span className="flex items-center gap-2">
                                 {canView ? "🎬" : "🔒"} {i + 1}. {lesson.title}
+
+                                {lesson.duration > 0 && (
+                                  <span className="text-sm text-gray-500">
+                                    ⌚ {formatDuration(lesson.duration)}
+                                  </span>
+                                )}
+                                
                                 {lesson.is_preview && (
                                   <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                                     Free Preview

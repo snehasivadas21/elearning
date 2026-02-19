@@ -24,12 +24,13 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
     instructor_profile = serializers.SerializerMethodField()
     avg_rating = serializers.FloatField(read_only=True)
     review_count = serializers.IntegerField(read_only=True)
+    total_duration = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Course
         fields = [
             'id','title','description','category','category_name','level','price','course_image',
-            'status','updated_at','instructor_profile','avg_rating','review_count'
+            'status','updated_at','instructor_profile','avg_rating','review_count','total_duration',
         ]
         read_only_fields = ['status']
 
@@ -150,11 +151,12 @@ class AdminCourseSerializer(serializers.ModelSerializer):
     instructor_profile = serializers.SerializerMethodField()
     avg_rating = serializers.FloatField(read_only=True)
     review_count = serializers.IntegerField(read_only=True)
+    total_duration = serializers.IntegerField(read_only=True)
 
     class Meta:
         model=Course
         fields=['id','title','price','level','status','is_active','is_published','admin_feedback','instructor_username',
-                'category_name','created_at','course_image','category','updated_at','instructor_profile','avg_rating','review_count']  
+                'category_name','created_at','course_image','category','updated_at','instructor_profile','avg_rating','review_count','total_duration',]  
         read_only_fields = fields
 
     def validate_category(self,value):
@@ -178,6 +180,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
     live_session = serializers.SerializerMethodField()
     avg_rating = serializers.FloatField(read_only=True)
     review_count = serializers.IntegerField(read_only=True)
+    total_duration = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Course
@@ -197,6 +200,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
             "live_session",
             "avg_rating",
             "review_count",
+            "total_duration",
         ]
 
     def get_modules(self, obj):

@@ -1,31 +1,35 @@
 import { useEffect, useState } from "react";
 import { getAdminPayouts, markPayoutPaid, markPayoutReject } from "../../api/adminRevenue";
 import { toast } from "react-toastify";
+import Pagination from "../../components/ui/Pagination";
 
 const AdminPayoutPage = () => {
   const [payouts, setPayouts] = useState([]);
   const [status, setStatus] = useState("ALL");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
+
+  const totalPages = Math.ceil(count / 9);
 
   const loadPayouts = async () => {
-    let res;
-
-    if (status === "PENDING") {
-      res = await getAdminPayouts("PENDING");
-    } else if (status === "PAID" || status === "REJECTED") {
-      res = await getAdminPayouts("history");
-    } else {
-      const pending = await getAdminPayouts("PENDING");
-      const history = await getAdminPayouts("history");
-      res = { data: [...pending.data, ...history.data] };
+    try {
+      const res = await getAdminPayouts(status, page);
+      setPayouts(res.data.results);   // paginated response uses `results`
+      setCount(res.data.count);
+    } catch {
+      toast.error("Failed to load payouts");
+      setPayouts([]);
     }
-
-    setPayouts(res.data);
   };
 
   useEffect(() => {
-    loadPayouts();
+    setPage(1);
   }, [status]);
+
+  useEffect(() => {
+    loadPayouts();
+  }, [status,page]);
 
   const handleMarkPaid = async (id) => {
     try {
@@ -155,6 +159,13 @@ const AdminPayoutPage = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination 
+        page={page} 
+        totalPages={totalPages} 
+        setPage={setPage} 
+      />
+
     </div>
   );
 };

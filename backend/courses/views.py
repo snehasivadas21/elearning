@@ -9,7 +9,7 @@ from django.core.exceptions import PermissionDenied,ValidationError
 from rest_framework.parsers import MultiPartParser,FormParser
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
-from django.db.models import Avg,Count
+from django.db.models import Avg,Count,Sum
 
 from .models import (Course,CourseCategory,Module,Lesson,LessonResource,LessonProgress,CourseCertificate,Review)
 from payment.models import CoursePurchase
@@ -20,8 +20,7 @@ from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
 from .tasks import send_course_status_email
 from .utils import issue_certificate_if_eligible,verify_certificate,get_course_progress,generate_certificate_file
 from instrpanel.utils.youtube_duration import get_youtube_duration
-from cloudinary_storage.storage import MediaCloudinaryStorage
-from cloudinary import CloudinaryImage
+import cloudinary
 from ai.pdf_ingestion import index_lesson_resource
 
 
@@ -39,7 +38,8 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
             ).exclude(status='draft'
             ).annotate(
                 avg_rating=Avg("reviews__rating"),
-                review_count=Count("reviews")
+                review_count=Count("reviews"),
+                total_duration=Sum("modules__lessons__duration")
             ).order_by('-created_at')
 
     @action(detail=True,methods=['patch'])
@@ -93,7 +93,8 @@ class InstructorCourseViewSet(viewsets.ModelViewSet):
             instructor=self.request.user,is_active=True
             ).annotate(
                 avg_rating=Avg("reviews__rating"),
-                review_count=Count("reviews")
+                review_count=Count("reviews"),
+                total_duration=Sum("modules__lessons__duration")
             ).order_by('-created_at')
     
     def destroy(self, request, *args, **kwargs):
@@ -408,10 +409,11 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
         if not certificate.certificate_file:
             return Response({"error": "Certificate file not found"}, status=404)
 
-        download_url = CloudinaryImage(certificate.certificate_file.name).build_url(
+        download_url, _ = cloudinary.utils.cloudinary_url(
+            certificate.certificate_file.name,
             resource_type="raw",
             secure=True
-        )      
+        )     
         return redirect(download_url)
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer

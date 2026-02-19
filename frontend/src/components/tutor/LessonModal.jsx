@@ -48,7 +48,7 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
       setFormData({
         title: lessonData.title || "",
         content_type: lessonData.content_type || "video",
-        video_source: lessonData.video_source === "cloud" ? "upload" : lessonData.video_source || "youtube",
+        video_source: lessonData.video_source || "youtube",
         video_url: lessonData.video_url || "",
         video_file: null,
         text_content: lessonData.text_content || "",
@@ -109,35 +109,48 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
     if (submitting) return;
 
     if (!formData.title.trim()) {
-      alert("Lesson title is required");
+      toast.error("Lesson title is required");
       return;
     }
 
     if (formData.content_type === "video") {
       if (formData.video_source === "youtube" && !formData.video_url.trim()) {
-        alert("Video URL is required");
+        toast.error("Video URL is required");
         return;
       }
       if (formData.video_source === "cloud" && !formData.video_file) {
-        alert("Please upload a video file");
+        toast.error("Please upload a video file");
         return;
       }
     }
 
     if (formData.content_type === "text" && !formData.text_content.trim()) {
-      alert("Text content is required");
+      toast.error("Text content is required");
       return;
     }
 
     try {
       setSubmitting(true);
 
-      let finalVideoUrl = formData.video_url;
+      // let finalVideoUrl = formData.video_url;
+
+      // if (formData.content_type === "video" && formData.video_source === "cloud") {
+      //   const uploadData = await uploadVideoToCloudinary(formData.video_file);
+      //   finalVideoUrl = uploadData.url;
+      //   var videoDuration = uploadData.duration;
+      // }
+
+      let finalVideoUrl = formData.video_url; // ← existing URL from DB
+      let videoDuration = null;
 
       if (formData.content_type === "video" && formData.video_source === "cloud") {
-        const uploadData = await uploadVideoToCloudinary(formData.video_file);
-        finalVideoUrl = uploadData.url;
-        var videoDuration = uploadData.duration;
+        if (formData.video_file) {
+          // ✅ only upload if a NEW file was actually selected
+          const uploadData = await uploadVideoToCloudinary(formData.video_file);
+          finalVideoUrl = uploadData.url;
+          videoDuration = uploadData.duration;
+        }
+        // else: no new file chosen → finalVideoUrl stays as existing URL
       }
 
       const payload = new FormData();
@@ -149,9 +162,9 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
       payload.append("is_active", formData.is_active);
 
       if (formData.content_type === "video") {
-        payload.append("video_source", formData.video_source === "upload"?"cloud":"youtube");
+        payload.append("video_source", formData.video_source);
         payload.append("video_url",finalVideoUrl);
-        if (formData.video_source === "upload" && videoDuration) {
+        if (formData.video_source === "cloud" && videoDuration) {
           payload.append("duration", videoDuration);
         }
       }
