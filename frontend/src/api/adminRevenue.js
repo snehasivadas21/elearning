@@ -9,13 +9,10 @@ export const getRevenueByCourse = () =>
 export const getRevenueByInstructor = () =>
   axiosInstance.get("/revenue/admin/revenue/by-instructor/");
 
-
-export const getAdminPayouts = (status = "") => {
-  const url = status
-    ? `/revenue/admin/payout/${status.toLowerCase()}/`
-    : `/revenue/admin/payout/history/`; 
-
-  return axiosInstance.get(url);
+export const getAdminPayouts = (status = "", page = 1) => {
+  const params = { page };
+  if (status && status !== "ALL") params.status = status;
+  return axiosInstance.get(`/revenue/admin/payout/`, { params });
 };
 
 export const markPayoutPaid = (id) =>

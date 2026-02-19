@@ -37,8 +37,9 @@ const AdminRevenuePage = () => {
       </div>
 
       <AdminRevenueSummary data={summary} />
-      <RevenueByCourseTable data={byCourse} />
       <RevenueByInstructorTable data={byInstructor} />
+      <RevenueByCourseTable data={byCourse} />
+     
     </div>
   );
 };

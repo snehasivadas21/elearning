@@ -24,7 +24,7 @@ const AdminTutors = () => {
     fetchTutors();
   }, [page]);
 
-  const totalPages = Math.ceil(count / 10); 
+  const totalPages = Math.ceil(count / 9); 
 
   const handleToggleStatus = async (tutor) => {
     if (!window.confirm("Are you sure to deactivate this tutor?")) return;

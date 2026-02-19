@@ -1,22 +1,32 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
+import Pagination from "../../components/ui/Pagination";
 
 const AdminPlatformCommissionPage = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
+
+  useEffect(() => {
+    setPage(1); 
+  }, [transactions]);
 
   useEffect(() => {
     axiosInstance
-      .get("/revenue/admin/revenue/transactions/")
+      .get("/revenue/admin/revenue/transactions/",{params:{page}})
       .then(res => {
         setTransactions(res.data);
         setLoading(false);
+        setCount(res.data.count);
       })
       .catch(err => {
         console.error("Failed to load commission transactions", err);
         setLoading(false);
       });
-  }, []);
+  }, [page]);
+
+  const totalPages = Math.ceil(count / 9);
 
   if (loading) return <p className="p-6">Loading transactions...</p>;
 
@@ -72,6 +82,13 @@ const AdminPlatformCommissionPage = () => {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
+      />
+
     </div>
   );
 };

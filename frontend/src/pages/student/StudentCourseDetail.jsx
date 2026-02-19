@@ -101,6 +101,7 @@ const StudentCourseDetail = () => {
           <span className="bg-gray-200 px-3 py-1 rounded-full">
             📜 Certificate
           </span>
+          <span className="bg-gray-200 px-3 py-1 rounded-full">📄 Downloadable resources</span>
           {course.total_duration && (
             <span className="bg-gray-200 px-3 py-1 rounded-full">
               ⏱ {formatDuration(course.total_duration)}
@@ -115,6 +116,13 @@ const StudentCourseDetail = () => {
 
         <div className="text-2xl font-bold mt-2">
           ₹{course.price}
+        </div>
+
+        <div className="mt-4 flex items-center gap-4 text-lg text-gray-500">
+          <span>⭐ {course.avg_rating ? course.avg_rating.toFixed(1) : "No ratings"} -
+            ({course.review_count} reviews)
+          </span>
+          <span>🌍 English</span>
         </div>
       </div>
 
@@ -176,6 +184,10 @@ const StudentCourseDetail = () => {
                             currentTime
                           );
                         }
+                      }}
+                      onEnded={(e) => {
+                        const fullDuration = Math.floor(e.target.duration);
+                        sendWatchProgress(lesson.id, fullDuration);
                       }}
                     />
                   )}

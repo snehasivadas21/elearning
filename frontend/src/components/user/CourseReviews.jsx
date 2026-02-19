@@ -8,6 +8,7 @@ const CourseReviews = ({ courseId }) => {
   const [rating, setRating] = useState("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     fetchReviews();
@@ -46,7 +47,7 @@ const CourseReviews = ({ courseId }) => {
 
   const submitReview = async () => {
     if (!rating || rating === "") {
-      alert("Please select a rating");
+      toast.error("Please select a rating");
       return;
     }
 
@@ -83,14 +84,10 @@ const CourseReviews = ({ courseId }) => {
   };
 
   const deleteReview = async () => {
-    if (!window.confirm("Are you sure you want to delete your review?")) {
-      return;
-    }
-
     setLoading(true);
     try {
       await axiosInstance.delete(`/reviews/${status.review.id}/`);
-      alert("Review deleted successfully!");
+      toast.success("Review deleted successfully!");
       
       setRating("");
       setComment("");
@@ -103,11 +100,12 @@ const CourseReviews = ({ courseId }) => {
       toast.error("Failed to delete review. Please try again.");
     } finally {
       setLoading(false);
+      setShowDeleteModal(false);
     }
   };
 
   return (
-    <div>
+    <div className="relative">
       <h2 className="text-lg font-bold mb-4">Reviews</h2>
 
       {status?.can_review && (
@@ -156,7 +154,7 @@ const CourseReviews = ({ courseId }) => {
 
             {status.has_reviewed && (
               <button
-                onClick={deleteReview}
+                onClick={()=>setShowDeleteModal(true)}
                 disabled={loading}
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
@@ -195,6 +193,38 @@ const CourseReviews = ({ courseId }) => {
           </p>
         )}
       </div>
+      
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[480px]">
+            <h3 className="text-lg font-semibold mb-3">
+              Delete Review
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete your review?
+              This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={loading}
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={deleteReview}
+                disabled={loading}
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+              >
+                {loading ? "Deleting..." : "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

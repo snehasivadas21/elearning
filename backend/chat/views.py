@@ -5,6 +5,9 @@ from django.db.models import Max,Q
 from django.shortcuts import get_object_or_404
 from .models import ChatRoom, Message
 from .serializers import ChatRoomSerializer, MessageSerializer
+import logging
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -19,6 +22,10 @@ class MyCourseChatRoomsView(generics.ListAPIView):
 
     def get_queryset(self):
         student = self.request.user
+
+        logger.info(
+            f"User {student.id} fetching their chat rooms"
+        )
 
         return (
             ChatRoom.objects
@@ -42,6 +49,10 @@ class ChatRoomDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         student = self.request.user
 
+        logger.info(
+            f"User {student.id} trying to access chat room details"
+        )
+
         return ChatRoom.objects.filter(
             is_active=True
         ).filter(
@@ -58,20 +69,36 @@ class MessageListView(generics.ListAPIView):
     def get_queryset(self):
         room_id = self.kwargs["room_id"]
         user = self.request.user
+        
+        try:
+            room = get_object_or_404(
+                ChatRoom,
+                id=room_id,
+                is_active=True
+            )
 
-        room = get_object_or_404(
-            ChatRoom,
-            id=room_id,
-            is_active=True
-        )
+            logger.info(
+                f"User {user.id} requesting messages for room {room_id}"
+            )
 
-        if not (
-            room.course.purchases.filter(student_id=user.id).exists()
-            or room.course.instructor_id == user.id
-        ):
-            return Message.objects.none()
+            if not (
+                room.course.purchases.filter(student_id=user.id).exists()
+                or room.course.instructor_id == user.id
+            ):
+                logger.warning(
+                    f"Unauthorized access attempt: "
+                    f"User {user.id} tried accessing room {room_id}"
+                )
+                return Message.objects.none()
 
-        return room.messages.select_related(
-            "sender",
-            "reply_to"
-        ).order_by("-created_at")
+            return room.messages.select_related(
+                "sender",
+                "reply_to"
+            ).order_by("-created_at")
+        
+        except Exception as e:
+            logger.error(
+                f"Error fetching messages for room {room_id} "
+                f"by user {user.id}: {str(e)}"
+            )
+            raise

@@ -1,4 +1,14 @@
+import { useState } from "react";
+import Pagination from "../ui/Pagination";
+
+const PAGE_SIZE = 5;
+
 const PayoutHistory = ({ payouts }) => {
+  const [page,setPage] = useState(1);
+
+  const totalPages = Math.ceil(payouts.length / PAGE_SIZE);
+  const paginated = payouts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -15,7 +25,7 @@ const PayoutHistory = ({ payouts }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {payouts.map(p => (
+            {paginated.map(p => (
               <tr key={p.id}>
                 <td className="px-6 py-4">₹ {p.amount}</td>
                 <td className="px-6 py-4">{p.status}</td>
@@ -25,6 +35,7 @@ const PayoutHistory = ({ payouts }) => {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} totalPages={totalPages} setPage={setPage} />
     </div>
   );
 };

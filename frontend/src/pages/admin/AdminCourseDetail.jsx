@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
 import CourseDetail from "../tutor/CourseDetail";
 import { extractResults } from "../../api/api";
+import { toast } from "react-toastify";
 
 const AdminCourseDetail = () => {
   const { id } = useParams();
@@ -36,7 +37,7 @@ const AdminCourseDetail = () => {
 
   const handleAction = async (action) => {
     if (action === "reject" && !feedback.trim()) {
-      alert("Feedback is required for rejection");
+      toast.error("Feedback is required for rejection");
       return;
     }
 

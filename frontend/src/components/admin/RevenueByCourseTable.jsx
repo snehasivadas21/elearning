@@ -1,4 +1,14 @@
+import { useState } from "react";
+import Pagination from "../ui/Pagination";
+
+const PAGE_SIZE = 5;
+
 const RevenueByCourseTable = ({ data }) => {
+  const [page,setPage] = useState(1)
+
+  const totalPages = Math.ceil(data.length / PAGE_SIZE);
+  const paginated = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
@@ -16,7 +26,7 @@ const RevenueByCourseTable = ({ data }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {data.map((row) => (
+            {paginated.map((row) => (
               <tr key={row.course_id}>
                 <td className="px-6 py-4">{row.course_title}</td>
                 <td className="px-6 py-4">{row.instructor_name}</td>
@@ -27,6 +37,7 @@ const RevenueByCourseTable = ({ data }) => {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} totalPages={totalPages} setPage={setPage} />
     </div>
   );
 };

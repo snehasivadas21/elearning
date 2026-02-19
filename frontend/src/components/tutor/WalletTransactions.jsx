@@ -1,4 +1,14 @@
+import { useState } from "react";
+import Pagination from "../ui/Pagination";
+
+const PAGE_SIZE = 5;
+
 const WalletTransactions = ({ transactions }) => {
+  const [page,setPage] = useState(1);
+
+  const totalPages = Math.ceil(transactions.length / PAGE_SIZE);
+  const paginated = transactions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Transactions</h2>
@@ -15,7 +25,7 @@ const WalletTransactions = ({ transactions }) => {
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {transactions.map(tx => (
+            {paginated.map(tx => (
               <tr key={tx.id}>
                 <td
                   className={`px-6 py-4 font-medium ${
@@ -37,6 +47,7 @@ const WalletTransactions = ({ transactions }) => {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} totalPages={totalPages} setPage={setPage} />
     </div>
   );
 };

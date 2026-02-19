@@ -11,7 +11,7 @@ const AdminCourses = () => {
   const [page,setPage] = useState(1);
   const [count,setCount] = useState(0);
 
-  const totalPages = Math.ceil(count / 10); 
+  const totalPages = Math.ceil(count / 9); 
 
   const navigate = useNavigate();
 
