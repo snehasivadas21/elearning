@@ -6,6 +6,14 @@ import ModuleModal from "../../components/tutor/ModuleModal";
 import LessonModal from "../../components/tutor/LessonModal";
 import { toast } from "react-toastify";
 
+
+const formatDuration = (seconds) => {
+  if (!seconds) return "";
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}m ${secs}s`;
+};
+
 const getEmbedUrl = (url) => {
   if (!url) return "";
 
@@ -241,6 +249,12 @@ const InstructorCourseContent = () => {
                             : "Text"}
                           )
                         </span>
+
+                        {lesson.duration > 0 && (
+                          <span className="text-sm text-gray-500">
+                            ⌚ {formatDuration(lesson.duration)}
+                          </span>
+                        )}
 
                         {lesson.is_preview && (
                           <span className="ml-2 text-xs font-semibold text-yellow-700">

@@ -1,7 +1,15 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Pagination from "../ui/Pagination";
+
+const PAGE_SIZE = 5;
 
 const RevenueByInstructorTable = ({ data }) => {
   const navigate = useNavigate();
+  const [page,setPage] = useState(1);
+
+  const totalPages = Math.ceil(data.length / PAGE_SIZE);
+  const paginated = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const viewTransactions = (instructorId) =>{
     navigate(`/admin/transactions?instructor=${instructorId}`)
@@ -25,7 +33,7 @@ const RevenueByInstructorTable = ({ data }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {data.map((row) => (
+            {paginated.map((row) => (
               <tr key={row.instructor_id}>
                 <td className="px-6 py-4">{row.instructor_name}</td>
                 <td className="px-6 py-4">₹{row.total_earned}</td>
@@ -44,6 +52,7 @@ const RevenueByInstructorTable = ({ data }) => {
           </tbody>
         </table>
       </div>
+      <Pagination page={page} totalPages={totalPages} setPage={setPage} />
     </div>
   );
 };

@@ -10,46 +10,42 @@ from .models import InstructorWallet, PayoutRequest,WalletTransaction,PlatformRe
 from .serializers import (PayoutRequestSerializer, WalletTransactionSerializer, AdminPendingPayoutSerializer,
                           TutorPayoutSerializer, PlatformRevenueTransactionSerializer,PaymentAccountSerializer)
 from users.permissions import IsInstructorUser,IsAdminUser
+import logging
 
-    
+logger = logging.getLogger(__name__)    
 
 class AdminPayoutViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AdminPendingPayoutSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminUser]
     
-
     def get_queryset(self):
         queryset = PayoutRequest.objects.select_related("instructor").order_by("-created_at")
 
         status_filter = self.request.query_params.get("status")
-        if status_filter:
+        if status_filter and status_filter != "ALL":
             queryset = queryset.filter(status=status_filter)
 
         return queryset
-    
-    @action(detail=False, methods=["get"], url_path="pending")
-    def pending(self, request):
-        payouts = (
-            PayoutRequest.objects
-            .filter(status=PayoutRequest.PENDING)
-            .select_related("instructor","instructor__payment_account")
-        )
-        serializer = AdminPendingPayoutSerializer(payouts, many=True)
-        return Response(serializer.data)
 
     @action(detail=True, methods=["post"], url_path="mark-paid")
     def mark_paid(self, request, pk=None):
+        logger.info(f"Admin {request.user.id} attempting to mark payout {pk} as PAID")
         try:
             with transaction.atomic():
                 payout = PayoutRequest.objects.select_for_update().get(id=pk)
 
                 if payout.status == PayoutRequest.PAID:
+                    logger.warning(f"Payout {pk} already marked as PAID")
                     return Response(
                         {"message": "Already marked as PAID"},
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 
                 if payout.status not in [PayoutRequest.PENDING,PayoutRequest.APPROVED]:
+                    logger.warning(
+                        f"Invalid payout state for payout {pk} | "
+                        f"Current status = {payout.status}"
+                    )
                     return Response(
                         {"error":"Invalid payout state"},
                         status=status.HTTP_400_BAD_REQUEST
@@ -73,24 +69,46 @@ class AdminPayoutViewSet(viewsets.ReadOnlyModelViewSet):
                 payout.status = PayoutRequest.PAID
                 payout.save()
 
+                logger.info(
+                    f"Payout {payout.id} marked as PAID | "
+                    f"Instructor={payout.instructor.id} | "
+                    f"Amount = {payout.amount}"
+                )
+
                 return Response(
                     {"message": "Payout marked as PAID"},
                     status=status.HTTP_200_OK
                 )
 
         except PayoutRequest.DoesNotExist:
+            logger.error(f"Payout {pk} not found while attempting mark_paid")
             return Response(
                 {"error": "Payout not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
         
+        except Exception as e:
+            logger.critical(
+                f"Critical error while marking payout {pk} as PAID | "
+                f"Error={str(e)}"
+            )
+            return Response(
+                {"error": "Internal server error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
     @action(detail=True, methods=["post"], url_path="reject")
     def reject(self, request, pk=None):
+        logger.info(f"Admin {request.user.id} attempting to reject payout {pk}")
         try:
             with transaction.atomic():
                 payout = PayoutRequest.objects.select_for_update().get(id=pk)
 
                 if payout.status != PayoutRequest.PENDING:
+                    logger.warning(
+                        f"Invalid reject attempt for payout {pk} | "
+                        f"Current status={payout.status}"
+                    )
                     return Response(
                         {"error": "Only pending payouts can be rejected"},
                         status=status.HTTP_400_BAD_REQUEST
@@ -106,28 +124,33 @@ class AdminPayoutViewSet(viewsets.ReadOnlyModelViewSet):
                 payout.status = PayoutRequest.REJECTED
                 payout.save()
 
+                logger.info(
+                    f"Payout {payout.id} rejected | "
+                    f"Instructor={payout.instructor.id} | "
+                    f"Amount={payout.amount}"
+                )
+
                 return Response(
                     {"message": "Payout rejected and amount refunded"},
                     status=status.HTTP_200_OK
                 )
 
         except PayoutRequest.DoesNotExist:
+            logger.error(f"Payout {pk} not found while attempting reject")
             return Response(
                 {"error": "Payout not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
-    
-    @action(detail=False, methods=["get"], url_path="history")
-    def history(self, request):
-        payouts = (
-            PayoutRequest.objects
-            .exclude(status=PayoutRequest.PENDING)
-            .select_related("instructor")
-            .order_by("-created_at")
-        )
-        serializer = AdminPendingPayoutSerializer(payouts, many=True)
-        return Response(serializer.data)
-
+        
+        except Exception as e:
+            logger.critical(
+                f"Critical error while rejecting payout {pk} | "
+                f"Error={str(e)}"
+            )
+            return Response(
+                {"error": "Internal server error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class PaymentAccountView(RetrieveUpdateAPIView):
@@ -139,79 +162,127 @@ class PaymentAccountView(RetrieveUpdateAPIView):
             instructor=self.request.user
         )
         return obj
+    
 class TutorRequestPayoutAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsInstructorUser]
     
     def post(self, request):
+        logger.info(f"Instructor {request.user.id} attempting payout request")
         serializer = PayoutRequestSerializer(
             data=request.data,
             context={"request": request}
         )
         
         if not serializer.is_valid():
+            logger.warning(
+                f"Invalid payout request data | "
+                f"Instructor={request.user.id} | Errors={serializer.errors}"
+            )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         amount = serializer.validated_data["amount"]
         
-        with transaction.atomic():
-            wallet = InstructorWallet.objects.select_for_update().get(
-                instructor=request.user
-            )
-            
-            withdrawable = wallet.available_balance - wallet.pending_balance
+        try:
+            with transaction.atomic():
+                wallet = InstructorWallet.objects.select_for_update().get(
+                    instructor=request.user
+                )
+                
+                withdrawable = wallet.available_balance - wallet.pending_balance
 
-            if amount <= 0:
-                return Response({"error": "Invalid amount"}, status=400)
+                if amount <= 0:
+                    logger.warning(
+                        f"Invalid payout amount | "
+                        f"Instructor={request.user.id} | Amount={amount}"
+                    )
+                    return Response({"error": "Invalid amount"}, status=400)
 
-            if withdrawable <= 0:
-                return Response({"error": "No withdrawable balance"}, status=400)
+                if withdrawable <= 0:
+                    logger.warning(
+                        f"No withdrawable balance | "
+                        f"Instructor={request.user.id}"
+                    )
+                    return Response({"error": "No withdrawable balance"}, status=400)
 
-            if amount > withdrawable:
-                return Response(
-                    {
-                        "error": "Insufficient withdrawable balance",
-                        "available_balance": str(wallet.available_balance),
-                        "pending_balance": str(wallet.pending_balance),
-                        "withdrawable_balance": str(withdrawable),
-                    },
-                    status=400,
+                if amount > withdrawable:
+                    logger.warning(
+                        f"Insufficient balance | "
+                        f"Instructor={request.user.id} | "
+                        f"Requested={amount} | Withdrawable={withdrawable}"
+                    )
+                    return Response(
+                        {
+                            "error": "Insufficient withdrawable balance",
+                            "available_balance": str(wallet.available_balance),
+                            "pending_balance": str(wallet.pending_balance),
+                            "withdrawable_balance": str(withdrawable),
+                        },
+                        status=400,
+                    )
+                
+                # Get or create payment account
+                payment_obj, created = PaymentAccount.objects.get_or_create(
+                    instructor=request.user
+                )
+
+                if created:
+                    logger.info(
+                        f"Payment account created for Instructor={request.user.id}"
+                    )
+                
+                # Update payment details if provided
+                upi_id = serializer.validated_data.get("upi_id", "").strip()
+                account_holder = serializer.validated_data.get("account_holder_name", "").strip()
+                account_num = serializer.validated_data.get("account_number", "").strip()
+                ifsc = serializer.validated_data.get("ifsc_code", "").strip()
+                
+                if upi_id:
+                    payment_obj.upi_id = upi_id
+                if account_holder:
+                    payment_obj.account_holder_name = account_holder
+                if account_num:
+                    payment_obj.account_number = account_num
+                if ifsc:
+                    payment_obj.ifsc_code = ifsc
+                
+                payment_obj.save()
+                
+                # Create payout request
+                payout = PayoutRequest.objects.create(
+                    instructor=request.user,
+                    amount=amount,
+                    status=PayoutRequest.PENDING
+                )
+
+                wallet.pending_balance += amount
+
+                if wallet.pending_balance > wallet.available_balance:
+                    logger.critical(
+                        f"Wallet corruption detected | "
+                        f"Instructor={request.user.id} | "
+                        f"Available={wallet.available_balance} | "
+                        f"Pending={wallet.pending_balance}"
+                    )
+                    raise Exception("Invalid wallet state: pending exceeds available")
+                
+                wallet.save()
+
+                logger.info(
+                    f"Payout request created successfully | "
+                    f"Instructor={request.user.id} | "
+                    f"PayoutID={payout.id} | Amount={amount}"
                 )
             
-            # Get or create payment account
-            payment_obj, created = PaymentAccount.objects.get_or_create(
-                instructor=request.user
+        except Exception as e:
+            logger.critical(
+                f"Critical failure during payout request | "
+                f"Instructor={request.user.id} | Error={str(e)}"
             )
+            return Response(
+                {"error": "Internal server error"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )    
             
-            # Update payment details if provided
-            upi_id = serializer.validated_data.get("upi_id", "").strip()
-            account_holder = serializer.validated_data.get("account_holder_name", "").strip()
-            account_num = serializer.validated_data.get("account_number", "").strip()
-            ifsc = serializer.validated_data.get("ifsc_code", "").strip()
-            
-            if upi_id:
-                payment_obj.upi_id = upi_id
-            if account_holder:
-                payment_obj.account_holder_name = account_holder
-            if account_num:
-                payment_obj.account_number = account_num
-            if ifsc:
-                payment_obj.ifsc_code = ifsc
-            
-            payment_obj.save()
-            
-            # Create payout request
-            PayoutRequest.objects.create(
-                instructor=request.user,
-                amount=amount,
-                status=PayoutRequest.PENDING
-            )
-
-            wallet.pending_balance += amount
-
-            if wallet.pending_balance > wallet.available_balance:
-               raise Exception("Invalid wallet state: pending exceeds available")
-            wallet.save()
-        
         return Response(
             {
                 "message": "Payout request submitted successfully",
@@ -269,6 +340,8 @@ class AdminTotalRevenueAPIView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
+        logger.info(f"Admin {request.user.id} accessed total revenue summary")
+
         data = PlatformRevenue.objects.aggregate(
             total_amount=Sum("total_amount"),
             commission_amount=Sum("commission_amount")
@@ -341,6 +414,8 @@ class AdminRevenueTransactionsAPIView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
+        logger.info(f"Admin {request.user.id} viewed revenue transactions")
+        
         transactions = (
             PlatformRevenue.objects
             .select_related("order", "order__course", "order__course__instructor")

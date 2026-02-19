@@ -13,6 +13,9 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from courses.models import Course
 from .utils import notify_course_students
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LiveSessionCreateView(generics.CreateAPIView):
@@ -22,10 +25,26 @@ class LiveSessionCreateView(generics.CreateAPIView):
     def perform_create(self, serializer):
         course = get_object_or_404(Course, id=self.request.data.get("course"))
 
+        logger.info(
+            f"Instructor {self.request.user.id} attempting to create "
+            f"live session for Course={course.id}"
+        )
+
         if course.instructor_id != self.request.user.id:
+            logger.warning(
+                f"Unauthorized live session creation attempt | "
+                f"User={self.request.user.id} | Course={course.id}"
+            )
             raise PermissionDenied("Only instructor can create live sessions")
 
         session = serializer.save(created_by=self.request.user)
+
+        logger.info(
+            f"Live session created successfully | "
+            f"SessionID={session.id} | "
+            f"Course={course.id} | "
+            f"ScheduledAt={session.scheduled_at}"
+        )
 
         notify_course_students(
             course=course,
@@ -38,16 +57,35 @@ class LiveSessionCreateView(generics.CreateAPIView):
 def start_session(request, id):
     session = get_object_or_404(LiveSession, id=id)
 
+    logger.info(
+        f"Instructor {request.user.id} attempting to start session {id}"
+    )
+
     if session.course.instructor_id != request.user.id:
+        logger.warning(
+            f"Unauthorized session start attempt | "
+            f"User={request.user.id} | Session={id}"
+        )
         return Response({"detail": "Forbidden"}, status=403)
 
     if session.status != "scheduled":
+        logger.warning(
+            f"Invalid session start state | "
+            f"Session={id} | CurrentStatus={session.status}"
+        )
         return Response({"detail": "Session cannot be started"}, status=400)
 
     session.status = "ongoing"
     session.started_at = timezone.now()
     session.save(update_fields=["status", "started_at"])
     
+    logger.info(
+        f"Session started successfully | "
+        f"SessionID={session.id} | "
+        f"Course={session.course_id} | "
+        f"Instructor={request.user.id}"
+    )
+
     notify_course_students(
         course=session.course,
         title="Live session started",
@@ -59,20 +97,26 @@ def start_session(request, id):
         user=request.user,
         defaults={"role": "instructor", "joined_at": timezone.now()}
     )
-
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f"course_notify_{session.course_id}",
-        {
-            "type": "notify.message",
-            "payload": {
-                "event": "session_started",
-                "session_id": str(session.id),
-                "course_id": session.course_id,
-                "title": session.title,
+    
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"course_notify_{session.course_id}",
+            {
+                "type": "notify.message",
+                "payload": {
+                    "event": "session_started",
+                    "session_id": str(session.id),
+                    "course_id": session.course_id,
+                    "title": session.title,
+                }
             }
-        }
-    )
+        )
+    except Exception as e:
+        logger.error(
+            f"WebSocket broadcast failed during session start | "
+            f"SessionID={session.id} | Error={str(e)}"
+        )    
 
     return Response({"message": "Session started"})
 
@@ -80,77 +124,132 @@ def start_session(request, id):
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def end_session(request, id):
+    logger.info(
+        f"Instructor {request.user.id} attempting to end session {id}"
+    )
+
     session = get_object_or_404(LiveSession, id=id)
 
     if session.course.instructor_id != request.user.id:
+        logger.warning(
+            f"Unauthorized session end attempt | "
+            f"User={request.user.id} | Session={id}"
+        )
         return Response({"detail": "Forbidden"}, status=403)
 
     if session.status != "ongoing":
+        logger.warning(
+            f"Invalid session end attempt | "
+            f"Session={id} | CurrentStatus={session.status}"
+        )
         return Response({"detail": "Session is not live"}, status=400)
 
     session.status = "ended"
     session.ended_at = timezone.now()
     session.save(update_fields=["status", "ended_at"])
 
-    LiveParticipant.objects.filter(
+    updated_count = LiveParticipant.objects.filter(
         session=session,
         left_at__isnull=True
     ).update(left_at=timezone.now())
 
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f"course_notify_{session.course_id}",
-        {
-            "type": "notify.message",
-            "payload": {
-                "event": "session_ended",
-                "session_id": str(session.id),
-                "course_id": session.course_id,
-            }
-        }
+    logger.info(
+        f"Session ended successfully | "
+        f"SessionID={session.id} | "
+        f"Course={session.course_id} | "
+        f"ParticipantsClosed={updated_count}"
     )
 
-    async_to_sync(channel_layer.group_send)(
-        f"webrtc_{session.id}",                                    # matches consumer's room_group
-        {
-            "type": "session.ended",                               # dots → underscores = session_ended method
-            "session_id": str(session.id),
-        }
-    )
+    channel_layer = get_channel_layer()
+    try:
+        async_to_sync(channel_layer.group_send)(
+            f"course_notify_{session.course_id}",
+            {
+                "type": "notify.message",
+                "payload": {
+                    "event": "session_ended",
+                    "session_id": str(session.id),
+                    "course_id": session.course_id,
+                }
+            }
+        )
+    except Exception as e:
+        logger.error(
+            f"Course notify broadcast failed during session end | "
+            f"SessionID={session.id} | Error={str(e)}"
+        )    
+    
+    try:
+        async_to_sync(channel_layer.group_send)(
+            f"webrtc_{session.id}",                                    # matches consumer's room_group
+            {
+                "type": "session.ended",                               # dots → underscores = session_ended method
+                "session_id": str(session.id),
+            }
+        )
+    except Exception as e:
+        logger.error(
+            f"WebRTC broadcast failed during session end | "
+            f"SessionID={session.id} | Error={str(e)}"
+        )    
 
     return Response({"message": "Session ended"})
 
 @api_view(["POST"])
 def cancel_session(request, id):
+    logger.info(
+        f"Instructor {request.user.id} attempting to cancel session {id}"
+    )
+
     session = get_object_or_404(LiveSession, id=id)
 
     if session.course.instructor_id != request.user.id:
+        logger.warning(
+            f"Unauthorized session cancel attempt | "
+            f"User={request.user.id} | Session={id}"
+        )
         return Response(status=403)
 
     if session.status != "scheduled":
+        logger.warning(
+            f"Invalid session cancel attempt | "
+            f"Session={id} | CurrentStatus={session.status}"
+        )
         return Response({"detail": "Cannot cancel"}, status=400)
 
     session.status = "cancelled"
     session.save(update_fields=["status"])
+
+    logger.info(
+        f"Session cancelled successfully | "
+        f"SessionID={session.id} | "
+        f"Course={session.course_id}"
+    )
 
     notify_course_students(
         course=session.course,
         title="Live session cancelled",
         message=f"{session.title} has been cancelled by instructor",
     )
-
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f"course_notify_{session.course_id}",
-        {
-            "type": "notify.message",
-            "payload": {
-                "event": "live_cancelled",
-                "session_id": str(session.id),
-                "title": session.title,
+    
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"course_notify_{session.course_id}",
+            {
+                "type": "notify.message",
+                "payload": {
+                    "event": "live_cancelled",
+                    "session_id": str(session.id),
+                    "title": session.title,
+                }
             }
-        }
-    )
+        )
+    except Exception as e:
+        logger.error(
+            f"WebSocket broadcast failed during session cancel | "
+            f"SessionID={session.id} | Error={str(e)}"
+        )    
 
     return Response({"message": "Session cancelled"})
 

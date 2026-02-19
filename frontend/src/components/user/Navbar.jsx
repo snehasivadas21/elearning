@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { Menu, X } from "lucide-react";
@@ -14,8 +14,10 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const enrolledCourseId =
-  user?.role === "student" ? user?.enrolled_courses || [] : [];
+  const enrolledCourseId = useMemo (()=>{
+      return user?.role === "student" ? (user?.enrolled_courses ?? []) : [];
+  },[user?.enrolled_courses,user?.role]);    
+
 
   const { notifications: liveNotifications, dismiss: dismissLiveNotification, dismissAll: dismissAllLive } = useLiveNotifySocket(enrolledCourseId);
 

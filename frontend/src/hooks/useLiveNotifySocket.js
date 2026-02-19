@@ -5,6 +5,8 @@ const useLiveNotifySocket = (courseIds = []) => {
   const [notifications, setNotifications] = useState([]);
   const [connected, setConnected] = useState(false);
 
+  const courseKey = courseIds.join(",");
+
   useEffect(() => {
     if (!courseIds.length) return;
 
@@ -65,7 +67,7 @@ const useLiveNotifySocket = (courseIds = []) => {
       socketsRef.current = {};
       setConnected(false);
     };
-  }, [courseIds]);
+  }, [courseKey]);
 
   const dismiss = (sessionId) => {
     setNotifications((prev) => prev.filter((n) => n.session_id !== sessionId));
