@@ -7,6 +7,7 @@ const CourseReviews = ({ courseId }) => {
   const [status, setStatus] = useState(null);
   const [rating, setRating] = useState("");
   const [comment, setComment] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -19,6 +20,7 @@ const CourseReviews = ({ courseId }) => {
     try {
       const res = await axiosInstance.get(`/reviews/?course=${courseId}`);
       setReviews(res.data.results ?? []);
+      setTotalCount(res.data.count ?? 0);
     } catch (error) {
       console.error("Error fetching reviews:", error);
     }
@@ -167,7 +169,7 @@ const CourseReviews = ({ courseId }) => {
 
       <div className="mt-6">
         <h3 className="font-semibold mb-3">
-          All Reviews - {reviews.length}
+          All Reviews - {totalCount}
         </h3>
         
         {reviews.length > 0 ? (

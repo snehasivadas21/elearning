@@ -15,7 +15,8 @@ const useLiveNotifySocket = (courseIds = []) => {
     courseIds.forEach((courseId) => {
       if (socketsRef.current[courseId]) return;
 
-      const wsUrl = `${protocol}://${window.location.host}/ws/notify/course/${courseId}/`;
+      const token = localStorage.getItem("access");
+      const wsUrl = `${protocol}://${window.location.host}/ws/notify/course/${courseId}/?token=${token}`;
       const socket = new WebSocket(wsUrl);
 
       socket.onopen = () => setConnected(true);
@@ -23,7 +24,7 @@ const useLiveNotifySocket = (courseIds = []) => {
       socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
 
-        if (data.event === "live_created" || data.event === "live_started") {
+        if (data.event === "live_created" || data.event === "session_started") {
           setNotifications((prev) => {
             // if already exists, update it (e.g. created → started)
             const exists = prev.some((n) => n.session_id === data.session_id);

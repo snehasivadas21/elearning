@@ -1,7 +1,8 @@
 from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import Course
+from .models import Course,LessonResource
+from ai.pdf_ingestion import index_lesson_resource
 
 @shared_task
 def send_course_status_email(course_id):
@@ -33,3 +34,13 @@ def send_course_status_email(course_id):
         )
     except Course.DoesNotExist:
         print("Course not found for email task.")
+
+@shared_task
+def index_lesson_resource_task(resource_id):
+    try:
+        resource = LessonResource.objects.get(id=resource_id)
+        index_lesson_resource(resource)
+    except LessonResource.DoesNotExist:
+        print("Resource not found:", resource_id)
+    except Exception as e:
+        print("Indexing failed:", e)        

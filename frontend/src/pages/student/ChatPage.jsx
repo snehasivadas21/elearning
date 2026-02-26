@@ -31,7 +31,6 @@ export default function ChatPage() {
 
   const handleSelectRoom = (room) => {
     setSelectedRoom(room);
-    // ✅ Clear unread count for this room when user opens it
     markChatRead(room.id);
   };
 
@@ -40,7 +39,10 @@ export default function ChatPage() {
 
     axiosInstance
       .get(`/chat/rooms/${selectedRoom.id}/messages/`)
-      .then((res) => setMessages(res.data.results))
+      .then((res) => {
+        const sorted = [...res.data.results].reverse(); 
+        setMessages(sorted);
+      })
       .catch(() => setMessages([]));
   }, [selectedRoom]);
 
