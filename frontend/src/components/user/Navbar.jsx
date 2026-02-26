@@ -1,10 +1,11 @@
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { Menu, X } from "lucide-react";
 import useLiveNotifySocket from "../../hooks/useLiveNotifySocket";
 import useChatNotifySocket from "../../hooks/useChatNotifySocket";
 import NotificationBell from "./NotificationBell";
+import axiosInstance from "../../api/axiosInstance";
 
 const Navbar = () => {
   const { user, logoutUser } = useContext(AuthContext);
@@ -13,11 +14,19 @@ const Navbar = () => {
   const dropdownRef = useRef();
   const navigate = useNavigate();
   const location = useLocation();
-  
-  const enrolledCourseId = useMemo (()=>{
-      return user?.role === "student" ? (user?.enrolled_courses ?? []) : [];
-  },[user?.enrolled_courses,user?.role]);    
+  const [enrolledCourseId, setEnrolledCourseId] = useState([]);
 
+  useEffect(() => {
+    if (user?.role !== "student") return;
+
+    axiosInstance.get("/payment/purchase/")
+      .then((res) => {
+        const ids = (res.data.results ?? res.data).map((p) => 
+          typeof p.course === "object" ? p.course.id : p.course);
+        setEnrolledCourseId(ids);
+      })
+      .catch(() => setEnrolledCourseId([]));
+  }, [user?.user_id]);
 
   const { notifications: liveNotifications, dismiss: dismissLiveNotification, dismissAll: dismissAllLive } = useLiveNotifySocket(enrolledCourseId);
 

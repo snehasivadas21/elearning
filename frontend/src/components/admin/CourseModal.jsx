@@ -34,7 +34,7 @@ const CourseModal = ({ show, onClose, onSubmit, course, mode = "Add" }) => {
       setFormData({
         title: course.title || '',
         description: course.description || '',
-        category: course.category ?.id || '',
+        category: course.category?.id || course.category || '',
         level: course.level || 'beginner',
         is_active: course.is_active ?? true,
         price: course.price ?? 0.00,

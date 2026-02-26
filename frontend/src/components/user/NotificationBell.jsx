@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 const eventLabel = (event) => {
-  if (event === "live_started")   return { icon: "🔴", text: "Live Now",   style: "border-red-500 bg-red-50" };
+  if (event === "session_started")   return { icon: "🔴", text: "Live Now",   style: "border-red-500 bg-red-50" };
   if (event === "live_created")   return { icon: "📅", text: "Scheduled",  style: "border-yellow-500 bg-yellow-50" };
   if (event === "live_cancelled") return { icon: "❌", text: "Cancelled",  style: "border-gray-400 bg-gray-50" };
   return                                 { icon: "📢", text: "Session",    style: "border-blue-500 bg-blue-50" };
@@ -73,6 +73,7 @@ const NotificationBell = ({
                   className="cursor-pointer flex-1 text-sm"
                   onClick={() => {
                     navigate("/student/mycourses");
+                    onDismiss(n.session_id);
                     setOpen(false);
                   }}
                 >

@@ -52,6 +52,23 @@ class LiveSessionCreateView(generics.CreateAPIView):
             message=f"{session.title} scheduled on {session.scheduled_at.strftime('%d %b %Y, %I:%M %p')}",
         )
 
+        try:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"course_notify_{course.id}",
+                {
+                    "type": "notify.message",
+                    "payload": {
+                        "event": "live_created",
+                        "session_id": str(session.id),
+                        "course_id": course.id,
+                        "title": session.title,
+                    }
+                }
+            )
+        except Exception as e:
+            logger.error(f"WebSocket notify failed on create: {e}")
+
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
 def start_session(request, id):
@@ -181,9 +198,9 @@ def end_session(request, id):
     
     try:
         async_to_sync(channel_layer.group_send)(
-            f"webrtc_{session.id}",                                    # matches consumer's room_group
+            f"webrtc_{session.id}",                                    
             {
-                "type": "session.ended",                               # dots → underscores = session_ended method
+                "type": "session.ended",                               
                 "session_id": str(session.id),
             }
         )

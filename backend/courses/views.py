@@ -10,6 +10,8 @@ from rest_framework.parsers import MultiPartParser,FormParser
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.db.models import Avg,Count,Sum
+from django.db import transaction
+import logging
 
 from .models import (Course,CourseCategory,Module,Lesson,LessonResource,LessonProgress,CourseCertificate,Review)
 from payment.models import CoursePurchase
@@ -17,12 +19,12 @@ from .serializers import (AdminCourseSerializer,InstructorCourseSerializer,Cours
 ModuleSerializer,LessonSerializer,LessonResourceSerializer,LessonProgressSerializer,CertificateSerializer,ReviewSerializer)
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from users.permissions import IsInstructorUser,IsAdminUser,IsStudentUser
-from .tasks import send_course_status_email
+from .tasks import send_course_status_email,index_lesson_resource_task
 from .utils import issue_certificate_if_eligible,verify_certificate,get_course_progress,generate_certificate_file
 from instrpanel.utils.youtube_duration import get_youtube_duration
 import cloudinary
-from ai.pdf_ingestion import index_lesson_resource
 
+logger = logging.getLogger(__name__)
 
 class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AdminCourseSerializer
@@ -37,8 +39,8 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
             is_active=True
             ).exclude(status='draft'
             ).annotate(
-                avg_rating=Avg("reviews__rating"),
-                review_count=Count("reviews"),
+                avg_rating=Avg("reviews__rating",distinct=True),
+                review_count=Count("reviews",distinct=True),
                 total_duration=Sum("modules__lessons__duration")
             ).order_by('-created_at')
 
@@ -92,8 +94,8 @@ class InstructorCourseViewSet(viewsets.ModelViewSet):
         return Course.objects.filter(
             instructor=self.request.user,is_active=True
             ).annotate(
-                avg_rating=Avg("reviews__rating"),
-                review_count=Count("reviews"),
+                avg_rating=Avg("reviews__rating",distinct=True),
+                review_count=Count("reviews",distinct=True),
                 total_duration=Sum("modules__lessons__duration")
             ).order_by('-created_at')
     
@@ -295,32 +297,61 @@ class LessonResourceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return LessonResource.objects.filter(lesson__module__course__instructor=self.request.user) 
     
-    def perform_create(self,serializer):
-        lesson = serializer.validated_data['lesson']
-        course = lesson.module.course
-
+    def perform_create(self, serializer):
         resource = serializer.save()
-        if resource.file :
-            index_lesson_resource(resource)
+        course = resource.lesson.module.course
+
+        logger.info(
+            f"Resource created | resource_id={resource.id} | "
+            f"lesson_id={resource.lesson.id} | course_id={course.id}"
+        )
+
+        if resource.file:
+            logger.info(
+                f"Scheduling indexing task | resource_id={resource.id}"
+            )
+
+            transaction.on_commit(
+                lambda: index_lesson_resource_task.delay(resource.id)
+            )
 
     def perform_update(self, serializer):
         resource = self.get_object()
         course = resource.lesson.module.course
 
         if course.status in ["approved", "submitted"]:
+            logger.warning(
+                f"Attempt to edit live course resource | "
+                f"resource_id={resource.id} | course_id={course.id}"
+            )
             raise PermissionDenied(
                 "This course is live. You cannot edit existing resources."
             )
 
-        serializer.save()
-        if resource.file :
-            index_lesson_resource(resource)
+        updated_resource = serializer.save()
+        logger.info(
+            f"Resource updated | resource_id={updated_resource.id} | "
+            f"course_id={course.id}"
+        )
+
+        if updated_resource.file:
+            logger.info(
+                f"Scheduling re-indexing task | resource_id={updated_resource.id}"
+            )
+
+            transaction.on_commit(
+                lambda: index_lesson_resource_task.delay(updated_resource.id)
+            )
 
     def destroy(self, request, *args, **kwargs):
         resource = self.get_object()
         course = resource.lesson.module.course
 
         if course.status in ["approved", "submitted"]:
+            logger.warning(
+                f"Attempt to delete live course resource | "
+                f"resource_id={resource.id} | course_id={course.id}"
+            )
             return Response(
                 {
                     "detail": "This course is live. You cannot delete resources."
@@ -328,8 +359,13 @@ class LessonResourceViewSet(viewsets.ModelViewSet):
                 status=403
             )
 
+        logger.info(
+            f"Resource deleted | resource_id={resource.id} | "
+            f"course_id={course.id}"
+        )
+
         resource.delete()
-        return Response(status=204)      
+        return Response(status=204)     
 
 class LessonProgressViewSet(viewsets.GenericViewSet):
     serializer_class = LessonProgressSerializer
@@ -358,12 +394,12 @@ class LessonProgressViewSet(viewsets.GenericViewSet):
                 if not progress.completed:
                     progress.completed = True
                     progress.completed_at = timezone.now()
-                    issue_certificate_if_eligible(
-                        student=request.user,
-                        course=lesson.module.course
-                    )
-
         progress.save()
+        if progress.completed:            
+            issue_certificate_if_eligible(
+                student=request.user,
+                course=lesson.module.course
+            )
 
         return Response({
             "lesson_id": lesson.id,

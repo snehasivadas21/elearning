@@ -1,8 +1,14 @@
 from rest_framework.routers import DefaultRouter
-from .views import TutorOrderViewSet,NotificationViewSet
+from django.urls import path,include
+from .views import TutorOrderViewSet,TutorDashboardAPIView,NotificationViewSet
 
 router = DefaultRouter()
 router.register(r'orders',TutorOrderViewSet,basename='tutor-orders')
 router.register(r'notification', NotificationViewSet, basename="notifications")
 
-urlpatterns = router.urls
+urlpatterns = [
+
+    path('dashboard/',TutorDashboardAPIView.as_view()),
+    
+    path('',include(router.urls)),
+]

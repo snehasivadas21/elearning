@@ -19,7 +19,7 @@ from .permissions import IsInstructorUser
 from .tasks import send_verification_email_task
 from django.core.mail import send_mail
 
-from courses.models import Course,Lesson,LessonProgress,LessonResource
+from courses.models import Course,Lesson,LessonProgress,LessonResource,CourseCertificate
 from payment.models import CoursePurchase
 from courses.serializers import AdminCourseSerializer,UserCourseDetailSerializer
 from django.db.models import Avg,Count,Sum
@@ -246,8 +246,8 @@ class ApprovedCourseListView(generics.ListAPIView):
             is_published=True,
             category__is_active=True
         ).annotate(
-            avg_rating=Avg("reviews__rating"),
-            review_count=Count("reviews"),
+            avg_rating=Avg("reviews__rating",distinct=True),
+            review_count=Count("reviews",distinct=True),
             total_duration=Sum("modules__lessons__duration"),
         )
 
@@ -267,8 +267,8 @@ class MyEnrolledCourseDetailView(generics.RetrieveAPIView):
             is_active=True,
             is_published=True
         ).annotate(
-            avg_rating = Avg("reviews__rating"),
-            review_count = Count("reviews"),
+            avg_rating = Avg("reviews__rating",distinct=True),
+            review_count = Count("reviews",distinct=True),
             total_duration=Sum("modules__lessons__duration") 
         ).distinct()  
     
@@ -296,4 +296,58 @@ class ProfileView(APIView):
         serializer.save()
         return Response(serializer.data,status=status.HTTP_200_OK)
 
-    
+class StudentDashboardAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student = request.user
+
+        purchases = CoursePurchase.objects.filter(student=student)
+
+        total_enrolled = purchases.count()
+        completed_courses = 0
+        ongoing_courses = 0
+
+        progress_data = []
+
+        for purchase in purchases:
+            course = purchase.course
+
+            # Total lessons in this course
+            total_lessons = Lesson.objects.filter(
+                module__course=course,
+                is_deleted=False,
+                is_active=True
+            ).count()
+
+            # Completed lessons by student
+            completed_lessons = LessonProgress.objects.filter(
+                student=student,
+                lesson__module__course=course,
+                completed=True
+            ).count()
+
+            if total_lessons > 0:
+                progress = round((completed_lessons / total_lessons) * 100, 2)
+            else:
+                progress = 0
+
+            if progress >= 100:
+                completed_courses += 1
+            else:
+                ongoing_courses += 1
+
+            progress_data.append({
+                "course_title": course.title,
+                "progress": progress
+            })     
+
+        return Response({
+            "stats":{
+                "total_enrolled": total_enrolled,
+                "completed": completed_courses,
+                "ongoing": ongoing_courses,
+                "certificates": completed_courses
+            },
+            "progress_per_course":progress_data
+        })        
