@@ -2,9 +2,11 @@ import { useState } from 'react';
 import axiosPublic from "../../api/axiosPublic";
 import { useNavigate, Link } from 'react-router-dom';
 import GoogleLoginButton from '../../components/user/GoogleLoginButton';
+import { toast } from "react-toastify";
 
 const Register = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     email: '',
     username: '',
@@ -17,11 +19,13 @@ const Register = () => {
     e.preventDefault();
     
     if (form.password !== form.confirm_password){
-      alert("Password do not match");
+      toast.error("Password do not match");
       return;
     }
 
     try {
+      setLoading(true);
+
       const payload = {
         email : form.email,
         username : form.username,
@@ -33,7 +37,9 @@ const Register = () => {
       navigate("/check-email/")
     } catch (error) {
       console.error(error.response?.data);
-      alert("Registration failed.Try again")
+      toast.error("Registration failed.Try again")
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,9 +101,14 @@ const Register = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition"
+            disabled={loading}
+            className={`w-full p-2 rounded-md text-white transition ${
+              loading 
+                ? "bg-blue-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            Register
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
 

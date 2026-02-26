@@ -4,7 +4,7 @@ from .views import (
     RegisterView, LoginView, VerifyEmailView,
     CustomTokenObtainPairView, GoogleLoginView,LogoutView, ApprovedCourseListView,
     ApprovedCourseDetailView, PasswordResetRequestView,PasswordResetConfirmView,
-    MyEnrolledCourseDetailView,ProfileView
+    MyEnrolledCourseDetailView,ProfileView,StudentDashboardAPIView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -24,6 +24,7 @@ urlpatterns = [
     path('approved/<int:pk>/', ApprovedCourseDetailView.as_view(), name='approved-course-detail'),
     path('my-courses/<int:pk>/',MyEnrolledCourseDetailView.as_view(),name='my-course-detail'),
     path('profile/', ProfileView.as_view(),name="profiel"),
+    path('dashboard/',StudentDashboardAPIView.as_view(),name="dashboard"),
 
     path('token/', CustomTokenObtainPairView.as_view(), name="get_token"),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

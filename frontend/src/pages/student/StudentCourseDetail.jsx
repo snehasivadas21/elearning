@@ -32,12 +32,21 @@ const StudentCourseDetail = () => {
   const [showChat, setShowChat] = useState(false);
   const [youtubeReady, setYoutubeReady] = useState(false);
   const lastSentRef = useRef({});
+  const [selectedLesson, setSelectedLesson] = useState(null);
 
   const { data: course, isLoading } = useQuery({
     queryKey: ["student-course", id],
     queryFn: () => fetchCourse(id),
     enabled: !!id,
   });
+
+  useEffect(() => {
+    if (course && !selectedLesson) {
+      const firstLesson =
+        course.modules?.[0]?.lessons?.[0] || null;
+      setSelectedLesson(firstLesson);
+    }
+  }, [course]);
 
   const sendWatchProgress = async (lessonId, watchedSeconds) => {
     try {
@@ -74,159 +83,207 @@ const StudentCourseDetail = () => {
   if (!course) return <p>Course not found</p>;
 
   return (
-    <div className="relative max-w-7xl mx-auto p-6 space-y-6">
+     <div className="h-screen flex flex-col bg-gray-100">
 
       {/* COURSE HEADER */}
-      <div>
-        <div className="relative mb-4">
-          <img
-            src={course.course_image}
-            alt={course.title}
-            className="rounded-xl w-full h-64 object-cover"
-          />
-          {course.category_name && (
-            <span className="absolute top-4 left-4 bg-white text-sm px-3 py-1 rounded-full shadow">
-              {course.category_name}
-            </span>
-          )}
+      <div className="bg-white shadow rounded-xl overflow-hidden mb-6">
+
+        <div className="flex flex-col md:flex-row">
+
+          {/* RIGHT: COURSE DETAILS */}
+          <div className="md:w-2/3 p-6 flex flex-col justify-between">
+
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                {course.title}
+              </h1>
+
+              <p className="text-gray-600 mt-2 line-clamp-3">
+                {course.description}
+              </p>
+
+              {/* TAGS */}
+              <div className="flex flex-wrap gap-2 mt-4 text-sm">
+                <span className="bg-blue-50 px-3 py-1 rounded-full font-medium">
+                  {course.level}
+                </span>
+
+                <span className="bg-purple-50 px-3 py-1 rounded-full">
+                  📜 Certificate of completion
+                </span>
+
+                <span className="bg-green-50 px-3 py-1 rounded-full">
+                  📄 Downloadable resources
+                </span>
+
+                {course.total_duration && (
+                  <span className="bg-orange-50 px-3 py-1 rounded-full">
+                    ⏱ {formatDuration(course.total_duration)}
+                  </span>
+                )}
+
+                {course.updated_at && (
+                  <span className="bg-gray-100 px-3 py-1 rounded-full">
+                    Updated {format(new Date(course.updated_at), "dd/MM/yyyy")}
+                  </span>
+                )}
+              </div>
+
+              {/* RATING */}
+              <div className="mt-4 flex items-center gap-3 text-gray-600">
+                <span className="font-semibold">
+                  ⭐ {course.avg_rating ? course.avg_rating.toFixed(1) : "No ratings"}
+                </span>
+                <span className="text-sm">
+                  ({course.review_count} reviews)
+                </span>
+                <span className="text-sm">🌍 English</span>
+              </div>
+            </div>
+
+            {/* PRICE + PROGRESS */}
+            <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+              <div className="text-2xl font-bold text-gray-800">
+                ₹{course.price}
+              </div>
+
+              <div className="md:w-1/2">
+                <CourseProgressBar
+                  percentage={course.progress_percentage ?? 0}
+                />
+              </div>
+
+            </div>
+
+          </div>
         </div>
 
-        <h1 className="text-2xl font-bold">{course.title}</h1>
-        <p className="text-gray-600">{course.description}</p>
-
-        <div className="flex gap-3 mt-3 flex-wrap text-sm text-gray-600">
-          <span className="bg-gray-200 px-3 py-1 rounded-full">
-            {course.level}
-          </span>
-          <span className="bg-gray-200 px-3 py-1 rounded-full">
-            📜 Certificate
-          </span>
-          <span className="bg-gray-200 px-3 py-1 rounded-full">📄 Downloadable resources</span>
-          {course.total_duration && (
-            <span className="bg-gray-200 px-3 py-1 rounded-full">
-              ⏱ {formatDuration(course.total_duration)}
-            </span>
-          )}
-          {course.updated_at && (
-            <span className="bg-gray-200 px-3 py-1 rounded-full">
-              Updated {format(new Date(course.updated_at), "dd/MM/yyyy")}
-            </span>
-          )}
-        </div>
-
-        <div className="text-2xl font-bold mt-2">
-          ₹{course.price}
-        </div>
-
-        <div className="mt-4 flex items-center gap-4 text-lg text-gray-500">
-          <span>⭐ {course.avg_rating ? course.avg_rating.toFixed(1) : "No ratings"} -
-            ({course.review_count} reviews)
-          </span>
-          <span>🌍 English</span>
-        </div>
       </div>
 
-      <CourseProgressBar percentage={course.progress_percentage ?? 0} />
-
       {/* MODULES */}
-      {course.modules.map((mod, index) => (
-        <div key={mod.id} className="mt-6">
-          <h2 className="font-semibold text-lg">
-            {index + 1}. {mod.title}
-          </h2>
+      <div className="flex flex-1 overflow-hidden">
 
-          <div className="space-y-4 mt-3">
-            {mod.lessons.map((lesson, i) => (
-              <div key={lesson.id} className="border p-4 rounded bg-white">
+        {/* ===== Sidebar ===== */}
+        <div className="w-80 bg-white border-r overflow-y-auto p-4">
+          {course.modules.map((mod, index) => (
+            <div key={mod.id} className="mb-6">
+              <h2 className="font-semibold text-sm mb-2 text-gray-700">
+                {index + 1}. {mod.title}
+              </h2>
 
-                <div className="flex justify-between">
-                  <h4 className="font-medium">
-                    {i + 1}. {lesson.title}
-                  </h4>
-
-                  {lesson.completed && (
-                    <div className="mt-2 text-green-600 text-sm font-semibold">
-                      ✔ Completed
-                    </div>
-                  )}
+              {mod.lessons.map((lesson, i) => (
+                <div
+                  key={lesson.id}
+                  onClick={() => setSelectedLesson(lesson)}
+                  className={`p-3 rounded-lg mb-2 cursor-pointer transition text-sm
+                    ${
+                      selectedLesson?.id === lesson.id
+                        ? "bg-blue-50 border border-blue-200"
+                        : "hover:bg-gray-100"
+                    }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <span>
+                      {i + 1}. {lesson.title}
+                    </span>
+                    {lesson.completed && (
+                      <span className="text-green-600 text-xs">
+                        ✔
+                      </span>
+                    )}
+                  </div>
 
                   {lesson.duration > 0 && (
-                    <span className="text-sm text-gray-500">
+                    <p className="text-xs text-gray-500">
                       {formatDuration(lesson.duration)}
-                    </span>
+                    </p>
                   )}
                 </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-8">
+
+          {selectedLesson ? (
+            <div className="bg-white rounded-xl shadow p-6">
+
+              <h2 className="text-lg font-semibold mb-4">
+                {selectedLesson.title}
+              </h2>
 
                 {/* Uploaded Video Tracking */}
-                {lesson.content_type === "video" &&
-                  lesson.video_source === "cloud" &&
-                  lesson.video_url && (
+                {selectedLesson.content_type === "video" &&
+                  selectedLesson.video_source === "cloud" &&
+                  selectedLesson.video_url && (
                     <video
-                      src={lesson.video_url}
+                      src={selectedLesson.video_url}
                       controls
-                      className="mt-3 w-full rounded"
+                      className="mb-4 w-full rounded-lg"
                       onTimeUpdate={(e) => {
                         const currentTime = Math.floor(
                           e.target.currentTime
                         );
 
                         if (
-                          !lastSentRef.current[lesson.id] ||
+                          !lastSentRef.current[selectedLesson.id] ||
                           currentTime -
-                            lastSentRef.current[lesson.id] >=
+                            lastSentRef.current[selectedLesson.id] >=
                             5
                         ) {
-                          lastSentRef.current[lesson.id] =
+                          lastSentRef.current[selectedLesson.id] =
                             currentTime;
 
                           sendWatchProgress(
-                            lesson.id,
+                            selectedLesson.id,
                             currentTime
                           );
                         }
                       }}
                       onEnded={(e) => {
                         const fullDuration = Math.floor(e.target.duration);
-                        sendWatchProgress(lesson.id, fullDuration);
+                        sendWatchProgress(selectedLesson.id, fullDuration);
                       }}
                     />
                   )}
 
                 {/* YouTube Loading State */}
-                {lesson.content_type === "video" &&
-                  lesson.video_source === "youtube" &&
-                  lesson.video_url && !youtubeReady && (
+                {selectedLesson.content_type === "video" &&
+                  selectedLesson.video_source === "youtube" &&
+                  selectedLesson.video_url && !youtubeReady && (
                     <div className="mt-3 w-full aspect-video bg-gray-200 rounded flex items-center justify-center">
                       <p className="text-gray-600">Loading YouTube player...</p>
                     </div>
                   )}
 
                 {/* YouTube Tracking */}
-                {lesson.content_type === "video" &&
-                  lesson.video_source === "youtube" &&
-                  lesson.video_url && youtubeReady && (
+                {selectedLesson.content_type === "video" &&
+                  selectedLesson.video_source === "youtube" &&
+                  selectedLesson.video_url && youtubeReady && (
                     <YouTubePlayer
-                      lesson={lesson}
+                      lesson={selectedLesson}
                       sendWatchProgress={sendWatchProgress}
                       lastSentRef={lastSentRef}
                     />
                   )}
 
                 {/* Text */}
-                {lesson.content_type === "text" &&
-                  lesson.text_content && (
+                {selectedLesson.content_type === "text" &&
+                  selectedLesson.text_content && (
                     <p className="mt-3 text-gray-700 whitespace-pre-line">
-                      {lesson.text_content}
+                      {selectedLesson.text_content}
                     </p>
                   )}
 
                 {/* Resources */}
-                {lesson.resources?.length > 0 && (
+                {selectedLesson.resources?.length > 0 && (
                   <div className="pt-3 border-t mt-3">
                     <p className="text-sm font-semibold mb-1">
                       Resources
                     </p>
-                    {lesson.resources.map((res) => (
+                    {selectedLesson.resources.map((res) => (
                       <a
                         key={res.id}
                         href={res.file}
@@ -240,15 +297,19 @@ const StudentCourseDetail = () => {
                   </div>
                 )}
               </div>
-            ))}
+            ) : (
+              <div className="bg-white rounded-xl shadow p-6 text-gray-500">
+                Select a lesson to begin.
+              </div>
+            )}
           </div>
         </div>
-      ))}
+      
 
       {/* COMMUNITY BUTTON */}
       <button
         onClick={() => navigate(`/student/chat/course/`)}
-        className="fixed bottom-40 right-20 bg-green-600 hover:bg-green-700 text-white p-6 text-2xl rounded-full shadow-lg z-40"
+        className="fixed bottom-50 right-20 bg-green-600 hover:bg-green-700 text-white p-6 text-2xl rounded-full shadow-lg z-40"
       >
         💬
       </button>

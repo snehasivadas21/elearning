@@ -13,7 +13,7 @@ export default function MessageList({ messages, currentUserId }) {
     <div className="flex-1 overflow-y-auto bg-gray-50/50 px-4 py-6 space-y-1">
       {messages.map((msg) => {
         const isSystem = msg.is_system;
-        const isMine = msg.sender?.id === currentUserId;
+        const isMine = msg.sender?.id === Number(currentUserId);
 
         if (isSystem) {
           return (

@@ -16,6 +16,7 @@ def extract_text(resource: LessonResource):
     response.raise_for_status()
 
     content_type = response.headers.get("Content-Type", "").lower()
+    file_name = resource.file.name.lower()
     content = BytesIO(response.content)
 
     if "pdf" in content_type:
@@ -34,7 +35,7 @@ def extract_text(resource: LessonResource):
                 if hasattr(shape, "text"):
                     text.append(shape.text)
         return "\n".join(text)
-
+    print(f"Unrecognized content type: {content_type} for file : {file_name}")
     return ""
 
 def index_lesson_resource(resource):
