@@ -5,6 +5,7 @@ import { extractResults } from "../../api/api";
 import ModuleModal from "../../components/tutor/ModuleModal";
 import LessonModal from "../../components/tutor/LessonModal";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 
 const formatDuration = (seconds) => {
@@ -85,12 +86,16 @@ const InstructorCourseContent = () => {
 
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState(null);
+
+  const [quiz, setQuiz] = useState(null);
   
   const isSubmitted = course?.status === "submitted";
   const isApproved = course?.status === "approved";
 
   const canAddContent = course?.status === "draft" || isApproved;
   const canEditContent = course?.status === "draft";
+
+  const navigate = useNavigate();
 
   const fetchCourse = async () => {
     try {
@@ -113,6 +118,22 @@ const InstructorCourseContent = () => {
   useEffect(() => {
     fetchCourse();
     fetchModules();
+  }, [courseId]);
+
+  const fetchQuiz = async () => {
+    try {
+      const res = await axiosInstance.get(`/quiz/quizzes/?course=${courseId}`);
+      const results = res.data?.results || res.data;
+      if (results.length > 0) setQuiz(results[0]);
+    } catch (err) {
+      console.error("Failed to fetch quiz", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourse();
+    fetchModules();
+    fetchQuiz(); 
   }, [courseId]);
 
 
@@ -148,6 +169,37 @@ const InstructorCourseContent = () => {
     if (!window.confirm("Delete this lesson?")) return;
     await axiosInstance.delete(`/lessons/${lessonId}/`);
     fetchModules();
+  };
+
+  const handleCreateQuiz = async () => {
+    try {
+      const checkRes = await axiosInstance.get(`/quiz/quizzes/?course=${courseId}`);
+      const existing = checkRes.data?.results || checkRes.data;
+      
+      if (existing.length > 0) {
+        navigate(`/tutor/quizzes/${existing[0].id}`);
+        return;
+      }
+
+      const res = await axiosInstance.post("/quiz/quizzes/", {
+        course: courseId,
+        title: "Final Course Assessment",
+        pass_percentage: 50,
+        max_attempts: 3,
+      });
+      
+      console.log("Created quiz:", res.data);
+      const createdQuiz = res.data;
+
+      if (!createdQuiz.id) {
+        console.error("No quiz ID returned", createdQuiz);
+        return;
+      }
+  
+      navigate(`/tutor/quizzes/${createdQuiz.id}`);
+    } catch (error) {
+      console.error("Failed to create quiz",error.response?.data);
+    }
   };
 
   return (
@@ -307,6 +359,33 @@ const InstructorCourseContent = () => {
             </ul>
           </div>
         ))}
+      </div>
+
+      <div className="mt-10 border-t pt-6">
+        <h3 className="text-xl font-bold text-purple-600 mb-4">
+          📘 Final Course Assessment
+        </h3>
+
+        {quiz ? (
+          <button
+            onClick={() => navigate(`/tutor/quizzes/${quiz.id}`)}
+            className="px-4 py-2 bg-purple-600 text-white rounded"
+          >
+            Manage Final Quiz
+          </button>
+        ) : (
+          <button
+            onClick={handleCreateQuiz}
+            disabled={!canAddContent}
+            className={`px-4 py-2 text-white rounded ${
+              canAddContent
+                ? "bg-green-600"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+          >
+            + Create Final Quiz
+          </button>
+        )}
       </div>
 
       {showModuleModal && (

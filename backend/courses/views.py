@@ -76,13 +76,6 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
         send_course_status_email.delay(course.id)
         return Response({'message':'Course rejected successfully'})    
 
-    @action(detail=True,methods=['patch'])
-    def toggel_active(self,request,pk=None):
-        course=self.get_object()
-        course.is_active=not course.is_active
-        course.save(update_fields=['status','is_published','admin_feedback','updated_at'])
-        return Response({"is_active":course.is_active})   
-
 class InstructorCourseViewSet(viewsets.ModelViewSet):
     serializer_class = InstructorCourseSerializer
     permission_classes = [permissions.IsAuthenticated,IsInstructorUser]
@@ -124,8 +117,8 @@ class InstructorCourseViewSet(viewsets.ModelViewSet):
             )
 
         course.status = "submitted"
-        course.is_published = False
-        course.save(update_fields=["status", "is_published", "updated_at"])
+
+        course.save(update_fields=["status", "updated_at"])
 
         return Response({"message": "Course submitted for review"})
 
@@ -177,21 +170,30 @@ class ModuleViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You do not own this course.") 
         serializer.save()
 
+        if not self.request.user.is_staff and course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields = ["status","is_published","updated_at"])
+
 
     def perform_update(self, serializer):
         module = self.get_object()
         course = module.course
 
-        if course.status in ["approved", "submitted"]:
-            raise PermissionDenied("Cannot edit modules of approved/submitted courses")
+        if course.status == "submitted":
+            raise PermissionDenied("Cannot edit modules while course is under review")
+        serializer.save() 
 
-        serializer.save()      
+        if not self.request.user.is_staff and course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields = ["status", "is_published", "updated_at"])     
 
     def destroy(self, request, *args, **kwargs):
         module = self.get_object()
         course = module.course
 
-        if course.status in ["approved", "submitted"]:
+        if course.status == "submitted":
             return Response(
                 {"detail": "Cannot delete modules of approved/submitted courses"},
                 status=403
@@ -199,6 +201,11 @@ class ModuleViewSet(viewsets.ModelViewSet):
 
         module.is_deleted = True
         module.save(update_fields=['is_deleted'])
+
+        if not request.user.is_staff and course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields = ["status","is_published","updated_at"])
         return Response(status=204)
 
 class LessonViewSet(viewsets.ModelViewSet):
@@ -243,14 +250,19 @@ class LessonViewSet(viewsets.ModelViewSet):
                     lesson.duration = duration
                     lesson.save(update_fields=["duration"])
             except Exception as e:
-                print("Youtube duration error:",e)        
+                print("Youtube duration error:",e) 
+
+        if not self.request.user.is_staff and course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields = ["status","is_published","updated_at"])               
 
 
     def perform_update(self, serializer):
         lesson = self.get_object()
         course = lesson.module.course
 
-        if course.status in ["approved", "submitted"]:
+        if course.status == "submitted":
             raise PermissionDenied("Cannot edit lessons of approved/submitted courses")
 
         # FIX: Auto-detect video source based on URL
@@ -274,20 +286,31 @@ class LessonViewSet(viewsets.ModelViewSet):
                     lesson.duration = duration
                     lesson.save(update_fields=["duration"])
             except Exception as e:
-                print("Youtube duration error:",e)    
+                print("Youtube duration error:",e)  
+
+        if not self.request.user.is_staff and course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields=["status", "is_published", "updated_at"]) 
+
 
     def destroy(self, request, *args, **kwargs):
         lesson = self.get_object()
         course = lesson.module.course
 
-        if course.status in ["approved", "submitted"]:
+        if course.status == "submitted":
             return Response(
-                {"detail": "Cannot delete lessons of approved/submitted courses"},
+                {"detail": "Cannot delete lessons while course is under review"},
                 status=403
             )
 
         lesson.is_deleted = True
         lesson.save(update_fields=['is_deleted'])
+
+        if not request.user.is_staff and course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields=["status", "is_published", "updated_at"])
         return Response(status=204)
        
 class LessonResourceViewSet(viewsets.ModelViewSet):
@@ -315,11 +338,20 @@ class LessonResourceViewSet(viewsets.ModelViewSet):
                 lambda: index_lesson_resource_task.delay(resource.id)
             )
 
+        if not self.request.user.is_staff and course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields=["status", "is_published", "updated_at"])
+
+            logger.info(
+                f"Course resubmitted due to new resource | course_id={course.id}"
+            )    
+
     def perform_update(self, serializer):
         resource = self.get_object()
         course = resource.lesson.module.course
 
-        if course.status in ["approved", "submitted"]:
+        if course.status == "submitted":
             logger.warning(
                 f"Attempt to edit live course resource | "
                 f"resource_id={resource.id} | course_id={course.id}"
@@ -343,11 +375,20 @@ class LessonResourceViewSet(viewsets.ModelViewSet):
                 lambda: index_lesson_resource_task.delay(updated_resource.id)
             )
 
+        if not self.request.user.is_staff and course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields=["status", "is_published", "updated_at"])
+
+            logger.info(
+                f"Course resubmitted due to resource update | course_id={course.id}"
+            )    
+
     def destroy(self, request, *args, **kwargs):
         resource = self.get_object()
         course = resource.lesson.module.course
 
-        if course.status in ["approved", "submitted"]:
+        if course.status == "submitted":
             logger.warning(
                 f"Attempt to delete live course resource | "
                 f"resource_id={resource.id} | course_id={course.id}"
@@ -365,6 +406,15 @@ class LessonResourceViewSet(viewsets.ModelViewSet):
         )
 
         resource.delete()
+        
+        if not request.user.is_staff and course.status == "approved":
+            course.status = "submitted"
+            course.is_published = False
+            course.save(update_fields=["status", "is_published", "updated_at"])
+
+            logger.info(
+                f"Course resubmitted due to resource deletion | course_id={course.id}"
+            )
         return Response(status=204)     
 
 class LessonProgressViewSet(viewsets.GenericViewSet):

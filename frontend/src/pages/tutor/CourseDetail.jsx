@@ -83,14 +83,27 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
   const [activeTab, setActiveTab] = useState("curriculum");
   const modules = course?.modules || [];
   const instructor = course?.instructor_profile || null;
-
-  if (!course) return null;
+  const quiz = course?.final_quiz || null;
 
   const canViewLesson = (lesson) => {
     if (role === "admin" || role === "tutor") return true;
     if (isEnrolled === true) return true;
     return lesson.is_preview === true;
   };
+
+  const canViewQuiz = () => {
+    if (!quiz) return false;
+
+    if (role === "admin" || role === "tutor") return true;
+
+    if (isEnrolled) return true;
+
+    return false;
+  };
+
+  const showCorrectAnswers = role === "admin" || role === "tutor";
+
+  if (!course) return null;
 
   return (
     <div className="max-w-screen-xl mx-auto p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -149,7 +162,7 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
 
         {/* TABS */}
         <div className="mt-6 border-b flex gap-6">
-          {["curriculum", "instructor", "reviews"].map((tab) => (
+          {["curriculum", "quiz", "instructor", "reviews"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -229,6 +242,75 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
                     </ul>
                   </div>
                 ))
+              )}
+            </>
+          )}
+
+          {activeTab === "quiz" && (
+            <>
+              <h2 className="text-lg font-bold mb-4">Final Quiz</h2>
+
+              {!quiz ? (
+                <p className="text-gray-500">No quiz available.</p>
+              ) : !canViewQuiz() ? (
+                <div className="p-4 bg-gray-50 border rounded text-center">
+                  <span className="text-gray-500 text-sm">
+                    🔒 Enroll to access this quiz
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <h3 className="font-semibold text-purple-700">
+                    {quiz.title}
+                  </h3>
+
+                  <div className="text-sm text-gray-600 flex gap-4">
+                    <span>Pass: {quiz.pass_percentage}%</span>
+                    <span>Attempts: {quiz.max_attempts}</span>
+                    {quiz.time_limit && <span>Time: {quiz.time_limit} mins</span>}
+                  </div>
+
+                  {quiz.questions?.map((q, index) => (
+                    <div key={q.id} className="border p-4 rounded-lg bg-gray-50">
+                      <p className="font-medium mb-2">
+                        {index + 1}. {q.text}
+                      </p>
+
+                      <ul className="space-y-2">
+                        {q.options?.map((opt, i) => (
+                          <li
+                            key={i}
+                            className={`px-3 py-2 rounded border ${
+                              showCorrectAnswers && opt.is_correct
+                                ? "bg-green-100 border-green-400"
+                                : "bg-white"
+                            }`}
+                          >
+                            {opt.text}
+                            {showCorrectAnswers && opt.is_correct && (
+                              <span className="ml-2 text-green-600 text-xs">
+                                ✔ Correct
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+
+                  {/* Students see Start Quiz button */}
+                  {role === "user" && isEnrolled && (
+                    <button
+                      className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                      onClick={() => {
+                        // navigate to quiz attempt page
+                        console.log("Start quiz");
+                      }}
+                    >
+                      Start Quiz
+                    </button>
+                  )}
+                </div>
               )}
             </>
           )}
