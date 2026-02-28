@@ -18,7 +18,8 @@ import UserCourseDetail from "./pages/user/UserCourseDetail";
 import About from "./pages/user/About"
 import MyCourses from "./pages/student/MyCourses";
 import StudentCourseDetail from "./pages/student/StudentCourseDetail";
-import StudentProfile from "./pages/student/StudentProfile"
+import StudentProfile from "./pages/student/StudentProfile";
+import StudentQuizPage from "./pages/student/StudentQuizPage"
 import MyPurchases from "./pages/student/MyPurchases";
 import ChatPage from "./pages/student/ChatPage"
 import LiveSessionPage from "./pages/live/LiveSessionPage";
@@ -43,6 +44,7 @@ import TutorLayout from "./components/tutor/TutorLayout";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import TutorCourses from "./pages/tutor/TutorCourses";
 import TutorCoursesContent from "./pages/tutor/TutorCoursesContent";
+import TutorQuizManagementPage from "./pages/tutor/TutorQuizManagementPage";
 import TutorCourseDetail from "./pages/tutor/TutorCourseDetail";
 import TutorOrders from "./pages/tutor/TutorOrders";
 import InstructorLiveListPage from "./pages/tutor/InstructorLiveListPage";
@@ -75,6 +77,7 @@ function App() {
           <Route path="mycourses" element={<MyCourses/>}/>
           <Route path="mycourses/:id" element={<StudentCourseDetail/>}/>
           <Route path="myprofile" element={<StudentProfile/>} />
+          <Route path="courses/:courseId/quiz/:quizId" element={<StudentQuizPage />} />
           <Route path="mypurchase" element={<MyPurchases/>}/>
           <Route path="chat/:courseId" element={<ChatPage/>}/>
           <Route path="mycourses" element={<MyCourses/>}/>
@@ -125,6 +128,7 @@ function App() {
         <Route path="dashboard" element={<TutorDashboard />} />
         <Route path="courses" element={<TutorCourses />} />
         <Route path="courses/:id/content" element={<TutorCoursesContent/>}/>
+        <Route path="quizzes/:quizId" element={<TutorQuizManagementPage/>}/>
         <Route path="courses/:id" element={<TutorCourseDetail />}/>
         <Route path="profile" element={<StudentProfile/>} />
         <Route path="orders" element={<TutorOrders/>}/>

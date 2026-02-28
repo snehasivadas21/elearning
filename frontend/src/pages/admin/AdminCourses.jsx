@@ -30,18 +30,6 @@ const AdminCourses = () => {
     fetchCourses();
   }, [page]);
 
-  const toggleActive = async(course)=>{
-    if (!window.confirm("Change course active status?")) return;
-    try {
-      await axiosInstance.patch(
-        `/admin/courses/${course.id}/toggel_active/`
-      );
-      fetchCourses();
-    } catch (err) {
-      console.error("Toggle active failed",err) 
-    }
-  }
-
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -114,22 +102,12 @@ const AdminCourses = () => {
                 
                 <td className="px-6 py-4">{course.is_active ? "Yes" : "No"}</td>
 
-                  <button
-                    onClick={() => toggleActive(course)}
-                    className={`${
-                      course.is_active
-                        ? "text-red-600"
-                        : "text-green-600"
-                    } hover:underline`}
-                  >
-                    {course.is_active ? "Deactivate" : "Activate"}
-                  </button>
-                  <button
-                    onClick={() => navigate(`/admin/courses/${course.id}`)}
-                    className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    View Details
-                  </button>
+                <button
+                  onClick={() => navigate(`/admin/courses/${course.id}`)}
+                  className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  View Details
+                </button>
               </tr>
             ))}
           </tbody>

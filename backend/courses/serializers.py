@@ -5,6 +5,7 @@ from users.serializers import ProfileSerializer
 from .utils import get_course_progress
 from livesession.models import LiveSession
 from livesession.serializers import LiveSessionSerializer
+from quiz.serializers import QuizSerializer
 
 class CourseCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,12 +26,14 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
     avg_rating = serializers.FloatField(read_only=True)
     review_count = serializers.IntegerField(read_only=True)
     total_duration = serializers.IntegerField(read_only=True)
+    final_quiz = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = [
             'id','title','description','category','category_name','level','price','course_image',
             'status','updated_at','instructor_profile','avg_rating','review_count','total_duration',
+            'final_quiz',
         ]
         read_only_fields = ['status']
 
@@ -51,6 +54,28 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
             for field in ['title', 'description', 'category', 'level', 'price', 'course_image']:
                 validated_data.pop(field, None)
         return super().update(instance, validated_data) 
+    
+    def get_final_quiz(self, obj):
+        request = self.context.get("request")
+        if not hasattr(obj, "final_quiz"):
+            return None
+        quiz = obj.final_quiz
+
+        if not request:
+            return None
+
+        user = request.user
+        if not user or not user.is_authenticated:
+            return None
+
+        if user.role in ["instructor", "admin"]:
+            return QuizSerializer(quiz, context=self.context).data
+
+        if user.role == "student":
+            if obj.status == "approved" and obj.purchases.filter(student=user).exists():
+                return QuizSerializer(quiz, context=self.context).data
+
+        return None
     
     def get_instructor_profile(self, obj):
         profile = getattr(obj.instructor, "profile", None)
@@ -152,11 +177,13 @@ class AdminCourseSerializer(serializers.ModelSerializer):
     avg_rating = serializers.FloatField(read_only=True)
     review_count = serializers.IntegerField(read_only=True)
     total_duration = serializers.IntegerField(read_only=True)
+    final_quiz = serializers.SerializerMethodField()
 
     class Meta:
         model=Course
         fields=['id','title','price','level','status','is_active','is_published','admin_feedback','instructor_username',
-                'category_name','created_at','course_image','category','updated_at','instructor_profile','avg_rating','review_count','total_duration',]  
+                'category_name','created_at','course_image','category','updated_at','instructor_profile','avg_rating',
+                'review_count','total_duration','final_quiz',]  
         read_only_fields = fields
 
     def validate_category(self,value):
@@ -164,6 +191,31 @@ class AdminCourseSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Inactive category cannot be assigned.")
         return value
     
+    def get_final_quiz(self, obj):
+        request = self.context.get("request")
+
+        if not hasattr(obj, "final_quiz"):
+            return None
+
+        quiz = obj.final_quiz
+
+        if not request:
+            return None
+
+        user = request.user
+
+        if not user or not user.is_authenticated:
+            return None
+
+        if user.role in ["instructor", "admin"]:
+            return QuizSerializer(quiz, context=self.context).data
+
+        if user.role == "student":
+            if obj.status == "approved" and obj.purchases.filter(student=user).exists():
+                return QuizSerializer(quiz, context=self.context).data
+
+        return None
+        
     def get_instructor_profile(self, obj):
         profile = getattr(obj.instructor, "profile", None)
         if not profile:
@@ -181,6 +233,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
     avg_rating = serializers.FloatField(read_only=True)
     review_count = serializers.IntegerField(read_only=True)
     total_duration = serializers.IntegerField(read_only=True)
+    final_quiz = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -201,6 +254,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
             "avg_rating",
             "review_count",
             "total_duration",
+            "final_quiz",
         ]
 
     def get_modules(self, obj):
@@ -209,6 +263,31 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
             many=True,
             context=self.context
         ).data
+    
+    def get_final_quiz(self, obj):
+        request = self.context.get("request")
+
+        if not hasattr(obj, "final_quiz"):
+            return None
+
+        quiz = obj.final_quiz
+
+        if not request:
+            return None
+
+        user = request.user
+
+        if not user or not user.is_authenticated:
+            return None
+
+        if user.role in ["instructor", "admin"]:
+            return QuizSerializer(quiz, context=self.context).data
+
+        if user.role == "student":
+            if obj.status == "approved" and obj.purchases.filter(student=user).exists():
+                return QuizSerializer(quiz, context=self.context).data
+
+        return None
     
     def get_instructor_profile(self, obj):
         profile = getattr(obj.instructor, "profile", None)

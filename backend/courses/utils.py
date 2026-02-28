@@ -10,6 +10,7 @@ from django.db import models
 
 from .models import Lesson, LessonProgress,CourseCertificate
 from payment.models import CoursePurchase
+from quiz.models import Quiz,UserQuizAttempt
 
 def generate_certificate_id():
     return str(uuid.uuid4())[:12].upper()
@@ -78,6 +79,20 @@ def issue_certificate_if_eligible(student, course):
 
     if not CoursePurchase.objects.filter(student=student, course=course).exists():
         return
+    
+    try:
+        quiz = Quiz.objects.get(course=course)
+    except Quiz.DoesNotExist:
+        return
+
+    passed_attempt = UserQuizAttempt.objects.filter(
+        user = student,
+        quiz = quiz,
+        is_passed = True
+    ).exists()
+
+    if not passed_attempt:
+        return    
 
     certificate = CourseCertificate.objects.create(student=student, course=course, issued_at=timezone.now(), certificate_id= generate_certificate_id())
     return generate_certificate_file(certificate)
