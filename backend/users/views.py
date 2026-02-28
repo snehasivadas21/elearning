@@ -241,7 +241,6 @@ class ApprovedCourseListView(generics.ListAPIView):
 
     def get_queryset(self):
         return Course.objects.filter(
-            status='approved',
             is_active=True,
             is_published=True,
             category__is_active=True
@@ -252,7 +251,7 @@ class ApprovedCourseListView(generics.ListAPIView):
         )
 
 class ApprovedCourseDetailView(generics.RetrieveAPIView):
-    queryset = Course.objects.filter(status = 'approved',is_active=True,is_published=True,category__is_active=True)
+    queryset = Course.objects.filter(is_active=True,is_published=True,category__is_active=True)
     serializer_class = UserCourseDetailSerializer
     permission_classes =[permissions.AllowAny]
 
@@ -263,9 +262,7 @@ class MyEnrolledCourseDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         return Course.objects.filter(
             purchases__student=self.request.user,
-            status = 'approved',
             is_active=True,
-            is_published=True
         ).annotate(
             avg_rating = Avg("reviews__rating",distinct=True),
             review_count = Count("reviews",distinct=True),

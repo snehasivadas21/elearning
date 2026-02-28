@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'instrpanel',
     'livesession',
     'revenue',
+    'quiz',
 
     'django.contrib.sites',
 

@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/chat/',include('chat.urls')), 
     path('api/live/',include('livesession.urls')),
     path('api/revenue/',include('revenue.urls')),
+    path('api/quiz/',include('quiz.urls')),
     
     path('api/auth/', include('dj_rest_auth.urls')),
     path('api/auth/registration/', include('dj_rest_auth.registration.urls')),
