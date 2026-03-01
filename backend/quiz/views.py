@@ -23,6 +23,25 @@ class QuizViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         quiz = self.get_object()
+        user = request.user
+
+        if user.role == "student":
+
+            from payment.models import CoursePurchase
+            if not CoursePurchase.objects.filter(
+                student=user,
+                course=quiz.course
+            ).exists():
+                raise PermissionDenied("You must purchase this course.")
+
+            from courses.utils import get_course_progress
+            progress = get_course_progress(user, quiz.course)
+
+            if progress < 100:
+                raise PermissionDenied(
+                    "Complete all lessons to unlock the quiz."
+                )
+   
         logger.info(f"Quiz {quiz.id} fetched by user {request.user.id}")
         return super().retrieve(request, *args, **kwargs)
     
@@ -122,6 +141,25 @@ class QuizViewSet(viewsets.ModelViewSet):
     def submit(self, request, pk=None):
         quiz = self.get_object()
         user = request.user
+
+        from payment.models import CoursePurchase
+        if not CoursePurchase.objects.filter(
+            student=user,
+            course=quiz.course
+        ).exists():
+            return Response(
+                {"error": "You must purchase this course."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        from courses.utils import get_course_progress
+        progress = get_course_progress(user, quiz.course)
+
+        if progress < 100:
+            return Response(
+                {"error": "Complete all lessons before attempting quiz."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         if user.role != "student":
             return Response(

@@ -7,6 +7,7 @@ const StudentProfile = () => {
   const [open, setOpen] = useState(false);
   const [loading,setLoading] = useState(true);
   const skills = profile?.skills ? profile.skills.split(",") : [];
+
   const DEFAULT_AVATAR =
   "https://res.cloudinary.com/dgqjlqivb/image/upload/v1770222854/profile-avatar.jpg";
 
@@ -14,6 +15,7 @@ const StudentProfile = () => {
     const fetchProfile = async () => {
       try {
         const res = await axiosInstance.get("/users/profile/");
+        console.log("profile links:", res.data.links);
         setProfile(res.data);
       } catch (err) {
         console.error("Failed to load profile:", err);
@@ -24,11 +26,13 @@ const StudentProfile = () => {
     fetchProfile();
   }, []);
 
+  const refreshProfile = () => {
+    axiosInstance.get("/users/profile/").then((res) => setProfile(res.data));
+  };
+
   const handleProfileUpdate = () => {
-    axiosInstance.get("/users/profile/").then((res) => {
-      setProfile(res.data);
-      setOpen(false);
-    });
+    refreshProfile();
+    setOpen(false);
   };
 
   if (loading) return <div className="text-center mt-10">Loading...</div>;
@@ -39,7 +43,7 @@ const StudentProfile = () => {
 
       <div className="flex items-center gap-6 bg-white p-6 rounded-xl shadow">
         <img
-          src={profile.profile_image || DEFAULT_AVATAR}
+          src={profile.profile_image_url || DEFAULT_AVATAR}
           alt="profile"
           className="w-28 h-28 rounded-full object-cover"
         />
@@ -138,13 +142,12 @@ const StudentProfile = () => {
         </div>
       )}
 
-      
-
       <EditProfileDialog
         open={open}
         onClose={() => setOpen(false)}
         profile={profile}
         onUpdate={handleProfileUpdate}
+        onLinkChange={refreshProfile}
       />
     </div>
   );
