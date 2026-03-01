@@ -13,16 +13,17 @@ from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.decorators import action
 from django.conf import settings
 
-from .models import CustomUser,Profile
-from .serializers import RegisterSerializer, LoginSerializer,CustomTokenObtainPairSerializer,PasswordResetConfirmSerializer,PasswordResetRequestSerializer,ProfileSerializer
+from .models import CustomUser,Profile,ProfileLink
+from .serializers import RegisterSerializer, LoginSerializer,CustomTokenObtainPairSerializer,PasswordResetConfirmSerializer,PasswordResetRequestSerializer,ProfileSerializer,ProfileLinkSerializer
 from .permissions import IsInstructorUser
 from .tasks import send_verification_email_task
 from django.core.mail import send_mail
 
 from courses.models import Course,Lesson,LessonProgress,LessonResource,CourseCertificate
 from payment.models import CoursePurchase
+from quiz.models import UserQuizAttempt
 from courses.serializers import AdminCourseSerializer,UserCourseDetailSerializer
-from django.db.models import Avg,Count,Sum
+from django.db.models import Avg,Count,Sum,Max
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.parsers import MultiPartParser,FormParser
@@ -273,7 +274,7 @@ class ProfileView(APIView):
     permission_classes=[IsAuthenticated]
 
     def get(self,request):
-        profile = request.user.profile
+        profile = Profile.objects.prefetch_related('links').get(user=request.user)
         serializer = ProfileSerializer(profile)
         return Response(serializer.data,status=status.HTTP_200_OK)
     
@@ -293,7 +294,31 @@ class ProfileView(APIView):
         serializer.save()
         return Response(serializer.data,status=status.HTTP_200_OK)
 
-class StudentDashboardAPIView(APIView):
+class ProfileLinkView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = Profile.objects.prefetch_related('links').get(user=request.user)
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        profile = request.user.profile
+        serializer = ProfileLinkSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(profile=profile)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, link_id):
+        profile = request.user.profile
+        try:
+            link = profile.links.get(id=link_id)
+            link.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ProfileLink.DoesNotExist:
+            return Response({"detail": "Link not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+class StudentPortfolioAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -305,46 +330,100 @@ class StudentDashboardAPIView(APIView):
         completed_courses = 0
         ongoing_courses = 0
 
-        progress_data = []
+        course_data = []
+        total_progress_sum = 0
+        overall_quiz_percentages = []
 
         for purchase in purchases:
             course = purchase.course
 
-            # Total lessons in this course
             total_lessons = Lesson.objects.filter(
                 module__course=course,
                 is_deleted=False,
                 is_active=True
             ).count()
 
-            # Completed lessons by student
             completed_lessons = LessonProgress.objects.filter(
                 student=student,
                 lesson__module__course=course,
                 completed=True
             ).count()
 
+            progress = 0
             if total_lessons > 0:
                 progress = round((completed_lessons / total_lessons) * 100, 2)
-            else:
-                progress = 0
+
+            total_progress_sum += progress
 
             if progress >= 100:
                 completed_courses += 1
+                status_label = "Completed"
             else:
                 ongoing_courses += 1
+                status_label = "Ongoing"
 
-            progress_data.append({
+            quiz_attempts = UserQuizAttempt.objects.filter(
+                user=student,
+                quiz__course=course
+            )
+
+            quiz_average = 0
+
+            if quiz_attempts.exists():
+                
+                best_attempts = (
+                    quiz_attempts
+                    .values("quiz")
+                    .annotate(best_percentage=Max("percentage"))
+                )
+
+                percentages = [item["best_percentage"] for item in best_attempts]
+
+                quiz_average = round(sum(percentages) / len(percentages), 2)
+                overall_quiz_percentages.extend(percentages)
+
+            course_data.append({
+                "course_id": course.id,
                 "course_title": course.title,
-                "progress": progress
-            })     
+                "progress": progress,
+                "quiz_average": quiz_average,
+                "status": status_label
+            })
+
+        overall_progress = round(
+            (total_progress_sum / total_enrolled), 2
+        ) if total_enrolled > 0 else 0
+
+        overall_quiz_average = round(
+            sum(overall_quiz_percentages) / len(overall_quiz_percentages), 2
+        ) if overall_quiz_percentages else 0
+
+        certificates = CourseCertificate.objects.filter(student=student)
+
+        certificate_data = [
+            {
+                "course": cert.course.title,
+                "certificate_id": cert.certificate_id,
+                "certificate_url": cert.certificate_file.url if cert.certificate_file else None,
+                "issued_at": cert.issued_at
+            }
+            for cert in certificates
+        ]
 
         return Response({
-            "stats":{
+            "profile": {
+                "name": student.username,
+                "email": student.email,
+                "joined_date": student.date_joined
+            },
+            "stats": {
                 "total_enrolled": total_enrolled,
                 "completed": completed_courses,
                 "ongoing": ongoing_courses,
-                "certificates": completed_courses
+                "certificates": certificates.count(),
+                "overall_progress": overall_progress,
+                "overall_quiz_average": overall_quiz_average
             },
-            "progress_per_course":progress_data
-        })        
+            "courses": course_data,
+            "certificates": certificate_data
+        }, status=status.HTTP_200_OK)
