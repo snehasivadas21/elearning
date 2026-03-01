@@ -128,13 +128,14 @@ class ProfileLinkSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     links = ProfileLinkSerializer(many=True, required=False)
-    profile_image = serializers.SerializerMethodField()
+    profile_image = serializers.ImageField(required=False, allow_null=True)
+    profile_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
-        fields = ["id","user","full_name","bio","headline","profile_image","date_of_birth","location","experience","resume","skills","links",]
+        fields = ["id","user","full_name","bio","headline","profile_image","profile_image_url","date_of_birth","location","experience","resume","skills","links",]
 
-    def get_profile_image(self, obj):
+    def get_profile_image_url(self, obj):
         if obj.profile_image:
             return obj.profile_image.url
         return settings.DEFAULT_PROFILE_IMAGE

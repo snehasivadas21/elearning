@@ -229,20 +229,17 @@ class LessonViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_staff and course.instructor != self.request.user: 
             raise PermissionDenied("You do not own this course") 
         
-        # FIX: Auto-detect video source based on URL
         if serializer.validated_data.get('content_type') == 'video':
             video_url = serializer.validated_data.get('video_url', '')
             
-            # If URL contains cloudinary, it's a cloud upload
             if 'cloudinary.com' in video_url:
                 serializer.validated_data['video_source'] = 'cloud'
-            # Otherwise treat as youtube
+
             elif video_url:
                 serializer.validated_data['video_source'] = 'youtube'
         
         lesson = serializer.save()
 
-        # Only fetch YouTube duration for actual YouTube videos
         if lesson.content_type == "video" and lesson.video_source == "youtube" and 'youtube.com' in lesson.video_url:
             try:
                 duration = get_youtube_duration(lesson.video_url)
@@ -265,20 +262,17 @@ class LessonViewSet(viewsets.ModelViewSet):
         if course.status == "submitted":
             raise PermissionDenied("Cannot edit lessons of approved/submitted courses")
 
-        # FIX: Auto-detect video source based on URL
         if serializer.validated_data.get('content_type') == 'video':
             video_url = serializer.validated_data.get('video_url', '')
             
-            # If URL contains cloudinary, it's a cloud upload
             if 'cloudinary.com' in video_url:
                 serializer.validated_data['video_source'] = 'cloud'
-            # Otherwise treat as youtube
+            
             elif video_url:
                 serializer.validated_data['video_source'] = 'youtube'
 
         lesson = serializer.save()
 
-        # Only fetch YouTube duration for actual YouTube videos
         if lesson.content_type == "video" and lesson.video_source == "youtube" and 'youtube.com' in lesson.video_url:
             try:
                 duration = get_youtube_duration(lesson.video_url)
@@ -445,11 +439,6 @@ class LessonProgressViewSet(viewsets.GenericViewSet):
                     progress.completed = True
                     progress.completed_at = timezone.now()
         progress.save()
-        if progress.completed:            
-            issue_certificate_if_eligible(
-                student=request.user,
-                course=lesson.module.course
-            )
 
         return Response({
             "lesson_id": lesson.id,
