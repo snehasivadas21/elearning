@@ -17,9 +17,26 @@ logger = logging.getLogger(__name__)
 
 
 class QuizViewSet(viewsets.ModelViewSet):
-    queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        
+        if user.is_staff:
+            return Quiz.objects.all()
+        
+        if user.role == "instructor":
+            return Quiz.objects.filter(course__instructor=user)
+        
+        if user.role == "student":
+            from payment.models import CoursePurchase
+            purchased_course_ids = CoursePurchase.objects.filter(
+                student=user
+            ).values_list("course_id", flat=True)
+            return Quiz.objects.filter(course_id__in=purchased_course_ids)
+        
+        return Quiz.objects.none()
 
     def retrieve(self, request, *args, **kwargs):
         quiz = self.get_object()
@@ -284,6 +301,11 @@ class QuizViewSet(viewsets.ModelViewSet):
         user = request.user
 
         if user.role == "instructor":
+            if quiz.course.instructor != user and not user.is_staff:
+                return Response(
+                    {"error": "Not allowed"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
             attempts = UserQuizAttempt.objects.filter(
                 quiz=quiz
             ).select_related("user").order_by("-completed_at")
@@ -291,22 +313,24 @@ class QuizViewSet(viewsets.ModelViewSet):
         elif user.role == "student":
             attempts = UserQuizAttempt.objects.filter(
                 quiz=quiz,
-                user=user
+                user=user  
             ).order_by("-attempt_number")
 
         else:
-            return Response(
-                {"error": "Not allowed"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"error": "Not allowed"}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = AttemptDetailSerializer(attempts, many=True)
         return Response(serializer.data)
 
 class QuestionViewSet(viewsets.ModelViewSet):
-    queryset = Question.objects.all()
     serializer_class = QuestionSerializer
     permission_classes = [permissions.IsAuthenticated, IsInstructorUser]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Question.objects.all()
+        return Question.objects.filter(quiz__course__instructor=user)
 
     def perform_update(self, serializer):
         question = self.get_object()

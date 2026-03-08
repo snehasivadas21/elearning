@@ -3,9 +3,9 @@ import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.core.cache import cache
+from .serializers import MessageSerializer
 
 logger = logging.getLogger(__name__)
-
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -62,6 +62,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         try:
             data = json.loads(text_data)
+            message_type = data.get("type", "chat_message")
+
+            if message_type == "file_message":
+                message_id = data.get("message_id")
+
+                message = await self.get_message_by_id(message_id)
+                if not message:
+                    return
+
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {"type": "chat_message", "message": await self.serialize_message(message)}
+                )
+                return
             
             content = data.get("content", data) if isinstance(data, dict) else data
             
@@ -77,7 +91,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if not content:
                 logger.warning(f"Empty message received from {self.user.username}")
                 return
-
+            
+            reply_to_id = data.get("reply_to_id")
             message = await self.save_message(content)
             participants = await self.get_participants(message)
 
@@ -124,7 +139,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def chat_notification(self, event):
         pass    
 
-
     @database_sync_to_async
     def get_room(self):
         from .models import ChatRoom
@@ -149,20 +163,41 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return None
 
     @database_sync_to_async
-    def save_message(self, content):
+    def save_message(self, content, reply_to_id=None):
         from .models import Message
-
+        reply_to = None
+        if reply_to_id:
+            try:
+                reply_to = Message.objects.get(id=reply_to_id)
+            except Message.DoesNotExist:
+                pass
         return Message.objects.create(
             room=self.room,
             sender=self.user,
-            content=content
+            content=content,
+            reply_to=reply_to,
         )
+
+    @database_sync_to_async
+    def get_message_by_id(self, message_id):
+        from .models import Message
+        try:
+            return Message.objects.select_related(
+                "sender", "room", "reply_to__sender"
+            ).get(id=message_id)
+        except Message.DoesNotExist:
+            return None
     
     @database_sync_to_async
     def serialize_message(self, message):
+        from .serializers import MessageSerializer
+        data = MessageSerializer(message).data
+        
         return {
             "id": str(message.id),
             "content": message.content,
+            "file": data.get("file"),
+            "file_type": message.file_type,
             "sender": {
                 "id": message.sender.id,
                 "username": message.sender.username,
@@ -196,7 +231,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             Notification(
                 user_id=user_id,
                 title="New chat message",
-                message=f"{message.sender.username}: {message.content[:50]}",
+                message=f"{message.sender.username}: {message.content[:50] if message.content else 'sent a file'}",
                 notification_type="chat",
             )
             for user_id in participants

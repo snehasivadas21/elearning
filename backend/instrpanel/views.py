@@ -25,52 +25,54 @@ class TutorOrderViewSet(viewsets.ReadOnlyModelViewSet):
             status="completed"
         ).select_related("course", "student").order_by("-created_at")
 
-class TutorDashboardAPIView(APIView):
-    permissions_classes = [IsAuthenticated]
+from revenue.models import InstructorWallet, WalletTransaction
 
-    def get(self,request):
+class TutorDashboardAPIView(APIView):
+    permission_classes = [IsAuthenticated]  
+
+    def get(self, request):
         instructor = request.user
 
         instructor_courses = Course.objects.filter(instructor=instructor)
-
         total_courses = instructor_courses.count()
 
         total_students = CoursePurchase.objects.filter(
-            course__in = instructor_courses
+            course__in=instructor_courses
         ).count()
 
-        earnings_data = Order.objects.filter(
-            course__in = instructor_courses,
-            status = "completed"
-        ).aggregate(total=Sum("amount"))
+        try:
+            wallet = InstructorWallet.objects.get(instructor=instructor)
+            total_earnings = wallet.total_earned  
+        except InstructorWallet.DoesNotExist:
+            total_earnings = 0
 
-        total_earnings = earnings_data["total"] or 0
-
-        monthly_earnings  = (
-            Order.objects.filter(
-                course__in = instructor_courses,
-                status = "completed"
+        monthly_earnings = (
+            WalletTransaction.objects.filter(
+                wallet__instructor=instructor,
+                transaction_type="CREDIT"
             )
-            .annotate(month = TruncMonth("created_at"))
+            .annotate(month=TruncMonth("created_at"))
             .values("month")
             .annotate(total=Sum("amount"))
             .order_by("month")
         )
 
         students_per_course = (
-            CoursePurchase.objects.filter(course__in = instructor_courses)
+            CoursePurchase.objects.filter(course__in=instructor_courses)
             .values("course__title")
-            .annotate(count = Count("id"))
+            .annotate(count=Count("id"))
             .order_by("-count")
         )
 
         revenue_per_course = (
             Order.objects.filter(
-                course__in = instructor_courses,
-                status ="completed"
+                course__in=instructor_courses,
+                status="completed"
             )
             .values("course__title")
-            .annotate(total=Sum("amount"))
+            .annotate(
+                total=Sum("amount") - Sum("platform_revenue__commission_amount")
+            )
             .order_by("-total")
         )
 
@@ -80,20 +82,10 @@ class TutorDashboardAPIView(APIView):
                 "total_students": total_students,
                 "total_earnings": total_earnings
             },
-            "monthly_earnings":monthly_earnings,
+            "monthly_earnings": monthly_earnings,
             "students_per_course": students_per_course,
             "revenue_per_course": revenue_per_course
         })
-
-
-
-
-
-
-
-
-
-
 
 
 class NotificationViewSet(viewsets.ModelViewSet):

@@ -1,5 +1,37 @@
 import { useRef, useEffect } from "react";
 
+const FilePreview = ({ file, fileType, isMine }) => {
+  if (!file) return null;
+
+  if (fileType === "image") {
+    return (
+      <img
+        src={file}
+        alt="shared"
+        className="max-w-xs rounded-lg mb-1 cursor-pointer"
+        onClick={() => window.open(file, "_blank")}
+      />
+    );
+  }
+  if (fileType === "video") {
+    return <video src={file} controls className="max-w-xs rounded-lg mb-1" />;
+  }
+  if (fileType === "audio") {
+    return <audio src={file} controls className="mb-1" />;
+  }
+  
+  return (
+    <a
+      href={file}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`flex items-center gap-1 underline text-sm ${isMine ? "text-white" : "text-blue-600"}`}
+    >
+      📄 {file.split("/").pop()}
+    </a>
+  );
+};
+
 export default function MessageList({ messages, currentUserId }) {
   const bottomRef = useRef(null);
 
@@ -39,6 +71,12 @@ export default function MessageList({ messages, currentUserId }) {
                   {msg.sender?.username}
                 </span>
               )}
+
+              {msg.reply_to && (
+                <div className="text-xs bg-gray-200 rounded px-2 py-1 mb-1 border-l-2 border-blue-400 text-gray-600 max-w-full truncate">
+                  <span className="font-medium">{msg.reply_to.sender}</span>: {msg.reply_to.content}
+                </div>
+              )}
               
               <div
                 className={`px-4 py-2.5 rounded-2xl shadow-sm ${
@@ -47,7 +85,8 @@ export default function MessageList({ messages, currentUserId }) {
                     : "bg-white border border-gray-200/60 text-gray-800 rounded-bl-md"
                 }`}
               >
-                <p className="text-[14px] leading-relaxed">{msg.content}</p>
+                <FilePreview file={msg.file} fileType={msg.file_type} isMine={isMine} />
+                {msg.content && <p className="text-[14px] leading-relaxed">{msg.content}</p>}
               </div>
               
               <span className="text-[10px] text-gray-400 mt-1 mx-1">

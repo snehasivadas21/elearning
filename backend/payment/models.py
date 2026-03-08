@@ -7,6 +7,7 @@ class CoursePurchase(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='purchases')
     course = models.ForeignKey(Course,on_delete=models.CASCADE,related_name='purchases')
     purchased_at = models.DateTimeField(auto_now_add=True)
+    progress_locked = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ['student','course']
@@ -36,7 +37,7 @@ class Invoice(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="invoices")
     purchase = models.OneToOneField("CoursePurchase",on_delete=models.CASCADE,related_name="invoice")
     invoice_number = models.CharField(max_length=20,unique=True)
-    pdf_file = CloudinaryField("invoices",resource_type='raw',null=True,blank=True)
+    pdf_file = models.URLField(max_length=1000,null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

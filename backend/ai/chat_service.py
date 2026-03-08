@@ -6,7 +6,7 @@ def ask_course_ai(user, course, question):
     session, _ = ChatSession.objects.get_or_create(
         user=user,
         course=course,
-        is_active=True,
+        defaults={"is_active":True}
     )
 
     ChatMessage.objects.create(
@@ -15,8 +15,20 @@ def ask_course_ai(user, course, question):
         content=question,
     )
 
+    history = ChatMessage.objects.filter(
+        session=session
+    ).order_by("created_at").values_list("role","content")
+
+    history_text = "\n".join(
+        f"{'User' if role == 'user' else 'AI'}: {content}"
+        for role, content in history
+    )
+
     chain = get_course_chain(course.id)
-    answer = chain.invoke(question)
+    answer = chain.invoke({
+        "question":question,
+        "history":history_text,
+    })
 
     ChatMessage.objects.create(
         session=session,

@@ -159,8 +159,7 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
           </span>
           <span>🌍 English</span>
         </div>
-
-        {/* TABS */}
+        
         <div className="mt-6 border-b flex gap-6">
           {["curriculum", "quiz", "instructor", "reviews"].map((tab) => (
             <button
@@ -218,7 +217,6 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
 
                             <LessonPreview lesson={lesson} canViewContent={canView} />
 
-                            {/* Show resources only if user can view lesson */}
                             {canView && lesson.resources?.length > 0 && (
                               <ul className="mt-2 text-sm text-gray-600">
                                 {lesson.resources.map((res) => (
@@ -298,12 +296,10 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
                     </div>
                   ))}
 
-                  {/* Students see Start Quiz button */}
                   {role === "user" && isEnrolled && (
                     <button
                       className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
                       onClick={() => {
-                        // navigate to quiz attempt page
                         console.log("Start quiz");
                       }}
                     >
