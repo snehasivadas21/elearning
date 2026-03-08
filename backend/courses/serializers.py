@@ -82,6 +82,7 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
         if not profile:
             return None
         return ProfileSerializer(profile).data
+    
 class LessonResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonResource  
@@ -148,7 +149,6 @@ class LessonSerializer(serializers.ModelSerializer):
 
 class ModuleSerializer(serializers.ModelSerializer):
     lessons = serializers.SerializerMethodField()
-
     class Meta:
         model = Module
         fields = [
@@ -258,11 +258,38 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_modules(self, obj):
-        return ModuleSerializer(
-            obj.modules.filter(is_active=True,is_deleted=False),
+        request = self.context.get("request")
+        certificate = None
+
+        if request and request.user.is_authenticated:
+            certificate = CourseCertificate.objects.filter(
+                student=request.user,
+                course=obj
+            ).first()
+
+        modules = ModuleSerializer(
+            obj.modules.filter(is_active=True, is_deleted=False),
             many=True,
             context=self.context
         ).data
+
+        if certificate:
+            for module in modules:
+                for lesson in module.get("lessons", []):
+                    lesson_obj_created = lesson.get("created_at")
+
+                    if lesson_obj_created:
+                        lesson["is_new"] = (
+                            lesson_obj_created > certificate.issued_at.isoformat()
+                        )
+                    else:
+                        lesson["is_new"] = False
+        else:
+            for module in modules:
+                for lesson in module.get("lessons", []):
+                    lesson["is_new"] = False
+
+        return modules
     
     def get_final_quiz(self, obj):
         request = self.context.get("request")

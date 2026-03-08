@@ -44,9 +44,7 @@ export default function useWebSocket(roomId, onMessage) {
     return token;
   }, [isTokenExpired]);
 
-  // Connect to WebSocket
   const connect = useCallback(() => {
-    // Prevent multiple simultaneous connection attempts
     if (isConnectingRef.current) {
       console.log("Connection already in progress, skipping...");
       return;
@@ -57,7 +55,6 @@ export default function useWebSocket(roomId, onMessage) {
       return;
     }
 
-    // Check if already connected or connecting
     if (
       socketRef.current &&
       (socketRef.current.readyState === WS_STATES.CONNECTING ||
@@ -76,7 +73,7 @@ export default function useWebSocket(roomId, onMessage) {
     try {
       console.log(`Connecting to WebSocket for room ${roomId}...`);
       setConnectionStatus("connecting");
-      isConnectingRef.current = true; // Mark as connecting
+      isConnectingRef.current = true; 
 
       const wsUrl = `ws://localhost:8000/ws/chat/${roomId}/?token=${token}`;
       socketRef.current = new WebSocket(wsUrl);
@@ -114,9 +111,8 @@ export default function useWebSocket(roomId, onMessage) {
         console.log(`WebSocket closed: Code ${event.code}, Reason: ${event.reason || "No reason provided"}`);
         setConnectionStatus("disconnected");
         isConnectingRef.current = false;
-        hasJoinedRef.current = false; // Reset join status
+        hasJoinedRef.current = false; 
 
-        // Handle different close codes
         if (event.code === 4003) {
           console.error("Authentication failed. Please log in again.");
           return;
@@ -127,7 +123,6 @@ export default function useWebSocket(roomId, onMessage) {
           return;
         }
 
-        // Attempt to reconnect for other close codes
         if (
           reconnectAttemptsRef.current < maxReconnectAttempts &&
           (event.code === 1006 || event.code === 1000 || event.code === 1001)
@@ -152,7 +147,6 @@ export default function useWebSocket(roomId, onMessage) {
     }
   }, [roomId, getValidToken, onMessage]);
 
-  // Send message function
   const sendMessage = useCallback((content) => {
     if (!socketRef.current) {
       console.error("WebSocket is not initialized");
@@ -173,15 +167,29 @@ export default function useWebSocket(roomId, onMessage) {
     }
   }, []);
 
-  // Disconnect function
+  const sendFileMessage = useCallback((messageId) => {
+    if (!socketRef.current || socketRef.current.readyState !== WS_STATES.OPEN) {
+        console.error("WebSocket not open");
+        return false;
+    }
+    try {
+        socketRef.current.send(JSON.stringify({
+            type: "file_message",
+            message_id: messageId,
+        }));
+        return true;
+    } catch (error) {
+        console.error("Error sending file message:", error);
+        return false;
+    }
+  }, []);
+
   const disconnect = useCallback(() => {
-    // Clear reconnection timeout
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
 
-    // Close WebSocket connection
     if (socketRef.current && socketRef.current.readyState === WS_STATES.OPEN) {
       console.log("Closing WebSocket connection...");
       socketRef.current.close(1000, "User disconnected");
@@ -192,17 +200,17 @@ export default function useWebSocket(roomId, onMessage) {
     hasJoinedRef.current = false;
   }, []);
 
-  // Connect on mount, disconnect on unmount
   useEffect(() => {
     connect();
 
     return () => {
       disconnect();
     };
-  }, [roomId]); // Only reconnect when roomId changes
+  }, [roomId]); 
 
   return { 
     sendMessage, 
+    sendFileMessage,
     connectionStatus,
     disconnect,
     reconnect: connect 

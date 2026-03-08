@@ -6,6 +6,9 @@ from django.shortcuts import get_object_or_404
 from .models import ChatRoom, Message
 from .serializers import ChatRoomSerializer, MessageSerializer
 import logging
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
@@ -102,3 +105,117 @@ class MessageListView(generics.ListAPIView):
                 f"by user {user.id}: {str(e)}"
             )
             raise
+
+class ChatFileUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, room_id):
+        try:
+            room = ChatRoom.objects.select_related("course").get(
+                id=room_id,
+                is_active=True
+            )
+        except ChatRoom.DoesNotExist:
+            return Response({"error": "Room not found"}, status=404)
+
+        user = request.user
+
+        is_student = room.course.purchases.filter(student=user).exists()
+        is_instructor = room.course.instructor_id == user.id
+
+        if not (is_student or is_instructor):
+            return Response({"error": "Not authorized"}, status=403)
+
+        file = request.FILES.get("file")
+        content = request.data.get("content", "")
+        reply_to_id = request.data.get("reply_to_id")
+
+        if not file and not content.strip():
+            return Response({"error": "File or content required"}, status=400)
+
+        file_type = ""
+
+        if file:
+            if file.size > 20 * 1024 * 1024:
+                return Response({"error": "File too large (max 20MB)"}, status=400)
+
+            allowed = (
+                ".jpg",".jpeg",".png",".gif",".webp",
+                ".mp4",".mov",".webm",
+                ".mp3",".wav",".ogg",
+                ".pdf",".doc",".docx",".ppt",".pptx",
+                ".zip",".py",".js",".txt"
+            )
+
+            if not file.name.lower().endswith(allowed):
+                return Response({"error": "Unsupported file type"}, status=400)
+
+            name = file.name.lower()
+
+            if name.endswith((".jpg",".jpeg",".png",".gif",".webp")):
+                file_type = "image"
+            elif name.endswith((".mp4",".mov",".webm")):
+                file_type = "video"
+            elif name.endswith((".mp3",".wav",".ogg")):
+                file_type = "audio"
+            else:
+                file_type = "document"
+
+        reply_to = None
+        if reply_to_id:
+            try:
+                reply_to = Message.objects.get(id=reply_to_id)
+            except Message.DoesNotExist:
+                pass
+
+        message = Message.objects.create(
+            room=room,
+            sender=user,
+            content=content,
+            file=file,
+            file_type=file_type,
+            reply_to=reply_to,
+        )
+
+        participants = set()
+
+        students = room.course.purchases.values_list("student", flat=True)
+        participants.update(students)
+
+        participants.add(room.course.instructor_id)
+
+        participants.discard(user.id)
+
+        from instrpanel.models import Notification
+
+        notifications = [
+            Notification(
+                user_id=user_id,
+                title="New chat message",
+                message=f"{user.username}: {content[:50] if content else 'sent a file'}",
+                notification_type="chat",
+            )
+            for user_id in participants
+        ]
+
+        Notification.objects.bulk_create(notifications)
+
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
+
+        channel_layer = get_channel_layer()
+
+        for user_id in participants:
+            async_to_sync(channel_layer.group_send)(
+                f"user_{user_id}",
+                {
+                    "type": "chat_notification",
+                    "room_id": str(room.id),
+                },
+            )
+
+        return Response(
+            {"message": MessageSerializer(message, context={"request": request}).data},
+            status=201
+        )

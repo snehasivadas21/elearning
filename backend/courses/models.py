@@ -152,6 +152,7 @@ class LessonProgress(models.Model):
             models.Index(fields=['student']),
             models.Index(fields=['lesson']),
         ]
+        
 class CourseCertificate(models.Model):
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,

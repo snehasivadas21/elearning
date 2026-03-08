@@ -82,12 +82,10 @@ export default function ChatSidebar({ onSelectRoom, activeRoomId, onRoomLoaded, 
         ) : (
           <div className="py-2">
             {rooms.map((room) => {
-              // ✅ Live unread count from WebSocket, falls back to API count
               const liveUnread = unreadChats[room.id];
               const unreadCount = activeRoomId === room.id
-                ? 0                                          // always 0 for active room
-                : liveUnread ?? room.unread_count ?? 0;    // live count or API fallback
-
+                ? 0                                          
+                : liveUnread ?? room.unread_count ?? 0;    
               return (
                 <div
                   key={room.id}
@@ -115,7 +113,6 @@ export default function ChatSidebar({ onSelectRoom, activeRoomId, onRoomLoaded, 
                           {room.course_title || room.name}
                         </span>
 
-                        {/* ✅ Live unread badge — clears when room is active */}
                         {unreadCount > 0 && (
                           <span className="px-2 py-0.5 text-[10px] font-semibold bg-blue-600 text-white rounded-full shrink-0">
                             {unreadCount > 99 ? "99+" : unreadCount}

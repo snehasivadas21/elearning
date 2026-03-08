@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from courses.models import Course  
 import uuid
+from cloudinary_storage.storage import MediaCloudinaryStorage
 
 User=get_user_model()
 
@@ -33,6 +34,10 @@ class Message(models.Model):
     room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_messages')
     content = models.TextField(blank=True)
+
+    file = models.FileField(storage=MediaCloudinaryStorage(resource_type="auto"),upload_to='chat_media/',null=True,blank=True)
+    file_type = models.CharField(max_length=20,blank=True)
+
     is_system = models.BooleanField(default=False)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

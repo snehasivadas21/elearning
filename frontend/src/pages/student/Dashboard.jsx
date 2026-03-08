@@ -30,7 +30,6 @@ export default function StudentPortfolio() {
   return (
     <div className="p-6 space-y-8">
 
-      {/* ===== PROFILE HEADER ===== */}
       <div className="bg-white shadow rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">
@@ -47,7 +46,6 @@ export default function StudentPortfolio() {
         </div>
       </div>
 
-      {/* ===== KPI CARDS ===== */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <KpiCard title="Enrolled" value={data.stats.total_enrolled} />
         <KpiCard title="Completed" value={data.stats.completed} />
@@ -56,7 +54,6 @@ export default function StudentPortfolio() {
         <KpiCard title="Overall Quiz %" value={`${data.stats.overall_quiz_average}%`} />
       </div>
 
-      {/* ===== BAR CHART (ONLY ONE) ===== */}
       <div className="bg-white shadow rounded-2xl p-6">
         <h3 className="text-xl font-semibold mb-4">
           Course Progress Overview (%)
@@ -74,7 +71,6 @@ export default function StudentPortfolio() {
         </div>
       </div>
 
-      {/* ===== COURSE PERFORMANCE TABLE ===== */}
       <div className="bg-white shadow rounded-2xl p-6">
         <h3 className="text-xl font-semibold mb-4">Course Performance</h3>
         <div className="overflow-x-auto">
@@ -119,7 +115,6 @@ export default function StudentPortfolio() {
         </div>
       </div>
 
-      {/* ===== CERTIFICATES SECTION ===== */}
       <div className="bg-white shadow rounded-2xl p-6">
         <h3 className="text-xl font-semibold mb-4">Certificates</h3>
 
@@ -143,9 +138,9 @@ export default function StudentPortfolio() {
                     href={cert.certificate_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 text-purple-600 font-medium"
+                    className="mt-3 inline-block text-center border border-purple-600 text-purple-600 hover:bg-purple-50 text-sm px-4 py-2 rounded-lg transition"
                   >
-                    View Certificate
+                    View Certificate →
                   </a>
                 )}
               </div>
@@ -158,8 +153,6 @@ export default function StudentPortfolio() {
   );
 }
 
-
-/* ===== Reusable KPI Card Component ===== */
 function KpiCard({ title, value }) {
   return (
     <div className="bg-white rounded-2xl shadow p-5">

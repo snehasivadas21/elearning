@@ -4,6 +4,9 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import io
 import cloudinary.uploader
+import logging
+
+logger = logging.getLogger(__name__)
 
 def can_access_course(user, course):
     if course.is_free:
@@ -13,42 +16,54 @@ def can_access_course(user, course):
 def generate_invoice_number():
     today = datetime.now().strftime("%Y%m%d")
     from .models import Invoice
-    count = Invoice.objects.count() + 1
+    count = Invoice.objects.filter(
+        created_at__date=datetime.today()
+    ).count() + 1
     return f"INV{today}{count:04d}"
 
 def create_invoice_pdf(invoice):
-    buffer = io.BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
+    try:
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
 
-    # Title
-    p.setFont("Helvetica-Bold", 16)
-    p.drawString(200, 750, "PyTech Invoice")
+        from datetime import datetime
+        now = datetime.now()
 
-    # Student details
-    p.setFont("Helvetica", 12)
-    p.drawString(50, 700, f"Invoice Number: {invoice.invoice_number}")
-    p.drawString(50, 680, f"Date: {invoice.created_at.strftime('%Y-%m-%d')}")
-    p.drawString(50, 660, f"Student: {invoice.student.username}")
-    p.drawString(50, 640, f"Email: {invoice.student.email}")
+        purchase = invoice.purchase
+        order = purchase.order
 
-    # Course & Payment
-    purchase = invoice.purchase
-    order = purchase.order
+        p.setFont("Helvetica-Bold", 20)
+        p.drawString(200, 750, "PyTech Invoice")
 
-    p.drawString(50, 600, f"Course: {purchase.course.title}")
-    p.drawString(50, 580, f"Price: ₹{order.amount}")
-    p.drawString(50, 560, f"Payment ID: {order.payment_id}")
+        p.setFont("Helvetica", 12)
+        p.drawString(50, 700, f"Invoice Number: {invoice.invoice_number}")
+        p.drawString(50, 680, f"Date: {now.strftime('%Y-%m-%d')}")
+        p.drawString(50, 660, f"Student: {invoice.student.username}")
+        p.drawString(50, 640, f"Email: {invoice.student.email}")
 
-    p.showPage()
-    p.save()
+        p.drawString(50, 600, f"Course: {purchase.course.title}")
+        p.drawString(50, 580, f"Amount: Rs.{order.amount}")
+        p.drawString(50, 560, f"Payment ID: {order.payment_id}")
+        p.drawString(50, 540, f"Status: Paid")
 
-    buffer.seek(0)
+        p.showPage()
+        p.save()
 
-    upload_result = cloudinary.uploader.upload(
-        buffer,
-        folder="invoices",
-        resource_type ="raw",
-        public_id = f"{invoice.invoice_number}",
-        format="pdf"
-    )
-    return upload_result['secure_url']
+        buffer.seek(0)
+
+        upload_result = cloudinary.uploader.upload(
+            buffer.getvalue(),
+            folder="invoices",
+            resource_type="raw",
+            public_id=f"{invoice.invoice_number}",
+            format="pdf",
+            overwrite=True,
+        )
+
+        buffer.close()
+        logger.info("Invoice PDF uploaded: %s", invoice.invoice_number)
+        return upload_result["secure_url"]
+
+    except Exception as e:
+        logger.error("Invoice PDF generation failed: %s", str(e))
+        raise

@@ -12,6 +12,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.decorators import action
 from django.conf import settings
+import cloudinary.utils
 
 from .models import CustomUser,Profile,ProfileLink
 from .serializers import RegisterSerializer, LoginSerializer,CustomTokenObtainPairSerializer,PasswordResetConfirmSerializer,PasswordResetRequestSerializer,ProfileSerializer,ProfileLinkSerializer
@@ -324,7 +325,7 @@ class StudentPortfolioAPIView(APIView):
     def get(self, request):
         student = request.user
 
-        purchases = CoursePurchase.objects.filter(student=student)
+        purchases = CoursePurchase.objects.filter(student=student).select_related("course")
 
         total_enrolled = purchases.count()
         completed_courses = 0
@@ -337,21 +338,28 @@ class StudentPortfolioAPIView(APIView):
         for purchase in purchases:
             course = purchase.course
 
-            total_lessons = Lesson.objects.filter(
-                module__course=course,
-                is_deleted=False,
-                is_active=True
-            ).count()
+            if purchase.progress_locked:
+                progress = 100
+            else:
+                total_lessons = Lesson.objects.filter(
+                    module__course=course,
+                    duration__gt=0,
+                    is_deleted=False,
+                    is_active=True,
+                    created_at__lte=purchase.purchased_at  
+                ).count()
 
-            completed_lessons = LessonProgress.objects.filter(
-                student=student,
-                lesson__module__course=course,
-                completed=True
-            ).count()
+                completed_lessons = LessonProgress.objects.filter(
+                    student=student,
+                    lesson__module__course=course,
+                    lesson__duration__gt=0,
+                    completed=True,
+                    lesson__created_at__lte=purchase.purchased_at  
+                ).count()
 
-            progress = 0
-            if total_lessons > 0:
-                progress = round((completed_lessons / total_lessons) * 100, 2)
+                progress = 0
+                if total_lessons > 0:
+                    progress = round((completed_lessons / total_lessons) * 100, 2)
 
             total_progress_sum += progress
 
@@ -370,7 +378,6 @@ class StudentPortfolioAPIView(APIView):
             quiz_average = 0
 
             if quiz_attempts.exists():
-                
                 best_attempts = (
                     quiz_attempts
                     .values("quiz")
@@ -378,7 +385,6 @@ class StudentPortfolioAPIView(APIView):
                 )
 
                 percentages = [item["best_percentage"] for item in best_attempts]
-
                 quiz_average = round(sum(percentages) / len(percentages), 2)
                 overall_quiz_percentages.extend(percentages)
 
@@ -391,24 +397,33 @@ class StudentPortfolioAPIView(APIView):
             })
 
         overall_progress = round(
-            (total_progress_sum / total_enrolled), 2
+            total_progress_sum / total_enrolled, 2
         ) if total_enrolled > 0 else 0
 
         overall_quiz_average = round(
             sum(overall_quiz_percentages) / len(overall_quiz_percentages), 2
         ) if overall_quiz_percentages else 0
 
-        certificates = CourseCertificate.objects.filter(student=student)
+        certificates = CourseCertificate.objects.filter(student=student).select_related("course")
 
-        certificate_data = [
-            {
+        certificate_data = []
+
+        for cert in certificates:
+            certificate_url = None
+
+            if cert.certificate_file:
+                certificate_url, _ = cloudinary.utils.cloudinary_url(
+                    cert.certificate_file.name,
+                    resource_type="raw",
+                    secure=True
+                )
+
+            certificate_data.append({
                 "course": cert.course.title,
                 "certificate_id": cert.certificate_id,
-                "certificate_url": cert.certificate_file.url if cert.certificate_file else None,
+                "certificate_url": certificate_url,
                 "issued_at": cert.issued_at
-            }
-            for cert in certificates
-        ]
+            })
 
         return Response({
             "profile": {
