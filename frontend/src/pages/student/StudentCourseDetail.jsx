@@ -55,7 +55,6 @@ const StudentCourseDetail = () => {
         { watched_seconds: watchedSeconds }
       );
 
-      // Refresh progress
       queryClient.invalidateQueries(["student-course", id]);
     } catch (err) {
       console.log("Watch update failed");
@@ -63,12 +62,10 @@ const StudentCourseDetail = () => {
   };
 
   useEffect(() => {
-    // Load YouTube IFrame API
     if (!window.YT) {
       const tag = document.createElement("script");
       tag.src = "https://www.youtube.com/iframe_api";
       
-      // Set up callback for when API is ready
       window.onYouTubeIframeAPIReady = () => {
         setYoutubeReady(true);
       };
@@ -86,15 +83,16 @@ const StudentCourseDetail = () => {
 
   const allLessonsCompleted = course.progress_percentage >= 100;
 
+  const showAIButton = selectedLesson?.content_type === "text" || 
+                    selectedLesson?.resources?.length > 0;
+
   return (
      <div className="h-screen flex flex-col bg-gray-100">
 
-      {/* COURSE HEADER */}
       <div className="bg-white shadow rounded-xl overflow-hidden mb-6">
 
         <div className="flex flex-col md:flex-row">
 
-          {/* RIGHT: COURSE DETAILS */}
           <div className="md:w-2/3 p-6 flex flex-col justify-between">
 
             <div>
@@ -106,7 +104,6 @@ const StudentCourseDetail = () => {
                 {course.description}
               </p>
 
-              {/* TAGS */}
               <div className="flex flex-wrap gap-2 mt-4 text-sm">
                 <span className="bg-blue-50 px-3 py-1 rounded-full font-medium">
                   {course.level}
@@ -133,7 +130,6 @@ const StudentCourseDetail = () => {
                 )}
               </div>
 
-              {/* RATING */}
               <div className="mt-4 flex items-center gap-3 text-gray-600">
                 <span className="font-semibold">
                   ⭐ {course.avg_rating ? course.avg_rating.toFixed(1) : "No ratings"}
@@ -145,7 +141,6 @@ const StudentCourseDetail = () => {
               </div>
             </div>
 
-            {/* PRICE + PROGRESS */}
             <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
               <div className="text-2xl font-bold text-gray-800">
@@ -165,10 +160,8 @@ const StudentCourseDetail = () => {
 
       </div>
 
-      {/* MODULES */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ===== Sidebar ===== */}
         <div className="w-80 bg-white border-r overflow-y-auto p-4">
           {course.modules.map((mod, index) => (
             <div key={mod.id} className="mb-6">
@@ -188,9 +181,16 @@ const StudentCourseDetail = () => {
                     }`}
                 >
                   <div className="flex justify-between items-center">
-                    <span>
+                    <span className="flex items-center gap-2">
                       {i + 1}. {lesson.title}
+
+                      {lesson.is_new && (
+                        <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-semibold">
+                          NEW
+                        </span>
+                      )}
                     </span>
+
                     {lesson.completed && (
                       <span className="text-green-600 text-xs">
                         ✔
@@ -249,7 +249,6 @@ const StudentCourseDetail = () => {
                 {selectedLesson.title}
               </h2>
 
-                {/* Uploaded Video Tracking */}
                 {selectedLesson.content_type === "video" &&
                   selectedLesson.video_source === "cloud" &&
                   selectedLesson.video_url && (
@@ -284,7 +283,6 @@ const StudentCourseDetail = () => {
                     />
                   )}
 
-                {/* YouTube Loading State */}
                 {selectedLesson.content_type === "video" &&
                   selectedLesson.video_source === "youtube" &&
                   selectedLesson.video_url && !youtubeReady && (
@@ -293,7 +291,6 @@ const StudentCourseDetail = () => {
                     </div>
                   )}
 
-                {/* YouTube Tracking */}
                 {selectedLesson.content_type === "video" &&
                   selectedLesson.video_source === "youtube" &&
                   selectedLesson.video_url && youtubeReady && (
@@ -304,7 +301,6 @@ const StudentCourseDetail = () => {
                     />
                   )}
 
-                {/* Text */}
                 {selectedLesson.content_type === "text" &&
                   selectedLesson.text_content && (
                     <p className="mt-3 text-gray-700 whitespace-pre-line">
@@ -312,7 +308,6 @@ const StudentCourseDetail = () => {
                     </p>
                   )}
 
-                {/* Resources */}
                 {selectedLesson.resources?.length > 0 && (
                   <div className="pt-3 border-t mt-3">
                     <p className="text-sm font-semibold mb-1">
@@ -340,8 +335,6 @@ const StudentCourseDetail = () => {
           </div>
         </div>
       
-
-      {/* COMMUNITY BUTTON */}
       <button
         onClick={() => navigate(`/student/chat/course/`)}
         className="fixed bottom-50 right-20 bg-green-600 hover:bg-green-700 text-white p-6 text-2xl rounded-full shadow-lg z-40"
@@ -349,13 +342,14 @@ const StudentCourseDetail = () => {
         💬
       </button>
 
-      {/* AI BUTTON */}
-      <button
-        onClick={() => setShowChat(true)}
-        className="fixed bottom-20 right-20 bg-purple-600 hover:bg-purple-700 text-white p-6 text-2xl rounded-full shadow-lg z-40"
-      >
-        🤖
-      </button>
+      {showAIButton && (
+        <button
+          onClick={() => setShowChat(true)}
+          className="fixed bottom-20 right-20 bg-purple-600 hover:bg-purple-700 text-white p-6 text-2xl rounded-full shadow-lg z-40"
+        >
+          🤖
+        </button>
+      )}
 
       {showChat && (
         <CourseChatModal
@@ -366,10 +360,6 @@ const StudentCourseDetail = () => {
     </div>
   );
 };
-
-/* ===========================
-   YOUTUBE PLAYER COMPONENT
-=========================== */
 
 const YouTubePlayer = ({ lesson, sendWatchProgress, lastSentRef }) => {
   const playerRef = useRef(null);
@@ -383,7 +373,6 @@ const YouTubePlayer = ({ lesson, sendWatchProgress, lastSentRef }) => {
   useEffect(() => {
     if (!window.YT || !window.YT.Player || !videoId) return;
 
-    // Create player
     playerRef.current = new window.YT.Player(
       `yt-player-${lesson.id}`,
       {
@@ -396,13 +385,11 @@ const YouTubePlayer = ({ lesson, sendWatchProgress, lastSentRef }) => {
         },
         events: {
           onStateChange: (event) => {
-            // Clear any existing interval
             if (intervalRef.current) {
               clearInterval(intervalRef.current);
               intervalRef.current = null;
             }
 
-            // If playing, start tracking
             if (event.data === window.YT.PlayerState.PLAYING) {
               intervalRef.current = setInterval(() => {
                 try {
@@ -427,7 +414,6 @@ const YouTubePlayer = ({ lesson, sendWatchProgress, lastSentRef }) => {
       }
     );
 
-    // Cleanup
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -453,7 +439,7 @@ const CourseChatModal = ({ courseId, onClose }) => {
     <div className="fixed inset-0 z-50 bg-black/40">
       <div className="absolute right-0 top-0 h-full w-full sm:w-[600px] bg-white shadow-xl flex flex-col">
         <div className="flex justify-between p-4 border-b">
-          <h2 className="font-semibold">AI Tutor</h2>
+          <h2 className="font-semibold">🤖 AI Tutor</h2>
           <button onClick={onClose}>✕</button>
         </div>
         <div className="flex-1 overflow-hidden">

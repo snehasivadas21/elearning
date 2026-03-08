@@ -1,15 +1,21 @@
-import { useState } from "react";
-import axiosInstance from "../../api/axiosInstance"
+import { useState, useRef, useEffect } from "react";
+import axiosInstance from "../../api/axiosInstance";
 
 const CourseChat = ({ courseId }) => {
   const [messages, setMessages] = useState([
     {
       role: "ai",
-      content: "Hi! I’m your course assistant. Ask me anything from this course."
-    }
+      content: "Hi! I'm your course assistant. Ask me anything from this course.",
+    },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
+
+  // Auto-scroll on new messages
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
@@ -32,7 +38,7 @@ const CourseChat = ({ courseId }) => {
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", content: "AI error. Please try again." },
+        { role: "ai", content: "Something went wrong. Please try again." },
       ]);
     } finally {
       setLoading(false);
@@ -40,38 +46,49 @@ const CourseChat = ({ courseId }) => {
   };
 
   return (
-    <div className="border rounded-lg p-4 bg-white">
-      <h3 className="font-semibold mb-2">🤖 Course AI Assistant</h3>
-
-      <div className="h-[70vh] overflow-y-auto border p-3 mb-3 space-y-2">
+    <div className="flex flex-col h-full bg-white">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`text-lg p-2 rounded ${
-              m.role === "user"
-                ? "bg-purple-100 text-right"
-                : "bg-gray-100"
-            }`}
+            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            {m.content}
+            <div
+              className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm whitespace-pre-wrap
+                ${m.role === "user"
+                  ? "bg-purple-600 text-white rounded-br-none"
+                  : "bg-gray-100 text-gray-800 rounded-bl-none"
+                }`}
+            >
+              {m.content}
+            </div>
           </div>
         ))}
-        {loading && <p className="text-sm text-gray-400">Thinking...</p>}
+
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 text-gray-500 px-4 py-2 rounded-2xl rounded-bl-none text-sm">
+              <span className="animate-pulse">Thinking...</span>
+            </div>
+          </div>
+        )}
+
+        <div ref={bottomRef} />
       </div>
 
-      <div className="flex gap-2">
+      <div className="border-t p-3 flex gap-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
           disabled={loading}
-          className="flex-1 border rounded px-3 py-2 disabled:bg-gray-100 disabled:cursor-not-allowed"
-          placeholder={loading ? "AI is thinking..." : "Ask something from this course..."}
+          className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:bg-gray-100"
+          placeholder={loading ? "AI is thinking..." : "Ask something..."}
         />
-
         <button
           onClick={sendMessage}
-          disabled={loading}
-          className="bg-purple-600 text-white px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading || !input.trim()}
+          className="bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-purple-700 transition"
         >
           Send
         </button>

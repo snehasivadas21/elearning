@@ -3,6 +3,7 @@ import axiosInstance from "../../api/axiosInstance";
 import QuestionCard from "../../components/student/QuestionCard";
 import ResultCard from "../../components/student/ResultCard";
 import { useParams } from "react-router-dom";
+import Pagination from "../../components/ui/Pagination";
 
 import {
   LineChart,
@@ -25,6 +26,11 @@ export default function StudentQuizPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  const [page,setPage] = useState(1);
+  const [count,setCount] = useState(0);
+
+  const totalPages = Math.ceil(count / 10); 
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -43,7 +49,7 @@ export default function StudentQuizPage() {
     };
 
     loadData();
-  }, [quizId]);
+  }, [quizId,page]);
 
   const handleSelect = (questionId, optionId) => {
     setAnswers((prev) => ({
@@ -74,11 +80,11 @@ export default function StudentQuizPage() {
       setShowResultModal(true);
       setAnswers({});
 
-      // Refresh attempts
       const attemptsRes = await axiosInstance.get(
-        `/quiz/quizzes/${quizId}/attempts/`
+        `/quiz/quizzes/${quizId}/attempts/`,{params:{page}}
       );
-      setAttempts(attemptsRes.data);
+      setAttempts(attemptsRes.data.results ?? attemptsRes.data);
+      setCount(attemptsRes.data.count ?? 0);
 
     } catch (err) {
       console.error("Submission failed", err);
@@ -179,43 +185,51 @@ export default function StudentQuizPage() {
           </div>
         )}
 
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left border-b">
-              <th>Attempt</th>
-              <th>Score</th>
-              <th>Percentage</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {attempts.map((attempt) => (
-              <tr key={attempt.id} className="border-b">
-                <td>{attempt.attempt_number}</td>
-                <td>{attempt.score}</td>
-                <td>{attempt.percentage}%</td>
-                <td>
-                  <span
-                    className={
-                      attempt.is_passed
-                        ? "text-green-600 font-medium"
-                        : "text-red-600 font-medium"
-                    }
-                  >
-                    {attempt.is_passed ? "Passed" : "Failed"}
-                  </span>
-                </td>
+        <div className="overflow-x-auto bg-white rounded-lg shadow">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50 text-left text-sm font-semibold text-gray-600">
+              <tr>
+                <th className="p-3">Attempt</th>
+                <th className="p-3">Score</th>
+                <th className="p-3">Percentage</th>
+                <th className="p-3">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            
+            <tbody className="divide-y divide-gray-100">
+              {attempts.map((attempt) => (
+                <tr key={attempt.id} className="border-t">
+                  <td className="p-3">{attempt.attempt_number}</td>
+                  <td className="p-3">{attempt.score}</td>
+                  <td className="p-3">{attempt.percentage}%</td>
+                  <td className="p-3">
+                    <span
+                      className={
+                        attempt.is_passed
+                          ? "text-green-600 font-medium"
+                          : "text-red-600 font-medium"
+                      }
+                    >
+                      {attempt.is_passed ? "Passed" : "Failed"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>  
       </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        setPage={setPage}
+      />
 
       {/* Result Modal */}
       {showResultModal && result && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[480px]">
 
             <button
               onClick={() => setShowResultModal(false)}

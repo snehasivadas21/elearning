@@ -15,7 +15,7 @@ export default function ChatPage() {
   const userId = user?.user_id;
   const { unreadChats, markChatRead } = useChatNotifySocket(userId);
 
-  const { sendMessage } = useWebSocket(
+  const { sendMessage, sendFileMessage } = useWebSocket(
     selectedRoom?.id,
     (data) => {
       if (!data?.message) return;
@@ -67,6 +67,8 @@ export default function ChatPage() {
           <MessageInput
             disabled={!selectedRoom}
             onSend={sendMessage}
+            onFileSend={sendFileMessage}
+            roomId={selectedRoom?.id}
           />
         </div>
       </div>

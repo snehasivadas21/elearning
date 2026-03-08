@@ -490,6 +490,7 @@ class CertificateViewSet(viewsets.ReadOnlyModelViewSet):
             secure=True
         )     
         return redirect(download_url)
+    
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     queryset = Review.objects.select_related("user", "course")
