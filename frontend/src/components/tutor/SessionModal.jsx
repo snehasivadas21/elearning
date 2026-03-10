@@ -89,7 +89,6 @@ const SessionModal = ({ open, onClose, onSuccess, session }) => {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl">
 
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h2 className="text-base font-bold text-slate-800">
             {session ? "Edit Live Session" : "Create Live Session"}
@@ -102,7 +101,6 @@ const SessionModal = ({ open, onClose, onSuccess, session }) => {
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-4">
 
           <div className="flex flex-col gap-1">
@@ -164,7 +162,6 @@ const SessionModal = ({ open, onClose, onSuccess, session }) => {
 
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
           <button
             onClick={onClose}

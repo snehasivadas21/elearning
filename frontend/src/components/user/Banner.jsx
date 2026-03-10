@@ -1,7 +1,7 @@
 const HeroBanner = () => {
   return (
     <section className="relative w-full h-[500px] md:h-[600px]">
-      {/* Background Image */}
+      
       <img
         src="/AdobeStock_400776431_Preview.jpeg"
         alt="E-learning Banner"
@@ -13,7 +13,7 @@ const HeroBanner = () => {
             <span className="text-xl font-medium">Live Session</span>
           </div>
       </div>
-      {/* Text Content */}
+      
       <div className="relative z-10 max-w-7xl mx-auto h-full flex items-center px-6 md:px-10">
         <div className="w-full md:w-1/2 text-white space-y-6">
           <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">

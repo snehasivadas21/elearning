@@ -1,7 +1,5 @@
 import { BookOpen, Users, Award, Clock, Globe, Headphones } from "lucide-react";
 
-
-
 const AboutPage = () => {
     const features = [
     {
@@ -38,7 +36,6 @@ const AboutPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12">
-      {/* Header */}
       <div className="text-center mb-12">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
           About PyTech
@@ -48,7 +45,6 @@ const AboutPage = () => {
         </p>
       </div>
 
-      {/* 3 Columns - Mission, Vision, Values */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white border rounded-xl p-6 shadow-sm">
           <h3 className="text-xl font-semibold text-blue-600 mb-2">🎯 Our Mission</h3>
@@ -108,8 +104,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-
-      {/* CTA */}
       <div className="mt-16 text-center">
         <h3 className="text-xl font-bold text-gray-900 mb-2">
           Join Thousands of Learners on PyTech Today!

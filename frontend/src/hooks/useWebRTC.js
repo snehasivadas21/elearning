@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 
-// Multiple STUN servers. Chrome is stricter about ICE than Edge/Firefox.
 const ICE_SERVERS = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
@@ -11,10 +10,6 @@ const ICE_SERVERS = {
   ],
 };
 
-// Props changed: instead of receiving the raw socket object,
-// it receives sendRaw (function to send a JSON string) and
-// addMessageListener (function to attach a message handler).
-// This avoids the stale-ref problem entirely.
 const useWebRTC = ({ sendRaw, addMessageListener, localStream, isInstructor }) => {
   const peerRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -31,8 +26,6 @@ const useWebRTC = ({ sendRaw, addMessageListener, localStream, isInstructor }) =
       peer.addTrack(track, localStream);
     });
 
-    // Chrome sometimes fires ontrack with event.streams[0] undefined.
-    // Fallback: wrap the track in a new MediaStream.
     peer.ontrack = (event) => {
       if (!remoteVideoRef.current) return;
 
@@ -57,9 +50,6 @@ const useWebRTC = ({ sendRaw, addMessageListener, localStream, isInstructor }) =
       }
     };
 
-    // Queue-safe candidate addition.
-    // Chrome throws if addIceCandidate is called before
-    // setRemoteDescription. Queue them and flush after.
     const addCandidateSafe = async (candidate) => {
       if (!peer.remoteDescription) {
         pendingCandidatesRef.current.push(candidate);
@@ -78,7 +68,6 @@ const useWebRTC = ({ sendRaw, addMessageListener, localStream, isInstructor }) =
     const handleMessage = async (e) => {
       const data = JSON.parse(e.data);
 
-      // Student receives offer from tutor
       if (data.type === "offer" && !isInstructor) {
         await peer.setRemoteDescription(
           new RTCSessionDescription(data.offer)
@@ -96,7 +85,6 @@ const useWebRTC = ({ sendRaw, addMessageListener, localStream, isInstructor }) =
         );
       }
 
-      // Tutor receives answer from student
       if (data.type === "answer" && isInstructor) {
         await peer.setRemoteDescription(
           new RTCSessionDescription(data.answer)
@@ -104,13 +92,11 @@ const useWebRTC = ({ sendRaw, addMessageListener, localStream, isInstructor }) =
         await flushPendingCandidates();
       }
 
-      // ICE candidate — queue-safe
       if (data.type === "ice-candidate" && data.candidate) {
         await addCandidateSafe(data.candidate);
       }
     };
 
-    // Attach listener via the hook's helper — returns cleanup fn
     const removeListener = addMessageListener(handleMessage);
 
     return () => {

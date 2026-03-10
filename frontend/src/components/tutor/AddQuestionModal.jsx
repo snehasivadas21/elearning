@@ -105,7 +105,6 @@ export default function AddQuestionModal({ quizId, onClose, onSuccess, questionD
           </div>
         )}
 
-        {/* Question Text */}
         <div>
           <label className="block mb-1 text-sm font-medium">
             Question Text
@@ -118,7 +117,6 @@ export default function AddQuestionModal({ quizId, onClose, onSuccess, questionD
           />
         </div>
 
-        {/* Marks */}
         <div>
           <label className="block mb-1 text-sm font-medium">
             Marks
@@ -132,7 +130,6 @@ export default function AddQuestionModal({ quizId, onClose, onSuccess, questionD
           />
         </div>
 
-        {/* Options */}
         <div className="space-y-3">
           <label className="block text-sm font-medium">
             Options
@@ -179,7 +176,6 @@ export default function AddQuestionModal({ quizId, onClose, onSuccess, questionD
           </button>
         </div>
 
-        {/* Actions */}
         <div className="flex justify-end gap-3 pt-4">
           <button
             onClick={onClose}

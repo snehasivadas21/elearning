@@ -13,13 +13,11 @@ const TutorNavbar = ({ title }) => {
   const userId = user?.user_id;
   const { unreadChats, markChatRead } = useChatNotifySocket(userId);
 
-  // ✅ Count total messages across all rooms, not just unique rooms
   const unreadCount = Object.values(unreadChats).reduce(
     (sum, count) => sum + count,
     0
   );
 
-  // Cap badge at 99+
   const badgeLabel = unreadCount > 99 ? "99+" : unreadCount;
 
   const handleChatClick = () => {
@@ -49,7 +47,6 @@ const TutorNavbar = ({ title }) => {
           className="relative hidden md:flex items-center space-x-4"
           ref={dropdownRef}
         >
-          {/* Chat icon with unread badge */}
           <div
             className="relative cursor-pointer"
             onClick={handleChatClick}
@@ -63,7 +60,6 @@ const TutorNavbar = ({ title }) => {
             )}
           </div>
 
-          {/* User avatar + dropdown */}
           {user?.username && (
             <>
               <div

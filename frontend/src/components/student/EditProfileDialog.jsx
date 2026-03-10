@@ -122,13 +122,11 @@ const EditProfileDialog = ({ open, onClose, profile, onUpdate, onLinkChange }) =
 
   return (
     <Dialog open={open} onClose={onClose} className="relative z-50">
-      {/* Backdrop */}
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
         <Dialog.Panel className="w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
           
-          {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
             <Dialog.Title className="text-lg font-bold text-slate-800">
               Edit Profile
@@ -141,10 +139,8 @@ const EditProfileDialog = ({ open, onClose, profile, onUpdate, onLinkChange }) =
             </button>
           </div>
 
-          {/* Scrollable Body */}
           <div className="overflow-y-auto px-6 py-5 space-y-5 flex-1">
 
-            {/* Avatar Preview */}
             <div className="flex items-center gap-4">
               <img
                 src={preview || DEFAULT_AVATAR}
@@ -206,13 +202,11 @@ const EditProfileDialog = ({ open, onClose, profile, onUpdate, onLinkChange }) =
               )}
             </div>
 
-            {/* Links Section */}
             <div className="flex flex-col gap-3">
               <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Links
               </label>
 
-              {/* Existing links */}
               {links.length > 0 && (
                 <div className="space-y-2">
                   {links.map((link) => (
@@ -232,7 +226,6 @@ const EditProfileDialog = ({ open, onClose, profile, onUpdate, onLinkChange }) =
                 </div>
               )}
 
-              {/* Add new link */}
               <div className="flex gap-2">
                 <input
                   value={newLink.label}
@@ -263,7 +256,6 @@ const EditProfileDialog = ({ open, onClose, profile, onUpdate, onLinkChange }) =
 
           </div>
 
-          {/* Footer */}
           <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
             <button
               onClick={onClose}

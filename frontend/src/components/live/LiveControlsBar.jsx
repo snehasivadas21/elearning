@@ -33,7 +33,6 @@ const LiveControlsBar = ({
         <Hand />
       </button>
 
-      {/* ✅ Emoji panel toggled by Smile button */}
       <div className="relative">
         <button
           onClick={() => setShowReactions((p) => !p)}

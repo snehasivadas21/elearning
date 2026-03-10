@@ -20,12 +20,10 @@ class PayoutRequestSerializer(serializers.ModelSerializer):
         ifsc = attrs.get("ifsc_code", "").strip()
         acc_holder = attrs.get("account_holder_name", "").strip()
         
-        # Check if payment details are provided (either UPI or complete bank details)
         has_upi = bool(upi)
         has_bank = bool(acc and ifsc and acc_holder)
         
         if not has_upi and not has_bank:
-            # Check existing payment account
             try:
                 payment = PaymentAccount.objects.get(instructor=user)
                 existing_upi = bool(payment.upi_id)
@@ -42,7 +40,6 @@ class PayoutRequestSerializer(serializers.ModelSerializer):
                     {"payment": "Provide UPI ID or complete bank details (account number, IFSC code, and account holder name)."}
                 )
         
-        # Validate bank details are complete if partially provided
         bank_fields = [acc, ifsc, acc_holder]
         bank_provided = [bool(f) for f in bank_fields]
         if any(bank_provided) and not all(bank_provided):

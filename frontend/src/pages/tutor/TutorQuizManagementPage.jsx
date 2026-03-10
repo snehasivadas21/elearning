@@ -5,7 +5,6 @@ import AddQuestionModal from "../../components/tutor/AddQuestionModal";
 import { toast } from "react-toastify";
 import { Trash2, Pencil, Plus, AlertTriangle, X, ChevronDown, ChevronUp } from "lucide-react";
 
-// ── In-app confirmation dialog ──────────────────────────────────────────────
 const ConfirmDialog = ({ open, title, message, onConfirm, onCancel, danger = true }) => {
   if (!open) return null;
   return (
@@ -39,7 +38,6 @@ const ConfirmDialog = ({ open, title, message, onConfirm, onCancel, danger = tru
   );
 };
 
-// ── Edit Quiz inline form ────────────────────────────────────────────────────
 const EditQuizForm = ({ quiz, onSave, onCancel }) => {
   const [form, setForm] = useState({
     title: quiz.title,
@@ -99,7 +97,6 @@ const EditQuizForm = ({ quiz, onSave, onCancel }) => {
   );
 };
 
-// ── Main Page ────────────────────────────────────────────────────────────────
 export default function TutorQuizManagementPage() {
   const { quizId } = useParams();
   const navigate = useNavigate();
@@ -113,7 +110,6 @@ export default function TutorQuizManagementPage() {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [isEditingQuiz, setIsEditingQuiz] = useState(false);
 
-  // Confirm dialog state
   const [confirm, setConfirm] = useState({
     open: false, title: "", message: "", onConfirm: null,
   });
@@ -124,11 +120,8 @@ export default function TutorQuizManagementPage() {
   const closeConfirm = () =>
     setConfirm({ open: false, title: "", message: "", onConfirm: null });
 
-  // submitted = locked for edit/delete; draft/approved = editable
   const isSubmitted = courseStatus === "submitted";
 
-  // Tutors can always add questions (industry standard — content can grow)
-  // But cannot edit/delete when course is under review
   const canModify = !isSubmitted;
 
   useEffect(() => {
@@ -225,7 +218,6 @@ export default function TutorQuizManagementPage() {
         onCancel={closeConfirm}
       />
 
-      {/* Status banner */}
       {isSubmitted && (
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl px-4 py-3 text-sm font-medium">
           <AlertTriangle size={16} />
@@ -233,7 +225,6 @@ export default function TutorQuizManagementPage() {
         </div>
       )}
 
-      {/* Quiz Settings Card */}
       <div className="bg-white shadow-sm border border-slate-100 rounded-2xl p-6">
         <div className="flex items-start justify-between">
           <div>
@@ -282,13 +273,12 @@ export default function TutorQuizManagementPage() {
         )}
       </div>
 
-      {/* Questions Card */}
       <div className="bg-white shadow-sm border border-slate-100 rounded-2xl p-6">
         <div className="flex justify-between items-center mb-5">
           <h2 className="text-lg font-bold text-slate-800">
             Questions <span className="text-slate-400 font-normal text-sm">({quiz?.questions?.length || 0})</span>
           </h2>
-          {/* Always allow adding questions */}
+          
           <button
             onClick={() => { setSelectedQuestion(null); setShowModal(true); }}
             className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition"
@@ -342,7 +332,6 @@ export default function TutorQuizManagementPage() {
         </div>
       </div>
 
-      {/* Student Attempts Card */}
       <div className="bg-white shadow-sm border border-slate-100 rounded-2xl p-6">
         <h2 className="text-lg font-bold text-slate-800 mb-5">
           Student Attempts <span className="text-slate-400 font-normal text-sm">({attempts.length})</span>

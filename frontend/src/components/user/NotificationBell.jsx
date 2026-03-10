@@ -22,7 +22,6 @@ const NotificationBell = ({
 
   const liveCount = liveNotifications.length;
 
-  // ✅ Sum all message counts across rooms, not just unique room count
   const chatCount = Object.values(chatNotifications).reduce(
     (sum, count) => sum + count,
     0
@@ -45,7 +44,6 @@ const NotificationBell = ({
 
       {open && (
         <div className="absolute right-0 mt-3 w-80 bg-white shadow-lg rounded-lg p-4 z-50 border">
-          {/* Header */}
           <div className="flex justify-between items-center mb-3">
             <h4 className="font-semibold">Notifications</h4>
             <div className="flex items-center gap-2">
@@ -61,7 +59,6 @@ const NotificationBell = ({
             </div>
           </div>
 
-          {/* LIVE SESSION NOTIFICATIONS */}
           {liveNotifications.map((n) => {
             const { icon, text, style } = eventLabel(n.event);
             return (
@@ -91,7 +88,6 @@ const NotificationBell = ({
             );
           })}
 
-          {/* CHAT — one entry per room showing message count */}
           {Object.entries(chatNotifications).map(([roomId, count]) => (
             <div
               key={roomId}

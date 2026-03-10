@@ -56,7 +56,7 @@ const useLiveSessionSocket = (sessionId) => {
           });
 
           if (data.participant?.role === "student") {
-            setStudentJoined((prev) => !prev); // toggle to trigger effect
+            setStudentJoined((prev) => !prev); 
           }
           return;
         }
@@ -103,14 +103,12 @@ const useLiveSessionSocket = (sessionId) => {
       }
 
       if (data.type === "reaction") {
-        // ✅ add unique id + random x position for overlay
         const reaction = {
           ...data,
           id: `${Date.now()}-${Math.random()}`,
           x: Math.random() * 80 + 10,
         };
         setReactions((prev) => [...prev, reaction]);
-        // ✅ auto-remove after 3s so overlay doesn't accumulate
         setTimeout(() => {
           setReactions((prev) => prev.filter((r) => r.id !== reaction.id));
         }, 3000);

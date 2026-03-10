@@ -7,16 +7,16 @@ const ParticipantsPanel = ({ participants }) => {
 
       <ul className="space-y-2 text-sm">
         {participants.map((p) => (
-          <li key={p.user_id} className="flex justify-between items-center"> {/* ✅ user_id not id */}
+          <li key={p.user_id} className="flex justify-between items-center"> 
             <span>
-              👤 {p.username || `User ${p.user_id}`} {/* ✅ username not name */}
+              👤 {p.username || `User ${p.user_id}`} 
             </span>
             <span className="flex gap-2">
               {p.hand_raised && "✋"}
               {p.is_muted ? "🔇" : "🎤"}
             </span>
 
-            {p.role === "tutor" && ( /* ✅ "tutor" not "instructor" */
+            {p.role === "tutor" && ( 
               <span className="text-xs text-blue-400">Host</span>
             )}
           </li>
