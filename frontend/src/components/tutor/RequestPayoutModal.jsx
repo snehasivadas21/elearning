@@ -10,7 +10,6 @@ const RequestPayoutModal = ({ balance, onSuccess }) => {
   const [ifsc, setIfsc] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Safe balance handling
   const withdrawable = balance?.withdrawable_balance ?? 0;
   const availableBalance = balance?.available_balance ?? 0;  
   const pendingBalance = balance?.pending_balance ?? 0;
@@ -47,7 +46,6 @@ const RequestPayoutModal = ({ balance, onSuccess }) => {
 
       toast.success("Payout request submitted");
 
-      // reset fields
       setAmount("");
       setUpiId("");
       setAccountHolder("");

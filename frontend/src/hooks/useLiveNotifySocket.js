@@ -26,7 +26,6 @@ const useLiveNotifySocket = (courseIds = []) => {
 
         if (data.event === "live_created" || data.event === "session_started") {
           setNotifications((prev) => {
-            // if already exists, update it (e.g. created → started)
             const exists = prev.some((n) => n.session_id === data.session_id);
             if (exists) {
               return prev.map((n) =>
@@ -38,7 +37,6 @@ const useLiveNotifySocket = (courseIds = []) => {
         }
 
         if (data.event === "live_cancelled") {
-          // replace with cancelled entry briefly, then auto-remove after 5s
           setNotifications((prev) => {
             const filtered = prev.filter((n) => n.session_id !== data.session_id);
             return [{ ...data }, ...filtered];

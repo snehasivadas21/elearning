@@ -25,7 +25,6 @@ export default function TutorDashboard() {
 
   if (!data) return <div>Loading...</div>;
 
-  // 🔹 Format Monthly Earnings
   const earningsData = data.monthly_earnings.map((item) => ({
     month: new Date(item.month).toLocaleString("default", {
       month: "short",
@@ -33,13 +32,11 @@ export default function TutorDashboard() {
     total: item.total,
   }));
 
-  // 🔹 Format Students Per Course
   const studentsData = data.students_per_course.map((item) => ({
     course: item.course__title,
     count: item.count,
   }));
 
-  // 🔹 Format Revenue Per Course
   const revenueData = data.revenue_per_course.map((item) => ({
     course: item.course__title,
     total: item.total,
@@ -76,7 +73,6 @@ export default function TutorDashboard() {
 
       </div>
 
-      {/* ===== Monthly Earnings ===== */}
       <div style={{ width: "100%", height: 350, marginBottom: 40 }}>
         <h4 className="text-xl font-semibold">Monthly Earnings</h4>
         <ResponsiveContainer>
@@ -98,7 +94,6 @@ export default function TutorDashboard() {
         </ResponsiveContainer>
       </div>
 
-      {/* ===== Students Per Course ===== */}
       <div style={{ width: "100%", height: 300, marginBottom: 40 }}>
         <h4 className="text-xl font-semibold">Students Per Course</h4>
         <ResponsiveContainer>
@@ -112,8 +107,7 @@ export default function TutorDashboard() {
           </BarChart>
         </ResponsiveContainer>
       </div>
-
-      {/* ===== Revenue Per Course ===== */}
+      
       <div style={{ width: "100%", height: 300 }}>
         <h4 className="text-xl font-semibold">Revenue Per Course</h4>
         <ResponsiveContainer>

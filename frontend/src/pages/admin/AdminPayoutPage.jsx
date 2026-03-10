@@ -15,7 +15,7 @@ const AdminPayoutPage = () => {
   const loadPayouts = async () => {
     try {
       const res = await getAdminPayouts(status, page);
-      setPayouts(res.data.results);   // paginated response uses `results`
+      setPayouts(res.data.results);   
       setCount(res.data.count);
     } catch {
       toast.error("Failed to load payouts");

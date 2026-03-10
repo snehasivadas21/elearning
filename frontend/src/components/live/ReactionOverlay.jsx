@@ -3,7 +3,7 @@ const ReactionOverlay = ({ reactions }) => {
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {reactions.map((r) => (
         <span
-          key={r.id}              // ✅ r.id is now set in useLiveSessionSocket
+          key={r.id}              
           className="absolute bottom-10 text-3xl select-none animate-bounce"
           style={{ left: `${r.x}%` }}
         >

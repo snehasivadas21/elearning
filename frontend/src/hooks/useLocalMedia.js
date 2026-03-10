@@ -13,9 +13,6 @@ const useLocalMedia = () => {
     let cancelled = false;
 
     const startMedia = async () => {
-      // Strategy 1: video + audio
-      // Strategy 2: audio only (camera busy)
-      // Strategy 3: fail with clear error
       const constraints = [
         { video: true, audio: true },
         { video: false, audio: true },
@@ -34,14 +31,14 @@ const useLocalMedia = () => {
 
           streamRef.current = mediaStream;
           setStream(mediaStream);
-          setCameraOn(constraint.video !== false); // false if fell back to audio only
+          setCameraOn(constraint.video !== false); 
 
           if (videoRef.current) {
             videoRef.current.srcObject = mediaStream;
           }
 
           setError(null);
-          return; // success — stop trying
+          return; 
         } catch (err) {
           const isDeviceBusy =
             err.name === "NotReadableError" ||
@@ -54,16 +51,14 @@ const useLocalMedia = () => {
 
           if (isPermissionDenied) {
             setError("Camera or microphone permission denied.");
-            return; // no point retrying
+            return; 
           }
 
           if (isDeviceBusy && constraint.video) {
-            // Camera is busy — try next constraint (audio only)
             console.warn("Camera busy, falling back to audio only:", err.message);
             continue;
           }
 
-          // Unknown error
           console.error("Media error", err);
           setError(`Could not access media: ${err.message}`);
           return;
