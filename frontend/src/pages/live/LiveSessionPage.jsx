@@ -70,12 +70,11 @@ const LiveSessionPage = () => {
   useEffect(() => {
     if (userRole === "tutor" && localStream && studentJoined) {
       console.log("Student joined — tutor sending offer");
-      hasCalledRef.current = false; // reset so new offer goes out
+      hasCalledRef.current = false; 
       startCall();
     }
-  }, [studentJoined]); // only fires when studentJoined toggles
+  }, [studentJoined]); 
 
-  // ✅ Fallback: if tutor connects and student is already in the room
   useEffect(() => {
     if (
       connected &&

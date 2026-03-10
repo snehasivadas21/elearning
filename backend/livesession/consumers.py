@@ -36,7 +36,7 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
                 "user_id": self.user.id,
                 "participant": {
                     "user_id": self.user.id,
-                    "username": self.user.username or self.user.email,  # ✅ username not name
+                    "username": self.user.username or self.user.email,  
                     "role": role,
                     "hand_raised": False,
                     "is_muted": False,
@@ -205,7 +205,7 @@ class LiveSessionConsumer(AsyncJsonWebsocketConsumer):
         if s.status != "ongoing":
             return False
         c = s.course
-        # ✅ fixed: filter by student FK, not purchase id
+        
         return (
             c.instructor_id == self.user.id or
             c.purchases.filter(student=self.user).exists()
@@ -308,6 +308,5 @@ class NotifyConsumer(AsyncJsonWebsocketConsumer):
         if hasattr(self, "group_name"):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-    # Called by group_send with type "notify.message"
     async def notify_message(self, event):
         await self.send_json(event["payload"])

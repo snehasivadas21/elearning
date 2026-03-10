@@ -132,25 +132,15 @@ const LessonModal = ({show,onClose,lessonData = null,moduleId}) => {
     try {
       setSubmitting(true);
 
-      // let finalVideoUrl = formData.video_url;
-
-      // if (formData.content_type === "video" && formData.video_source === "cloud") {
-      //   const uploadData = await uploadVideoToCloudinary(formData.video_file);
-      //   finalVideoUrl = uploadData.url;
-      //   var videoDuration = uploadData.duration;
-      // }
-
-      let finalVideoUrl = formData.video_url; // ← existing URL from DB
+      let finalVideoUrl = formData.video_url; 
       let videoDuration = null;
 
       if (formData.content_type === "video" && formData.video_source === "cloud") {
         if (formData.video_file) {
-          // ✅ only upload if a NEW file was actually selected
           const uploadData = await uploadVideoToCloudinary(formData.video_file);
           finalVideoUrl = uploadData.url;
           videoDuration = uploadData.duration;
         }
-        // else: no new file chosen → finalVideoUrl stays as existing URL
       }
 
       const payload = new FormData();

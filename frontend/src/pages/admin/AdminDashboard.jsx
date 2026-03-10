@@ -30,13 +30,11 @@ export default function AdminDashboard() {
 
   if (!data) return <div>Loading...</div>;
 
-  // 🔹 Format Revenue Data
   const revenueData = data.monthly_revenue.map(item => ({
     month: new Date(item.month).toLocaleString("default", { month: "short" }),
     total: item.total
   }));
 
-  // 🔹 Format User Growth Data
   const userMap = {};
 
   data.monthly_users.forEach(item => {
@@ -55,7 +53,6 @@ export default function AdminDashboard() {
 
   const userData = Object.values(userMap);
 
-  // 🔹 Format Course Trend
   const courseData = data.monthly_courses.map(item => ({
     month: new Date(item.month).toLocaleString("default", { month: "short" }),
     count: item.count
@@ -100,7 +97,6 @@ export default function AdminDashboard() {
 
       </div>
 
-      {/* ===== Revenue Chart ===== */}
       <div style={{ width: "100%", height: 350, marginBottom: 40 }}>
         <h4 className="text-xl font-semibold">Monthly Revenue</h4>
         <ResponsiveContainer>
@@ -122,7 +118,6 @@ export default function AdminDashboard() {
         </ResponsiveContainer>
       </div>
 
-      {/* ===== User Growth ===== */}
       <div style={{ width: "100%", height: 300, marginBottom: 40 }}>
         <h4 className="text-xl font-semibold">User Growth</h4>
         <ResponsiveContainer>
@@ -138,7 +133,6 @@ export default function AdminDashboard() {
         </ResponsiveContainer>
       </div>
 
-      {/* ===== Course Creation Trend ===== */}
       <div style={{ width: "100%", height: 300 }}>
         <h4 className="text-xl font-semibold">Course Creation Trend</h4>
         <ResponsiveContainer>

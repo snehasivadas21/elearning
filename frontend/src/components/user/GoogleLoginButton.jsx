@@ -2,14 +2,12 @@ import { GoogleLogin } from "@react-oauth/google";
 import axiosPublic from "../../api/axiosPublic";
 import { useState } from "react";
 import { useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 
 
 const GoogleLoginButton = () => {
   const [error,setError] = useState("");
   const { loginUser } = useContext(AuthContext);
-  const navigate = useNavigate();
 
   const handleSuccess = async (credentialResponse) => {
     setError("");
@@ -19,14 +17,6 @@ const GoogleLoginButton = () => {
       });
 
       const { access, refresh } = res.data;
-
-      // localStorage.setItem("access", access);
-      // localStorage.setItem("refresh", refresh);
-
-      // window.location.href =
-      //   role === "instructor"
-      //     ? "/tutor/dashboard"
-      //     : "/student/dashboard";
 
       loginUser(access, refresh);
 

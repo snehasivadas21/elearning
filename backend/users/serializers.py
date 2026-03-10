@@ -42,9 +42,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        # validated_data['role'] = validated_data.get('role', 'student')
-        # return CustomUser.objects.create_user(**validated_data)
-    
         validated_data.pop('confirm_password')
         user = CustomUser.objects.create_user(**validated_data)
         user.is_verified=False
