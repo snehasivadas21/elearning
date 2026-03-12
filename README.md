@@ -1,165 +1,293 @@
-# PyTech – Full Stack E-Learning Platform
+PyTech – AI Powered E-Learning Platform
 
-## 📌 Project Overview
+PyTech is an end-to-end modern AI-integrated eLearning platform designed to deliver structured learning, interactive assessments, and intelligent assistance for students.
 
-**PyTech** is a full-stack e-learning platform designed to connect **students, instructors, and hiring managers**.
-It supports course creation, learning progress tracking, live sessions, certification, and hiring workflows — all in one system.
-An end-to-end eLearning platform designed not just to teach, but to align learning with real-world hiring needs.
+The platform allows instructors to create structured courses while learners track their progress through modules, lessons, quizzes, and AI-assisted learning tools.
 
-This project follows **industry-standard architecture**, **role-based access**, and **scalable API design**.
+PyTech focuses on practical learning workflows, progress tracking, and smart AI interaction within courses.
 
-## 🚀 Tech Stack
+🌟 Vision
 
-### **Frontend**
+The vision of PyTech is to build a learning platform that goes beyond static courses by integrating:
 
-* React.js
-* Tailwind CSS
-* Figma (UI/UX Design)
+📚 Structured learning paths
 
-### **Backend**
+🧠 AI-assisted understanding
 
-* Django
-* Django REST Framework
-* JWT Authentication
+📊 Progress tracking and evaluation
 
-### **Database**
+🤝 Instructor–student interaction
 
-* PostgreSQL
+The goal is to make learning more interactive, measurable, and intelligent.
 
-### **Other Tools**
+🛠 Tech Stack
+Frontend
 
-* Postman (API Documentation & Mock Server)
-* GitHub (Version Control)
+⚛️ React.js
 
+🎨 Tailwind CSS
 
-## 👥 User Roles
+🔗 Axios
 
-| Role                    | Description                                                   |
-| ----------------------- | ------------------------------------------------------------- |
-| **Admin**               | Manages users, courses, analytics, and platform settings      |
-| **Instructor**          | Creates courses, lessons, and live sessions          |
-| **Student**             | Enrolls in courses, learns, earns certificates |
-| **HR / Hiring Manager** | Filters candidates, views profiles, hiring analytics          |
+📦 React Router
 
+💬 WebSocket (real-time chat)
 
-## 🧩 Core Modules
+Backend
 
-### ✅ Authentication Module
+🐍 Django
 
-* Signup / Login
-* Role-based access
-* Forgot & Reset Password
-* JWT-based authentication
+⚡ Django REST Framework
 
-### ✅ Course Management
+🔐 JWT Authentication
 
-* Course creation & updates
-* Category management
-* Lesson & module builder
-* Course approval workflow
+🔄 Django Channels (WebSockets)
 
-### ✅ Learning Module
+Database
 
-* Video & text lessons
-* Progress tracking
-* Certificates on completion
+🗄 PostgreSQL
 
-### ✅ Payment Module
+AI / ML
 
-* Course purchase
-* Order management
-* Payment status tracking
+🤖 Sentence Transformers
 
-### ✅ Live Session Module
+🧠 Vector Embeddings
 
-* Live video sessions
-* Chat & reactions
-* Attendance tracking
-* Session recordings
+📄 Context-based AI Chat for course documents
 
-### ✅ HR & Hiring Module
+Payment Integration
 
-* Talent pool access
-* Filter by skills & experience
-* Resume & profile view
-* Hiring workflow (shortlist → hire)
+💳 Razorpay Payment Gateway
 
-### ✅ Admin Dashboard
+Other Tools
 
-* User analytics
-* Revenue tracking
-* Course performance
-* Platform monitoring
+🐳 Docker
 
-## 🧱 Database Design
+📜 Logging system
 
-The project uses a **normalized relational schema** including:
+📡 REST APIs
 
-* Users & Profiles
-* Courses, Lessons
-* Enrollments & Progress
-* Payments & Certificates
-* Live Sessions & Chats
-* HR Hiring Modules
+🔄 Git & GitHub
 
-## 📡 API Documentation
+👥 User Roles
+👨‍🎓 Student
 
-* API documented using **Postman**
-* Includes:
+Students can:
 
-  * Request & Response examples
-  * Status codes
-  * Mock server usage
-* Follows **RESTful standards**
+Register and login
 
+Browse courses
 
-## 📂 Project Structure (High Level)
+Purchase courses
 
-```
+Track learning progress
+
+Take quizzes
+
+Earn certificates
+
+Chat with AI assistant
+
+Participate in community chat
+
+👨‍🏫 Instructor
+
+Instructors can:
+
+Create courses
+
+Add modules and lessons
+
+Upload course materials
+
+Create quizzes and assessments
+
+Conduct live sessions
+
+Monitor student progress
+
+🛡 Admin
+
+Admins manage the platform:
+
+Approve or reject courses
+
+Review instructor content updates
+
+Manage users
+
+Monitor payments
+
+Maintain platform quality
+
+⚙ Core Modules
+🔐 Authentication System
+
+Secure authentication with role-based access.
+
+Features:
+
+User registration
+
+Login / Logout
+
+JWT authentication
+
+Role-based permissions
+
+📚 Course Management
+
+Instructors can create structured courses.
+
+Structure:
+
+Course
+→ Modules
+→ Lessons
+
+Features:
+
+Video lessons
+
+Document materials
+
+Course updates
+
+Content approval workflow
+
+📊 Course Progress Tracking
+
+Tracks how students move through courses.
+
+Features:
+
+Lesson completion tracking
+
+Module progress
+
+Course completion status
+
+Certificate eligibility
+
+When a certificate is issued, the system freezes progress to prevent modification.
+
+🧠 AI Learning Assistant
+
+AI chatbot integrated inside lessons to help students understand course materials.
+
+Features:
+
+Ask questions about documents
+
+Context-aware responses
+
+Embedded chat interface
+
+Document-based knowledge retrieval
+
+💬 Community Chat
+
+Students can communicate inside courses.
+
+Features:
+
+Real-time messaging
+
+Course-based discussion
+
+Instructor interaction
+
+🧾 Quiz & Assessment System
+
+Evaluate student learning progress.
+
+Features:
+
+Course quizzes
+
+Attempt tracking
+
+Pass / fail logic
+
+📡 Live Sessions
+
+Instructors can conduct interactive live classes.
+
+Features:
+
+Schedule sessions
+
+Student participation
+
+Real-time learning experience
+
+💳 Payment System
+
+Students can purchase courses.
+
+Features:
+
+Secure Razorpay integration
+
+Course purchase tracking
+
+Access control based on purchase
+
+📁 Project Structure
 pytech/
+│
 ├── backend/
 │   ├── users/
 │   ├── courses/
+│   ├── progress/
+│   ├── quiz/
 │   ├── payments/
-│   ├── live_sessions/
-│   ├── hr/
-│   └── admin-panel/
+│   ├── chat/
+│   ├── ai/
+│   └── livesessions/
+│
 ├── frontend/
 │   ├── components/
 │   ├── pages/
-│   └── services/
-└── docs/
+│   ├── services/
+│   ├── hooks/
+│   └── utils/
+│
+├── docker/
+├── requirements.txt
+└── README.md
+✨ Key Features
 
-🔄 Development Workflow
+✔ AI-powered course assistant
+✔ Structured course learning
+✔ Real-time chat system
+✔ Quiz and assessment engine
+✔ Certificate generation
+✔ Instructor course management
+✔ Secure payment integration
+✔ Course progress tracking
 
-1. Design UI in Figma
-2. Plan API structure (Postman)
-3. Implement backend APIs
-4. Connect frontend
-5. Test & refine
+🚀 Future Improvements
 
-📌 Current Status
+Course recommendation system
 
-✅ API design completed
-✅ Database schema finalized
-✅ Postman documentation ready
-⏳ Backend & frontend implementation in progress
+Student analytics dashboard
 
-🧠 Future Enhancements
-
-* AI-powered course recommendations
-* Resume scoring system
-* Real-time interview scheduling
-* Advanced analytics dashboard
-
-👤 Author
+👩‍💻 Author
 
 Sneha
 Full Stack Developer
-Project: PyTech – Smart Learning Platform
+
+Backend: Django / DRF
+
+Frontend: React
+
+Database: PostgreSQL
+
+AI Integration
 
 📄 License
 
-This project is for educational and demonstration purposes.
+This project is licensed under the MIT License.
 
-✨ Built with passion to create a smart learning ecosystem.
+⭐ If you find this project useful, feel free to star the repository.
