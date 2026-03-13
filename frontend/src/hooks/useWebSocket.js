@@ -75,7 +75,10 @@ export default function useWebSocket(roomId, onMessage) {
       setConnectionStatus("connecting");
       isConnectingRef.current = true; 
 
-      const wsUrl = `ws://localhost:8000/ws/chat/${roomId}/?token=${token}`;
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+
+      const wsUrl = `${protocol}://${window.location.host}/ws/chat/${roomId}/?token=${token}`;
+      
       socketRef.current = new WebSocket(wsUrl);
 
       socketRef.current.onopen = () => {
