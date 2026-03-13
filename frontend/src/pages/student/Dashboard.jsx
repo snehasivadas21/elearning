@@ -114,41 +114,6 @@ export default function StudentPortfolio() {
           </table>
         </div>
       </div>
-
-      <div className="bg-white shadow rounded-2xl p-6">
-        <h3 className="text-xl font-semibold mb-4">Certificates</h3>
-
-        {data.certificates.length === 0 ? (
-          <p className="text-gray-500">No certificates earned yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {data.certificates.map((cert, index) => (
-              <div
-                key={index}
-                className="border rounded-xl p-4 flex flex-col justify-between"
-              >
-                <div>
-                  <h4 className="font-semibold">{cert.course}</h4>
-                  <p className="text-sm text-gray-500">
-                    Issued: {new Date(cert.issued_at).toLocaleDateString()}
-                  </p>
-                </div>
-                {cert.certificate_url && (
-                  <a
-                    href={cert.certificate_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-block text-center border border-purple-600 text-purple-600 hover:bg-purple-50 text-sm px-4 py-2 rounded-lg transition"
-                  >
-                    View Certificate →
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
     </div>
   );
 }
