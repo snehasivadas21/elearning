@@ -98,7 +98,12 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  
+    "http://localhost:5173",
+    "https://pytech.site",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://pytech.site",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
