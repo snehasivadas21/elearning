@@ -31,13 +31,18 @@ export default function StudentQuizPage() {
   const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
 
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [retryAfter, setRetryAfter] = useState(null);
+
   const questionRefs = useRef({});
 
   const totalPages = Math.ceil(count / 10);
 
-  // Load Quiz
+  // Load quiz + attempts
   useEffect(() => {
+
     const loadData = async () => {
+
       try {
 
         const [quizRes, attemptsRes] = await Promise.all([
@@ -57,30 +62,34 @@ export default function StudentQuizPage() {
       } finally {
         setLoading(false);
       }
+
     };
 
     loadData();
+
   }, [quizId, page]);
 
-  // Select answer
+  // select answer
   const handleSelect = (questionId, optionId) => {
 
     setAnswers((prev) => ({
       ...prev,
       [questionId]: optionId,
     }));
+
   };
 
-  // Scroll to question
+  // scroll to question
   const scrollToQuestion = (id) => {
 
     questionRefs.current[id]?.scrollIntoView({
       behavior: "smooth",
       block: "center",
     });
+
   };
 
-  // Submit Quiz
+  // submit quiz
   const handleSubmit = async () => {
 
     if (!quiz) return;
@@ -95,6 +104,8 @@ export default function StudentQuizPage() {
     try {
 
       setSubmitting(true);
+      setErrorMessage(null);
+      setRetryAfter(null);
 
       const res = await axiosInstance.post(
         `/quiz/quizzes/${quizId}/submit/`,
@@ -114,10 +125,24 @@ export default function StudentQuizPage() {
       setCount(attemptsRes.data.count ?? 0);
 
     } catch (err) {
+
+      const data = err.response?.data;
+
+      if (data?.error) {
+        setErrorMessage(data.error);
+      }
+
+      if (data?.retry_after) {
+        const retryDate = new Date(data.retry_after);
+        setRetryAfter(retryDate.toLocaleString());
+      }
+
       console.error("Submission failed", err);
+
     } finally {
       setSubmitting(false);
     }
+
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
@@ -128,7 +153,9 @@ export default function StudentQuizPage() {
 
   const progress = (answeredCount / totalQuestions) * 100;
 
-  const maxReached = count >= (quiz.max_attempts || 0);
+  const maxReached =
+    count >= (quiz.max_attempts || 0) && retryAfter !== null;
+
   const alreadyPassed = attempts.some((a) => a.is_passed);
 
   const allAnswered =
@@ -141,9 +168,10 @@ export default function StudentQuizPage() {
   }));
 
   return (
+
     <div className="flex gap-6 p-6">
 
-      {/* Sidebar Navigation */}
+      {/* Sidebar */}
 
       <div className="w-64 sticky top-6 h-fit bg-white shadow rounded-xl p-4">
 
@@ -165,13 +193,13 @@ export default function StudentQuizPage() {
                   
                   ${answered
                     ? "bg-green-500 text-white"
-                    : "bg-gray-200 hover:bg-gray-300"
-                  }
+                    : "bg-gray-200 hover:bg-gray-300"}
                 `}
               >
                 {index + 1}
               </button>
             );
+
           })}
 
         </div>
@@ -186,11 +214,11 @@ export default function StudentQuizPage() {
 
       </div>
 
-      {/* Main Content */}
+      {/* Main content */}
 
       <div className="flex-1 space-y-6">
 
-        {/* Header */}
+        {/* Quiz header */}
 
         <div className="bg-white shadow rounded-2xl p-6 flex justify-between items-center">
 
@@ -202,6 +230,10 @@ export default function StudentQuizPage() {
             <p className="text-gray-500 text-sm">
               {quiz.questions.length} Questions
             </p>
+
+            <p className="text-sm text-gray-500 mt-2">
+              Attempts used: {count} / {quiz.max_attempts}
+            </p>
           </div>
 
           <div className="flex gap-8 text-sm">
@@ -209,11 +241,6 @@ export default function StudentQuizPage() {
             <div className="text-center">
               <p className="text-gray-500">Pass</p>
               <p className="font-semibold">{quiz.pass_percentage}%</p>
-            </div>
-
-            <div className="text-center">
-              <p className="text-gray-500">Attempts</p>
-              <p className="font-semibold">{quiz.max_attempts}</p>
             </div>
 
           </div>
@@ -240,6 +267,24 @@ export default function StudentQuizPage() {
 
         </div>
 
+        {/* Error message */}
+
+        {errorMessage && (
+
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
+
+            <p className="font-medium">{errorMessage}</p>
+
+            {retryAfter && (
+              <p className="text-sm mt-1">
+                You can try again after: {retryAfter}
+              </p>
+            )}
+
+          </div>
+
+        )}
+
         {/* Questions */}
 
         {quiz.questions.map((question) => (
@@ -259,7 +304,7 @@ export default function StudentQuizPage() {
 
         ))}
 
-        {/* Submit */}
+        {/* Submit button */}
 
         <div className="sticky bottom-4 flex justify-end">
 
@@ -270,22 +315,23 @@ export default function StudentQuizPage() {
               
               ${!allAnswered || maxReached || alreadyPassed || submitting
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-              }
+                : "bg-blue-600 text-white hover:bg-blue-700"}
             `}
           >
+
             {alreadyPassed
               ? "Quiz Passed"
-              : maxReached
-              ? "Max Attempts Reached"
+              : retryAfter
+              ? "Retry Later"
               : submitting
               ? "Submitting..."
               : "Submit Quiz"}
+
           </button>
 
         </div>
 
-        {/* Attempt History */}
+        {/* Attempt history */}
 
         <div className="bg-white shadow rounded-2xl p-6">
 
@@ -329,7 +375,7 @@ export default function StudentQuizPage() {
 
           )}
 
-          {/* Table */}
+          {/* table */}
 
           <div className="overflow-x-auto">
 
@@ -359,17 +405,13 @@ export default function StudentQuizPage() {
                     <td className="p-3">
 
                       {attempt.is_passed ? (
-
                         <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">
                           Passed
                         </span>
-
                       ) : (
-
                         <span className="px-3 py-1 text-xs rounded-full bg-red-100 text-red-700 font-medium">
                           Failed
                         </span>
-
                       )}
 
                     </td>
@@ -394,7 +436,7 @@ export default function StudentQuizPage() {
 
       </div>
 
-      {/* Result Modal */}
+      {/* Result modal */}
 
       {showResultModal && result && (
 
@@ -424,5 +466,7 @@ export default function StudentQuizPage() {
       )}
 
     </div>
+
   );
+
 }

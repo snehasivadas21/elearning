@@ -12,6 +12,7 @@ from users.permissions import IsInstructorUser
 from .models import Quiz, Question, Option, UserQuizAttempt, UserAnswer
 from .serializers import QuizSerializer, QuizSubmissionSerializer, QuestionSerializer, AttemptDetailSerializer
 from courses.utils import issue_certificate_if_eligible
+from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -201,10 +202,19 @@ class QuizViewSet(viewsets.ModelViewSet):
             logger.warning(
                 f"User {user.id} exceeded max attempts for quiz {quiz.id}"
             )
-            return Response(
-                {"error": "Maximum attempts reached"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            last_attempt = attempts.last()
+            cooldown_time = last_attempt.completed_at + timedelta(hours=1)
+            
+            if timezone.now() < cooldown_time:
+                return Response(
+                    {
+                        "error": "Maximum attempts reached.",
+                        "retry_after": cooldown_time
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            attempts.delete()
+            attempts_count = 0
 
         serializer = QuizSubmissionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
