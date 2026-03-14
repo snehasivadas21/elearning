@@ -335,6 +335,8 @@ class StudentPortfolioAPIView(APIView):
         total_progress_sum = 0
         overall_quiz_percentages = []
 
+        all_attempts = UserQuizAttempt.objects.filter(user=student)
+
         for purchase in purchases:
             course = purchase.course
 
@@ -363,21 +365,17 @@ class StudentPortfolioAPIView(APIView):
 
             total_progress_sum += progress
 
-            if progress >= 100:
-                completed_courses += 1
-                status_label = "Completed"
-            else:
-                ongoing_courses += 1
-                status_label = "Ongoing"
-
-            quiz_attempts = UserQuizAttempt.objects.filter(
-                user=student,
+            quiz_attempts = all_attempts.filter(
                 quiz__course=course
             )
 
             quiz_average = 0
+            quiz_passed = False
 
             if quiz_attempts.exists():
+
+                quiz_passed = quiz_attempts.filter(is_passed=True).exists()
+
                 best_attempts = (
                     quiz_attempts
                     .values("quiz")
@@ -385,8 +383,17 @@ class StudentPortfolioAPIView(APIView):
                 )
 
                 percentages = [item["best_percentage"] for item in best_attempts]
-                quiz_average = round(sum(percentages) / len(percentages), 2)
-                overall_quiz_percentages.extend(percentages)
+
+                if percentages:
+                    quiz_average = round(sum(percentages) / len(percentages), 2)
+                    overall_quiz_percentages.extend(percentages)
+
+            if progress >= 100 and quiz_passed:
+                completed_courses += 1
+                status_label = "Completed"
+            else:
+                ongoing_courses += 1
+                status_label = "Ongoing"
 
             course_data.append({
                 "course_id": course.id,
