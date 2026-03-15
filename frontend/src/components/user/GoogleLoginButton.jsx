@@ -40,16 +40,17 @@ const GoogleLoginButton = () => {
         </p>
       )}
       
-      <GoogleLogin
-        onSuccess={handleSuccess}
-        onError={() => {
-          setError("Google Login Failed");
-          console.log("Google Login Failed");
-        }}
-        theme="outline"
-        size="large"
-        width="100%"
-      />
+      <div className="flex justify-center">
+        <GoogleLogin
+          onSuccess={handleSuccess}
+          onError={() => {
+            setError("Google Login Failed");
+            console.log("Google Login Failed");
+          }}
+          theme="outline"
+          size="large"
+        />
+      </div>  
     </div>
   );
 };

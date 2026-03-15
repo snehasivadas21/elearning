@@ -111,9 +111,14 @@ const Login = () => {
 
         </div>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500 mb-2">Or Continue with</p>
+        <div className="mt-6 flex items-center gap-3">
+          <div className='flex-1 h-px bg-gray-200'></div>
+          <p className="text-sm text-gray-500">Or Continue with</p>
+          <div className='flex-1 h-px bg-gray-200'></div>
+          
+          <div className='mt-4 flex justify-center'>
             <GoogleLoginButton/>
+          </div>  
         </div>
 
         <div className="mt-6 text-center">
