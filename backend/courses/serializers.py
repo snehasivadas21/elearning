@@ -165,8 +165,15 @@ class ModuleSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
     def get_lessons(self, obj):
-        lessons = obj.lessons.filter(is_deleted=False)
-        return LessonSerializer(lessons, many=True, context=self.context).data
+        # lessons = obj.lessons.filter(is_deleted=False)
+        # return LessonSerializer(lessons, many=True, context=self.context).data
+
+        purchased_at = self.context.get("purchased_at")
+        lessons = obj.lessons.filter(is_active=True,is_deleted=False)
+
+        if purchased_at:
+            lessons = lessons.filter(created_at__lte=purchased_at)
+        return LessonSerializer(lessons,many=True,context=self.context).data    
     
 class AdminCourseSerializer(serializers.ModelSerializer):
     instructor_username = serializers.CharField(source='instructor.username', read_only=True)
@@ -260,6 +267,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
     def get_modules(self, obj):
         request = self.context.get("request")
         certificate = None
+        purchased_at = None
 
         if request and request.user.is_authenticated:
             certificate = CourseCertificate.objects.filter(
@@ -267,11 +275,29 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
                 course=obj
             ).first()
 
+        # modules = ModuleSerializer(
+        #     obj.modules.filter(is_active=True, is_deleted=False),
+        #     many=True,
+        #     context=self.context
+        # ).data
+
+            from payment.models import CoursePurchase
+            purchase = CoursePurchase.objects.filter(
+                student = request.user,
+                course = obj
+            ).first()
+            if purchase:
+                purchased_at = purchase.purchased_at
+
+        module_qs = obj.module.filter(is_active=True,is_deleted=False)
+        if purchased_at and not certificate:
+            module_qs = module_qs.filter(created_at__lte=purchased_at)
+
         modules = ModuleSerializer(
-            obj.modules.filter(is_active=True, is_deleted=False),
+            module_qs,
             many=True,
-            context=self.context
-        ).data
+            context={**self.context,"purchased_at":purchased_at}
+        ).data            
 
         if certificate:
             for module in modules:
