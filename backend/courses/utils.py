@@ -77,7 +77,7 @@ def issue_certificate_if_eligible(student, course):
         lesson__module__course=course,
         lesson__duration__gt=0,
         completed=True,
-        lesson__created__lte=purchase.purchased_at
+        lesson__created_at__lte=purchase.purchased_at
     ).count()
 
     if total_lessons == 0 or completed_lessons < total_lessons:
