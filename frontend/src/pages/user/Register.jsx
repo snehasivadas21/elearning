@@ -111,12 +111,14 @@ const Register = () => {
           </button>
         </form>
 
-        <div className="mt-6 flex items-center gap-3">
-          <div className='flex-1 h-px bg-gray-200'></div>
-          <p className="text-sm text-gray-500">Or Continue with</p>
-          <div className='flex-1 h-px bg-gray-200'></div>
+        <div className="mt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className='flex-1 h-px bg-gray-200'></div>
+            <p className="text-sm text-gray-500">Or Continue with</p>
+            <div className='flex-1 h-px bg-gray-200'></div>
+          </div>
           
-          <div className='mt-4 flex justify-center'>
+          <div className='flex justify-center'>
             <GoogleLoginButton/>
           </div>  
         </div>
