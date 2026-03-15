@@ -40,7 +40,7 @@ const GoogleLoginButton = () => {
         </p>
       )}
       
-      <div className="flex justify-center">
+      <div className="flex justify-center w-full">
         <GoogleLogin
           onSuccess={handleSuccess}
           onError={() => {
