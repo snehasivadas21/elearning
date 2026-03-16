@@ -60,14 +60,23 @@ const Navbar = () => {
           PyTech
         </div>
 
-        <div className="hidden md:flex space-x-6 items-center">
-          <Link to="/" className="text-gray-600 hover:text-blue-600 font-bold">
+        <div className="hidden md:flex space-x-1 items-center">
+          <Link 
+            to="/" 
+            className="px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition"
+          >
             Home
           </Link>
-          <Link to="/courses" className="text-gray-600 hover:text-blue-600 font-bold">
+          <Link 
+            to="/courses" 
+            className="px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition"
+          >
             Courses
           </Link>
-          <Link to="/about" className="text-gray-600 hover:text-blue-600 font-bold">
+          <Link 
+            to="/about" 
+            className="px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition"
+          >
             About
           </Link>
         </div>

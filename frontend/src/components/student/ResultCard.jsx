@@ -32,7 +32,7 @@ export default function ResultCard({ result }) {
         {result.is_passed && (
           <div className="pt-4">
             <Link
-              to="/student/certificates"
+              to="/student/certificate"
               className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
             >
               View Your Certificate
