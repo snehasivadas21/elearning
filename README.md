@@ -1,149 +1,187 @@
-🚀 PyTech – AI Powered E-Learning Platform
+# 🚀 PyTech – AI Powered E-Learning Platform
 
-PyTech is a modern AI-integrated eLearning platform built using React and Django that enables instructors to create structured learning experiences while students learn through modules, lessons, quizzes, and AI-assisted support.
+**PyTech** is a modern **AI-integrated eLearning platform** built using **React and Django** that enables instructors to create structured learning experiences while students learn through **modules, lessons, quizzes, and AI-assisted support**.
 
-The platform focuses on interactive learning, progress tracking, and intelligent AI assistance to enhance the learning experience.
+The platform focuses on **interactive learning, progress tracking, and intelligent AI assistance** to enhance the learning experience.
 
-🌟 Vision
+---
+
+# 🌟 Vision
 
 PyTech aims to go beyond traditional eLearning platforms by combining:
 
-📚 Structured Learning Paths
-🧠 AI-Assisted Learning
-📊 Progress Tracking & Evaluation
-🤝 Instructor–Student Interaction
+* 📚 **Structured Learning Paths**
+* 🧠 **AI-Assisted Learning**
+* 📊 **Progress Tracking & Evaluation**
+* 🤝 **Instructor–Student Interaction**
 
-The goal is to make learning interactive, measurable, and intelligent.
+The goal is to make **learning interactive, measurable, and intelligent**.
 
-🛠 Tech Stack
+---
 
-Frontend
-⚛️ React.js
-🎨 Tailwind CSS
-🔗 Axios
-📦 React Router
-💬 WebSocket (Real-time chat)
+# 🛠 Tech Stack
 
-Backend
-🐍 Django
-⚡ Django REST Framework
-🔐 JWT Authentication
-🔄 Django Channels (WebSockets)
+## Frontend
 
-Database
-🗄 PostgreSQL
+* ⚛️ **React.js**
+* 🎨 **Tailwind CSS**
+* 🔗 **Axios**
+* 📦 **React Router**
+* 💬 **WebSocket (Real-time chat)**
 
-AI / ML
-🤖 Sentence Transformers
-🧠 Vector Embeddings
-📄 Context-based AI chat for course documents
+## Backend
 
-Payment Integration
-💳 Razorpay Payment Gateway
+* 🐍 **Django**
+* ⚡ **Django REST Framework**
+* 🔐 **JWT Authentication**
+* 🔄 **Django Channels (WebSockets)**
 
-Other Tools
-🐳 Docker
-📜 Logging System
-📡 REST APIs
-🔄 Git & GitHub
+## Database
 
-👥 User Roles
+* 🗄 **PostgreSQL**
 
-Role	Description:
+## AI / ML
 
-👨‍🎓 Student	Learn courses, track progress, attempt quizzes, interact with AI tutor, earn certificates
-👨‍🏫 Instructor	Create courses, manage modules and lessons, create quizzes, conduct live sessions
-🛡 Admin	Review courses, approve or reject content, manage users, monitor platform activity
+* 🤖 **Sentence Transformers**
+* 🧠 **Vector Embeddings**
+* 📄 **Context-based AI chat for course documents**
 
-⚙ Core Modules
-🔐 Authentication System
+## Payment Integration
 
-Secure user authentication with role-based access control.
+* 💳 **Razorpay Payment Gateway**
 
-Features:
+## Other Tools
 
-User registration
-Login / Logout
-JWT authentication
-Role-based permissions
-📚 Course Management
+* 🐳 **Docker**
+* 📜 **Logging System**
+* 📡 **REST APIs**
+* 🔄 **Git & GitHub**
+
+---
+
+# 👥 User Roles
+
+| Role                 | Description                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| 👨‍🎓 **Student**    | Learn courses, track progress, attempt quizzes, interact with AI tutor, earn certificates |
+| 👨‍🏫 **Instructor** | Create courses, manage modules and lessons, create quizzes, conduct live sessions         |
+| 🛡 **Admin**         | Review courses, approve or reject content, manage users, monitor platform activity        |
+
+---
+
+# ⚙ Core Modules
+
+## 🔐 Authentication System
+
+Secure user authentication with **role-based access control**.
+
+**Features**
+
+* User registration
+* Login / Logout
+* JWT authentication
+* Role-based permissions
+
+---
+
+## 📚 Course Management
 
 Course structure:
 
 Course
-   └── Modules
-        └── Lessons
+└── Modules
+  └── Lessons
 
-Features:
+**Features**
 
-Video lessons
-Document resources
-Course approval workflow
-Instructor course management
-📊 Course Progress Tracking
+* Video lessons
+* Document resources
+* Course approval workflow
+* Instructor course management
 
-Tracks student learning progress across lessons and modules.
+---
 
-Features:
+## 📊 Course Progress Tracking
 
-Lesson completion tracking
-Module progress tracking
-Course completion detection
-Certificate eligibility
+Tracks student learning progress across **lessons and modules**.
 
-Once a certificate is issued, progress is frozen to maintain course completion integrity.
+**Features**
 
-🧠 AI Learning Assistant
+* Lesson completion tracking
+* Module progress tracking
+* Course completion detection
+* Certificate eligibility
 
-An AI chatbot integrated into course lessons to assist students with learning.
+Once a **certificate is issued**, progress is **frozen** to maintain course completion integrity.
 
-Features:
+---
 
-Ask questions related to course documents
-Context-aware AI responses
-Embedded learning assistant
-Document-based knowledge retrieval
-💬 Community Chat
+## 🧠 AI Learning Assistant
+
+An **AI chatbot integrated into course lessons** to assist students during learning.
+
+**Features**
+
+* Ask questions related to course documents
+* Context-aware AI responses
+* Embedded learning assistant
+* Document-based knowledge retrieval
+
+---
+
+## 💬 Community Chat
 
 Students can communicate within courses.
 
-Features:
+**Features**
 
-Real-time messaging
-Course-based discussion
-Instructor interaction
-Media message support
-🧾 Quiz & Assessment System
+* Real-time messaging
+* Course-based discussions
+* Instructor interaction
+* Media message support
 
-Evaluate student knowledge through structured assessments.
+---
 
-Features:
+## 🧾 Quiz & Assessment System
 
-Course quizzes
-Attempt tracking
-Pass / Fail logic
-Assessment validation
-📡 Live Sessions
+Evaluate student knowledge through **structured assessments**.
 
-Instructors can conduct interactive live classes.
+**Features**
 
-Features:
+* Course quizzes
+* Attempt tracking
+* Pass / Fail logic
+* Assessment validation
 
-Schedule live sessions
-Student participation
-Real-time learning experience
-💳 Payment System
+---
 
-Students can purchase courses through secure payment integration.
+## 📡 Live Sessions
 
-Features:
+Instructors can conduct **interactive live classes**.
 
-Razorpay payment gateway
-Course purchase tracking
-Access control based on enrollment
+**Features**
 
-📁 Project Structure
+* Schedule live sessions
+* Student participation
+* Real-time learning experience
 
+---
+
+## 💳 Payment System
+
+Students can purchase courses through **secure payment integration**.
+
+**Features**
+
+* Razorpay payment gateway
+* Course purchase tracking
+* Access control based on enrollment
+
+---
+
+# 📁 Project Structure
+
+```
 pytech/
 │
 ├── backend/
@@ -166,24 +204,37 @@ pytech/
 ├── docker/
 ├── requirements.txt
 └── README.md
+```
 
-✨ Key Features
+---
 
-✔ AI-powered course assistant
-✔ Structured learning modules
-✔ Real-time course chat system
-✔ Quiz & assessment engine
-✔ Certificate generation system
-✔ Instructor course management
-✔ Secure payment integration
-✔ Course progress tracking
-⚙ Installation (Local Setup)
+# ✨ Key Features
 
-Clone Repository
+✔ **AI-powered course assistant**
+✔ **Structured learning modules**
+✔ **Real-time course chat system**
+✔ **Quiz & assessment engine**
+✔ **Certificate generation system**
+✔ **Instructor course management**
+✔ **Secure payment integration**
+✔ **Course progress tracking**
 
+---
+
+# ⚙ Installation (Local Setup)
+
+## Clone Repository
+
+```
 git clone https://github.com/your-username/pytech.git
 cd pytech
-Backend Setup
+```
+
+---
+
+## Backend Setup
+
+```
 cd backend
 
 python -m venv venv
@@ -192,37 +243,58 @@ source venv/bin/activate
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
-Frontend Setup
+```
+
+---
+
+## Frontend Setup
+
+```
 cd frontend
 
 npm install
 npm run dev
-🚀 Deployment
+```
+
+---
+
+# 🚀 Deployment
 
 Deployment instructions are available in:
 
-DEPLOYMENT.md
+**DEPLOYMENT.md**
 
-This document contains production setup, server configuration, and CI/CD workflow.
+This document contains **production setup, server configuration, and CI/CD workflow**.
 
-🚀 Future Improvements
-Course recommendation system
-Student analytics dashboard
-AI-generated quizzes
-Advanced learning analytics
-👩‍💻 Author
+---
 
-Sneha
+# 🚀 Future Improvements
+
+* Course recommendation system
+* Student analytics dashboard
+* AI-generated quizzes
+* Advanced learning analytics
+
+---
+
+# 👩‍💻 Author
+
+**Sneha**
 Full Stack Developer
 
-Tech Expertise
+### Tech Expertise
 
-Backend → Django / DRF
-Frontend → React
-Database → PostgreSQL
-AI Integration → Vector Embeddings & NLP
-📄 License
+**Backend:** Django / DRF
+**Frontend:** React
+**Database:** PostgreSQL
+**AI Integration:** Vector Embeddings & NLP
 
-This project is licensed under the MIT License.
+---
 
-⭐ If you find this project useful, consider starring the repository.
+# 📄 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+⭐ If you find this project useful, consider **starring the repository**.
