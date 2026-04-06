@@ -4,7 +4,7 @@ import { LayoutDashboard, BookOpen, User, Award, Wallet, Menu, X } from "lucide-
 
 const navLinks = [
   { name: "Dashboard", icon: <LayoutDashboard size={18} />, path: "/student/dashboard" },
-  { name: "My PurCourses", icon: <BookOpen size={18} />, path: "/student/mycourses" },
+  { name: "My Courses", icon: <BookOpen size={18} />, path: "/student/mycourses" },
   { name: "My Purchase", icon: <Wallet size={18} />, path: "/student/mypurchase" },
   { name: "My Profile", icon: <User size={18} />, path: "/student/myprofile" },
   { name: "My Certificates", icon: <Award size={18} />, path: "/student/certificate" },
