@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 
 const Register = () => {
   const navigate = useNavigate();
+  const [showRules, setShowRules] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     email: '',
@@ -14,7 +15,7 @@ const Register = () => {
     confirm_password: '',
     role: 'student',
   });
-  
+
   const passwordRules = {
     length: form.password.length >= 8,
     uppercase: /[A-Z]/.test(form.password),
@@ -93,27 +94,33 @@ const Register = () => {
             type="password"
             placeholder="Password"
             value={form.password}
+            onFocus={() => setShowRules(true)}
+            onBlur={() => {
+              if (form.password === "") setShowRules(false);
+            }}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />
-          <div className="text-xs space-y-1 mt-1">
-            <p className={passwordRules.length ? "text-green-600" : "text-gray-500"}>
-              ✔ At least 8 characters
-            </p>
-            <p className={passwordRules.uppercase ? "text-green-600" : "text-gray-500"}>
-              ✔ One uppercase letter
-            </p>
-            <p className={passwordRules.lowercase ? "text-green-600" : "text-gray-500"}>
-              ✔ One lowercase letter
-            </p>
-            <p className={passwordRules.number ? "text-green-600" : "text-gray-500"}>
-              ✔ One number
-            </p>
-            <p className={passwordRules.special ? "text-green-600" : "text-gray-500"}>
-              ✔ One special character
-            </p>
-          </div>
+          {showRules && !isPasswordValid && (
+            <div className="text-xs space-y-1 mt-1">
+              <p className={passwordRules.length ? "text-green-600" : "text-gray-500"}>
+                ✔ At least 8 characters
+              </p>
+              <p className={passwordRules.uppercase ? "text-green-600" : "text-gray-500"}>
+                ✔ One uppercase letter
+              </p>
+              <p className={passwordRules.lowercase ? "text-green-600" : "text-gray-500"}>
+                ✔ One lowercase letter
+              </p>
+              <p className={passwordRules.number ? "text-green-600" : "text-gray-500"}>
+                ✔ One number
+              </p>
+              <p className={passwordRules.special ? "text-green-600" : "text-gray-500"}>
+                ✔ One special character
+              </p>
+            </div>
+          )}
 
           <input
             type="password"
