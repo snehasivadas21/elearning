@@ -57,9 +57,6 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
     
     def get_final_quiz(self, obj):
         request = self.context.get("request")
-        if not hasattr(obj, "final_quiz"):
-            return None
-        quiz = obj.final_quiz
 
         if not request:
             return None
@@ -67,6 +64,11 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
         user = request.user
         if not user or not user.is_authenticated:
             return None
+        
+        try:
+            quiz = obj.final_quiz
+        except Exception:
+            return None    
 
         if user.role in ["instructor", "admin"]:
             return QuizSerializer(quiz, context=self.context).data
@@ -111,6 +113,29 @@ class LessonSerializer(serializers.ModelSerializer):
             'resources', 'completed',
         ]
         read_only_fields = ['created_at', 'updated_at']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            data['video_url'] = None
+            data['text_content'] = None
+            data['resources'] = []
+            return data
+        user = request.user
+        if user.is_staff or getattr(user, 'role', None) in ['admin', 'instructor']:
+            return data
+        if instance.is_preview:
+            return data
+        from payment.models import CoursePurchase
+        has_purchased = CoursePurchase.objects.filter(
+            student=user, course=instance.module.course
+        ).exists()
+        if not has_purchased:
+            data['video_url'] = None
+            data['text_content'] = None
+            data['resources'] = []
+        return data    
 
     def validate(self, data):
         content_type = data.get('content_type')
@@ -194,17 +219,17 @@ class AdminCourseSerializer(serializers.ModelSerializer):
     def get_final_quiz(self, obj):
         request = self.context.get("request")
 
-        if not hasattr(obj, "final_quiz"):
-            return None
-
-        quiz = obj.final_quiz
-
         if not request:
             return None
 
         user = request.user
 
         if not user or not user.is_authenticated:
+            return None
+        
+        try:
+            quiz = obj.final_quiz
+        except Exception:
             return None
 
         if user.role in ["instructor", "admin"]:
@@ -234,6 +259,7 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
     review_count = serializers.IntegerField(read_only=True)
     total_duration = serializers.IntegerField(read_only=True)
     final_quiz = serializers.SerializerMethodField()
+    is_purchased = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -255,7 +281,14 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
             "review_count",
             "total_duration",
             "final_quiz",
+            "is_purchased",
         ]
+
+    def get_is_purchased(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.purchases.filter(student=request.user).exists()    
 
     def get_modules(self, obj):
         request = self.context.get("request")
@@ -294,17 +327,17 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
     def get_final_quiz(self, obj):
         request = self.context.get("request")
 
-        if not hasattr(obj, "final_quiz"):
-            return None
-
-        quiz = obj.final_quiz
-
         if not request:
             return None
 
         user = request.user
 
         if not user or not user.is_authenticated:
+            return None
+        
+        try:
+            quiz = obj.final_quiz
+        except Exception:
             return None
 
         if user.role in ["instructor", "admin"]:

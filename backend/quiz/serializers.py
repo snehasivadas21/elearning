@@ -64,20 +64,27 @@ class QuestionSerializer(serializers.ModelSerializer):
 
         return instance
 
+class StudentQuestionSerializer(serializers.ModelSerializer):
+    options = StudentOptionSerializer(many=True)  # no is_correct
+    class Meta:
+        model = Question
+        fields = ["id", "text", "marks", "options"]    
+
 class QuizSerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(many=True, required=False, read_only=True)
+    questions = serializers.SerializerMethodField()
 
     class Meta:
         model = Quiz
-        fields = [
-            "id",
-            "course",
-            "title",
-            "pass_percentage",
-            "time_limit",
-            "max_attempts",
-            "questions",
-        ]
+        fields = ["id", "course", "title", "pass_percentage",
+                  "time_limit", "max_attempts", "questions"]
+
+    def get_questions(self, obj):
+        request = self.context.get('request')
+        user = request.user if request else None
+        questions = obj.questions.all()
+        if user and getattr(user, 'role', None) in ['instructor', 'admin'] or (user and user.is_staff):
+            return QuestionSerializer(questions, many=True, context=self.context).data
+        return StudentQuestionSerializer(questions, many=True, context=self.context).data
 
 class QuizSubmissionSerializer(serializers.Serializer):
     answers = serializers.ListField(
