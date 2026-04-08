@@ -87,7 +87,7 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
 
   const canViewLesson = (lesson) => {
     if (role === "admin" || role === "tutor") return true;
-    if (isEnrolled === true) return true;
+    if (isEnrolled) return true;
     return lesson.is_preview === true;
   };
 
