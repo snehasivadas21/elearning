@@ -14,6 +14,14 @@ const Register = () => {
     confirm_password: '',
     role: 'student',
   });
+  
+  const passwordRules = {
+    length: form.password.length >= 8,
+    uppercase: /[A-Z]/.test(form.password),
+    lowercase: /[a-z]/.test(form.password),
+    number: /[0-9]/.test(form.password),
+    special: /[!@#$%^&*]/.test(form.password),
+  };
   const isPasswordValid = Object.values(passwordRules).every(Boolean);
 
   const handleSubmit = async (e) => {
@@ -49,14 +57,6 @@ const Register = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const passwordRules = {
-    length: form.password.length >= 8,
-    uppercase: /[A-Z]/.test(form.password),
-    lowercase: /[a-z]/.test(form.password),
-    number: /[0-9]/.test(form.password),
-    special: /[!@#$%^&*]/.test(form.password),
   };
 
   return (
