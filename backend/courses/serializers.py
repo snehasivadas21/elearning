@@ -117,24 +117,32 @@ class LessonSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         request = self.context.get('request')
+
         if not request or not request.user.is_authenticated:
-            data['video_url'] = None
-            data['text_content'] = None
-            data['resources'] = []
+            if not instance.is_preview:
+                data['video_url'] = None
+                data['text_content'] = None
+                data['resources'] = []
             return data
+        
         user = request.user
         if user.is_staff or getattr(user, 'role', None) in ['admin', 'instructor']:
             return data
+        
         if instance.is_preview:
             return data
-        from payment.models import CoursePurchase
-        has_purchased = CoursePurchase.objects.filter(
-            student=user, course=instance.module.course
-        ).exists()
+        try:
+            from payment.models import CoursePurchase
+            has_purchased = CoursePurchase.objects.filter(
+                student=user, course=instance.module.course
+            ).exists()
+        except Exception:
+            has_purchased = False
+
         if not has_purchased:
-            data['video_url'] = None
-            data['text_content'] = None
-            data['resources'] = []
+                data['video_url'] = None
+                data['text_content'] = None
+                data['resources'] = []
         return data    
 
     def validate(self, data):
