@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed,PermissionDenied
 from django.conf import settings
+import re
 
 User = get_user_model()
 
@@ -30,16 +31,34 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate_role(self, value):
-        if value not in ['student', 'instructor', 'recruiter']:
+        if value not in ['student', 'instructor']:
             raise serializers.ValidationError("Invalid role selected.")
         return value
     
-    def validate(self,value):
-        if value['password'] != value['confirm_password']:
-            raise serializers.ValidationError("password do not match")
-        if len(value['password'])<8:
-            raise serializers.ValidationError("password must be at least 8 characters")
+    def validate_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("At least 8 characters required.")
+
+        if not re.search(r"[A-Z]", value):
+            raise serializers.ValidationError("Must include an uppercase letter.")
+
+        if not re.search(r"[a-z]", value):
+            raise serializers.ValidationError("Must include a lowercase letter.")
+
+        if not re.search(r"[0-9]", value):
+            raise serializers.ValidationError("Must include a number.")
+
+        if not re.search(r"[!@#$%^&*]", value):
+            raise serializers.ValidationError("Must include a special character.")
+
         return value
+
+    def validate(self, data):
+        if data["password"] != data["confirm_password"]:
+            raise serializers.ValidationError({
+                "confirm_password": "Passwords do not match."
+            })
+        return data
 
     def create(self, validated_data):
         validated_data.pop('confirm_password')

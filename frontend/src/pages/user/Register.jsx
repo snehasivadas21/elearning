@@ -14,6 +14,7 @@ const Register = () => {
     confirm_password: '',
     role: 'student',
   });
+  const isPasswordValid = Object.values(passwordRules).every(Boolean);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,11 +37,26 @@ const Register = () => {
       await axiosPublic.post("/users/register/",payload)
       navigate("/check-email/")
     } catch (error) {
-      console.error(error.response?.data);
-      toast.error("Registration failed.Try again")
+      const data = error.response?.data;
+
+      if (data) {
+        Object.values(data).forEach((errArray) => {
+          toast.error(errArray[0]);
+        });
+      } else {
+        toast.error("Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const passwordRules = {
+    length: form.password.length >= 8,
+    uppercase: /[A-Z]/.test(form.password),
+    lowercase: /[a-z]/.test(form.password),
+    number: /[0-9]/.test(form.password),
+    special: /[!@#$%^&*]/.test(form.password),
   };
 
   return (
@@ -81,6 +97,24 @@ const Register = () => {
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />
+          <div className="text-xs space-y-1 mt-1">
+            <p className={passwordRules.length ? "text-green-600" : "text-gray-500"}>
+              ✔ At least 8 characters
+            </p>
+            <p className={passwordRules.uppercase ? "text-green-600" : "text-gray-500"}>
+              ✔ One uppercase letter
+            </p>
+            <p className={passwordRules.lowercase ? "text-green-600" : "text-gray-500"}>
+              ✔ One lowercase letter
+            </p>
+            <p className={passwordRules.number ? "text-green-600" : "text-gray-500"}>
+              ✔ One number
+            </p>
+            <p className={passwordRules.special ? "text-green-600" : "text-gray-500"}>
+              ✔ One special character
+            </p>
+          </div>
+
           <input
             type="password"
             placeholder="Confirm Password"
@@ -100,7 +134,7 @@ const Register = () => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isPasswordValid}
             className={`w-full p-2 rounded-md text-white transition ${
               loading 
                 ? "bg-blue-400 cursor-not-allowed"
