@@ -198,9 +198,30 @@ class ModuleSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
     def get_lessons(self, obj):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
         lessons = obj.lessons.filter(is_deleted=False)
-        return LessonSerializer(lessons, many=True, context=self.context).data
-    
+
+        if not user or not user.is_authenticated:
+            lessons = lessons.filter(is_preview=True)
+
+        elif getattr(user, "role", None) == "student":
+            from payment.models import CoursePurchase
+
+            has_purchased = CoursePurchase.objects.filter(
+                student=user,
+                course=obj.course
+            ).exists()
+
+            if not has_purchased:
+                lessons = lessons.filter(is_preview=True)
+
+        return LessonSerializer(
+            lessons,
+            many=True,
+            context=self.context
+        ).data
 class AdminCourseSerializer(serializers.ModelSerializer):
     instructor_username = serializers.CharField(source='instructor.username', read_only=True)
     category_name = serializers.CharField(source='category.name', read_only=True)    
