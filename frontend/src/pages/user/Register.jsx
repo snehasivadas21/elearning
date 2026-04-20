@@ -9,6 +9,7 @@ const Register = () => {
   const [showRules, setShowRules] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [form, setForm] = useState({
     email: '',
     username: '',
@@ -29,30 +30,31 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (form.password !== form.confirm_password){
-      toast.error("Password do not match");
+    setTouched({
+      email: true,
+      username: true,
+      password: true,
+      confirm_password: true,
+    });
+
+    if (!isPasswordValid) return;
+
+    if (form.password !== form.confirm_password) {
+      setErrors({ confirm_password: "Passwords do not match" });
       return;
     }
 
     try {
       setLoading(true);
 
-      const payload = {
-        email : form.email,
-        username : form.username,
-        password : form.password,
-        confirm_password : form.confirm_password,
-        role : form.role,
-      }
-      await axiosPublic.post("/users/register/",payload)
+      await axiosPublic.post("/users/register/",form);
+
+      toast.success("Check your email to verify account");
       navigate("/check-email/")
     } catch (error) {
       const data = error.response?.data;
 
       if (data) {
-        // Object.values(data).forEach((errArray) => {
-        //   toast.error(errArray[0]);
-        // });
         setErrors(data);
       } else {
         toast.error("Something went wrong");
@@ -80,11 +82,15 @@ const Register = () => {
             type="email"
             placeholder="Email"
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, email: e.target.value });
+              setErrors({ ...errors, email: null }); // clear error while typing
+            }}
+            onBlur={() => setTouched({ ...touched, email: true })}
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />
-          {errors.email && (
+          {touched.email && errors.email && (
             <p className="text-red-500 text-xs">{errors.email[0]}</p>
           )}
 
@@ -92,11 +98,15 @@ const Register = () => {
             type="text"
             placeholder="Username"
             value={form.username}
-            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, username: e.target.value });
+              setErrors({ ...errors, username: null });
+            }}
+            onBlur={() => setTouched({ ...touched, username: true })}
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />
-          {errors.username && (
+          {touched.username && errors.username && (
             <p className="text-red-500 text-xs">{errors.username[0]}</p>
           )}
 
@@ -136,14 +146,18 @@ const Register = () => {
             type="password"
             placeholder="Confirm Password"
             value={form.confirm_password}
-            onChange={(e) => setForm({ ...form, confirm_password: e.target.value })}
+            onChange={(e) => {
+              setForm({ ...form, confirm_password: e.target.value });
+              setErrors({ ...errors, confirm_password: null });
+            }}
+            onBlur={() => setTouched({ ...touched, confirm_password: true })}
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />
-          {errors.confirm_password && (
+          {touched.confirm_password && errors.confirm_password && (
             <p className="text-red-500 text-xs">{errors.confirm_password}</p>
           )}
-          
+
           <select
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
