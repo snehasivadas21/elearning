@@ -253,9 +253,19 @@ class ApprovedCourseListView(generics.ListAPIView):
         )
 
 class ApprovedCourseDetailView(generics.RetrieveAPIView):
-    queryset = Course.objects.filter(is_active=True,is_published=True,category__is_active=True)
     serializer_class = UserCourseDetailSerializer
     permission_classes =[permissions.AllowAny]
+
+    def get_queryset(self):
+        return Course.objects.filter(
+            is_active=True,
+            is_published=True,
+            category__is_active=True
+        ).annotate(
+            avg_rating=Avg("reviews__rating",distinct=True),
+            review_count=Count("reviews",distinct=True),
+            total_duration=Sum("modules__lessons__duration"),
+        )
 
 class MyEnrolledCourseDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
