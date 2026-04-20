@@ -8,6 +8,7 @@ const Register = () => {
   const navigate = useNavigate();
   const [showRules, setShowRules] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     email: '',
     username: '',
@@ -49,9 +50,10 @@ const Register = () => {
       const data = error.response?.data;
 
       if (data) {
-        Object.values(data).forEach((errArray) => {
-          toast.error(errArray[0]);
-        });
+        // Object.values(data).forEach((errArray) => {
+        //   toast.error(errArray[0]);
+        // });
+        setErrors(data);
       } else {
         toast.error("Something went wrong");
       }
@@ -82,6 +84,10 @@ const Register = () => {
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />
+          {errors.email && (
+            <p className="text-red-500 text-xs">{errors.email[0]}</p>
+          )}
+
           <input
             type="text"
             placeholder="Username"
@@ -90,6 +96,10 @@ const Register = () => {
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />
+          {errors.username && (
+            <p className="text-red-500 text-xs">{errors.username[0]}</p>
+          )}
+
           <input
             type="password"
             placeholder="Password"
@@ -130,6 +140,10 @@ const Register = () => {
             className="w-full p-2 border border-gray-300 rounded-md"
             required
           />
+          {errors.confirm_password && (
+            <p className="text-red-500 text-xs">{errors.confirm_password}</p>
+          )}
+          
           <select
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
