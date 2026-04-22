@@ -334,29 +334,32 @@ class UserCourseDetailSerializer(serializers.ModelSerializer):
     
     def get_final_quiz(self, obj):
         request = self.context.get("request")
-
         if not request:
             return None
 
         user = request.user
 
-        if not user or not user.is_authenticated:
-            return None
-        
+        # No quiz attached
         try:
             quiz = obj.final_quiz
         except Exception:
             return None
 
-        if user.role in ["instructor", "admin"]:
+        if not user or not user.is_authenticated:
+            return None
+
+        # Admin/Instructor → full quiz with answers
+        if getattr(user, 'role', None) in ["instructor", "admin"] or user.is_staff:
             return QuizSerializer(quiz, context=self.context).data
 
-        if user.role == "student":
-            if obj.status == "approved" and obj.purchases.filter(student=user).exists():
+        # Student → only if purchased
+        if getattr(user, 'role', None) == "student":
+            has_purchased = obj.purchases.filter(student=user).exists()
+            if has_purchased:
                 return QuizSerializer(quiz, context=self.context).data
 
         return None
-    
+        
     def get_instructor_profile(self, obj):
         profile = getattr(obj.instructor, "profile", None)
         if not profile:

@@ -15,12 +15,34 @@ const UserCourseDetail = () => {
 
   const isLoggedIn = !!localStorage.getItem("access");
 
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const courseRes = await axiosPublic.get(`/users/approved/${id}/`);
+  //       setCourse(courseRes.data);
+
+  //     } catch (err) {
+  //       console.error("Failed to load course", err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchData();
+  // }, [id]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const courseRes = await axiosPublic.get(`/users/approved/${id}/`);
+        let courseRes;
+        if (isLoggedIn) {
+          // authenticated request - backend knows who you are
+          courseRes = await axiosInstance.get(`/users/approved/${id}/`);
+        } else {
+          // unauthenticated - guest view
+          courseRes = await axiosPublic.get(`/users/approved/${id}/`);
+        }
         setCourse(courseRes.data);
-
       } catch (err) {
         console.error("Failed to load course", err);
       } finally {
@@ -29,7 +51,7 @@ const UserCourseDetail = () => {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, isLoggedIn]);
 
   useEffect(() => {
     if (!isLoggedIn || !course?.id) {

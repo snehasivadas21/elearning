@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import CourseReviews from "../../components/user/CourseReviews";
 
 const DEFAULT_AVATAR =
@@ -84,6 +85,7 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
   const modules = course?.modules || [];
   const instructor = course?.instructor_profile || null;
   const quiz = course?.final_quiz || null;
+  const navigate = useNavigate();
 
   const canViewLesson = (lesson) => {
     if (role === "admin" || role === "tutor") return true;
@@ -299,11 +301,9 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
                   {role === "user" && isEnrolled && (
                     <button
                       className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                      onClick={() => {
-                        console.log("Start quiz");
-                      }}
+                      onClick={() => navigate(`/student/mycourses/${course.id}`)}
                     >
-                      Start Quiz
+                      Let's Start
                     </button>
                   )}
                 </div>
