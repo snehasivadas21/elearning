@@ -47,7 +47,7 @@ export default function ChatPage() {
   }, [selectedRoom]);
 
   return (
-    <div className="h-[calc(100vh-64px)] flex">
+    <div className="h-[calc(100vh-64px)] flex flex-col md:flex-row overflow-hidden">
       <ChatSidebar
         onSelectRoom={handleSelectRoom}
         onRoomLoaded={handleSelectRoom}

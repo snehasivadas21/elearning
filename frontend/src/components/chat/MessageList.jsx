@@ -8,13 +8,13 @@ const FilePreview = ({ file, fileType, isMine }) => {
       <img
         src={file}
         alt="shared"
-        className="max-w-xs rounded-lg mb-1 cursor-pointer"
+        className="max-w-full sm:max-w-xs rounded-lg mb-1 cursor-pointer"
         onClick={() => window.open(file, "_blank")}
       />
     );
   }
   if (fileType === "video") {
-    return <video src={file} controls className="max-w-xs rounded-lg mb-1" />;
+    return <video src={file} controls className="max-w-full sm:max-w-xs rounded-lg mb-1" />;
   }
   if (fileType === "audio") {
     return <audio src={file} controls className="mb-1" />;
@@ -65,7 +65,7 @@ export default function MessageList({ messages, currentUserId }) {
               </div>
             )}
             
-            <div className={`flex flex-col max-w-[75%] ${isMine ? "items-end" : "items-start"}`}>
+            <div className={`flex flex-col max-w-[90%] sm:max-w-[75%] ${isMine ? "items-end" : "items-start"}`}>
               {!isMine && (
                 <span className="text-[11px] text-gray-500 font-medium mb-1 ml-1">
                   {msg.sender?.username}

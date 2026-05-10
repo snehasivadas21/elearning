@@ -65,7 +65,7 @@ export default function ChatSidebar({ onSelectRoom, activeRoomId, onRoomLoaded, 
   }
 
   return (
-    <div className="w-80 border-r border-gray-200 bg-white flex flex-col">
+    <div className="w-full md:w-80 max-h-[40vh] md:max-h-full border-r border-gray-200 bg-white flex flex-col">
       <div className="p-4 border-b border-gray-100">
         <h2 className="text-2xl font-semibold text-gray-800">Community Chats</h2>
         <p className="text-xs text-gray-500 mt-0.5">{rooms.length} conversations</p>
@@ -96,7 +96,7 @@ export default function ChatSidebar({ onSelectRoom, activeRoomId, onRoomLoaded, 
                       : "hover:bg-gray-50 border border-transparent"
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2 sm:gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 ${
                       activeRoomId === room.id
                         ? "bg-blue-600 text-white"

@@ -58,7 +58,7 @@ export default function MessageInput({ onSend, onFileSend, disabled, roomId }) {
   };
 
   return (
-    <div className="px-4 py-3 border-t border-gray-200 bg-white/95 backdrop-blur-md">
+    <div className="px-2 sm:px-4 py-2 sm:py-3 border-t border-gray-200 bg-white/95 backdrop-blur-md">
 
       {file && (
         <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-gray-50 border rounded-xl text-sm text-gray-600">
@@ -74,7 +74,7 @@ export default function MessageInput({ onSend, onFileSend, disabled, roomId }) {
       )}
       
       <div
-        className={`flex items-center gap-1 rounded-2xl border bg-white px-2 py-1.5 transition-all duration-300 ease-out ${
+        className={`flex items-center gap-1 sm:gap-2 rounded-2xl border bg-white px-2 py-1.5 transition-all duration-300 ease-out ${
           isFocused 
             ? "border-blue-400/40 ring-4 ring-blue-500/10 shadow-lg shadow-blue-500/5" 
             : "border-gray-200 hover:border-gray-300"
