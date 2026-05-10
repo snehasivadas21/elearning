@@ -169,17 +169,17 @@ export default function StudentQuizPage() {
 
   return (
 
-    <div className="flex gap-6 p-6">
+    <div className="flex flex-col lg:flex-row gap-6 p-3 md:p-6">
 
       {/* Sidebar */}
 
-      <div className="w-64 sticky top-6 h-fit bg-white shadow rounded-xl p-4">
+      <div className="w-full lg:w-64 lg:sticky top-6 h-fit bg-white shadow rounded-xl p-4">
 
         <h3 className="font-semibold mb-4">
           Questions
         </h3>
 
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
 
           {quiz.questions.map((q, index) => {
 
@@ -220,7 +220,7 @@ export default function StudentQuizPage() {
 
         {/* Quiz header */}
 
-        <div className="bg-white shadow rounded-2xl p-6 flex justify-between items-center">
+        <div className="bg-white shadow rounded-2xl p-4 md:p-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
 
           <div>
             <h1 className="text-2xl font-bold">
@@ -249,7 +249,7 @@ export default function StudentQuizPage() {
 
         {/* Progress */}
 
-        <div className="bg-white shadow rounded-xl p-4">
+        <div className="bg-white shadow rounded-xl p-3 sm:p-4">
 
           <div className="flex justify-between text-sm mb-2">
             <span>Progress</span>
@@ -306,7 +306,7 @@ export default function StudentQuizPage() {
 
         {/* Submit button */}
 
-        <div className="sticky bottom-4 flex justify-end">
+        <div className="sticky bottom-2 flex justify-center sm:justify-end">
 
           <button
             onClick={handleSubmit}
@@ -333,7 +333,7 @@ export default function StudentQuizPage() {
 
         {/* Attempt history */}
 
-        <div className="bg-white shadow rounded-2xl p-6">
+        <div className="bg-white shadow rounded-2xl p-3 sm:p-6">
 
           <h2 className="text-xl font-semibold mb-4">
             Attempt History
@@ -347,7 +347,7 @@ export default function StudentQuizPage() {
                 Performance Trend
               </h3>
 
-              <div className="h-64">
+              <div className="h-52 sm:h-64">
 
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
@@ -379,15 +379,15 @@ export default function StudentQuizPage() {
 
           <div className="overflow-x-auto">
 
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
 
               <thead className="bg-gray-50 text-left text-sm font-semibold text-gray-600">
 
                 <tr>
-                  <th className="p-3">Attempt</th>
-                  <th className="p-3">Score</th>
-                  <th className="p-3">Percentage</th>
-                  <th className="p-3">Status</th>
+                  <th className="p-2 sm:p-3">Attempt</th>
+                  <th className="p-2 sm:p-3">Score</th>
+                  <th className="p-2 sm:p-3">Percentage</th>
+                  <th className="p-2 sm:p-3">Status</th>
                 </tr>
 
               </thead>
@@ -398,11 +398,11 @@ export default function StudentQuizPage() {
 
                   <tr key={attempt.id}>
 
-                    <td className="p-3">{attempt.attempt_number}</td>
-                    <td className="p-3">{attempt.score}</td>
-                    <td className="p-3">{attempt.percentage}%</td>
+                    <td className="p-2 sm:p-3">{attempt.attempt_number}</td>
+                    <td className="p-2 sm:p-3">{attempt.score}</td>
+                    <td className="p-2 sm:p-3">{attempt.percentage}%</td>
 
-                    <td className="p-3">
+                    <td className="p-2 sm:p-3">
 
                       {attempt.is_passed ? (
                         <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">
@@ -446,7 +446,7 @@ export default function StudentQuizPage() {
         >
 
           <div
-            className="relative bg-white p-8 rounded-2xl shadow-xl w-[520px]"
+            className="relative bg-white p-4 sm:p-8 rounded-2xl shadow-xl w-[95%] sm:w-[520px] max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
 
