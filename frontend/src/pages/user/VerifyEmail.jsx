@@ -19,8 +19,11 @@ const VerifyEmail = () => {
                 setStatus("success")
                 setTimeout(() => navigate("/login/"),2000);
                 
-            } catch {
-                setStatus("error")
+            } catch (err) {
+                setStatus(
+                    err.response?.data?.error || 
+                    "Verification failed"
+                );
             }
         }
         verify();
@@ -37,9 +40,11 @@ const VerifyEmail = () => {
 
                 </p>
             )}
-            {status === "error" && (
+            {typeof status === "string" &&
+            status !== "verifying" &&
+            status !== "success" && (
                 <p className="text-red-600 font-semibold">
-                    Verification failed or link expired
+                   {status}
                 </p>
             )}
 

@@ -61,9 +61,18 @@ class VerifyEmailView(APIView):
             user = CustomUser.objects.get(id=uid)
         except CustomUser.DoesNotExist:
             return Response({"error":"Invalid link"},status=400)
+        
+        if user.is_verified:
+            return Response(
+                {"error": "Email already verified"},
+                status=400
+            )
+        
         token_gen = PasswordResetTokenGenerator()
+
         if not token_gen.check_token(user,token):
             return Response({"error":"Invalid or expired token"},status=400)
+        
         user.is_verified=True
         user.save()
         return Response({"message":"Email verified successfully"})           
