@@ -337,7 +337,7 @@ const StudentCourseDetail = () => {
       
       <button
         onClick={() => navigate(`/student/chat/course/`)}
-        className="fixed bottom-20 right-20 bg-green-600 hover:bg-green-700 text-white p-6 text-2xl rounded-full shadow-lg z-40"
+        className="fixed bottom-50 right-20 bg-green-600 hover:bg-green-700 text-white p-6 text-2xl rounded-full shadow-lg z-40"
       >
         💬
       </button>
