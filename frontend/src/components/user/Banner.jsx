@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
+
 const HeroBanner = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative w-full h-[500px] md:h-[600px]">
       
@@ -7,12 +10,6 @@ const HeroBanner = () => {
         alt="E-learning Banner"
         className="absolute inset-0 w-full h-full object-fill"
       />
-      <div className="absolute top-5 left-5 bg-white rounded-lg shadow-lg p-6 animate-bounce">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <span className="text-xl font-medium">Live Session</span>
-          </div>
-      </div>
       
       <div className="relative z-10 max-w-7xl mx-auto h-full flex items-center px-6 md:px-10">
         <div className="w-full md:w-1/2 text-white space-y-6">
@@ -24,11 +21,10 @@ const HeroBanner = () => {
             Learn from industry experts. Get certified. Build real-world skills with our interactive online courses.
           </p>
           <div className="space-x-4">
-            <button className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">
+            <button 
+              onClick={() => navigate("/courses")}
+              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">
               Explore Courses
-            </button>
-            <button className="px-6 py-3 border border-white text-white font-semibold rounded-md hover:bg-white hover:text-black">
-              Watch how it works
             </button>
           </div>
         </div>
