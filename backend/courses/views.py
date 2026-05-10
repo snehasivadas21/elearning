@@ -74,7 +74,32 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
         course.admin_feedback=request.data.get('admin_feedback','')
         course.save(update_fields=['status','is_published','admin_feedback','updated_at'])
         send_course_status_email.delay(course.id)
-        return Response({'message':'Course rejected successfully'})    
+        return Response({'message':'Course rejected successfully'}) 
+
+    @action(detail=True, methods=['patch'])
+    def unlist(self, request, pk=None):
+        course = self.get_object()
+
+        course.is_published = False
+        course.save(update_fields=['is_published', 'updated_at'])
+
+        return Response({"message": "Course unlisted successfully"})
+
+
+    @action(detail=True, methods=['patch'])
+    def list(self, request, pk=None):
+        course = self.get_object()
+
+        if course.status != "approved":
+            return Response(
+                {"error": "Only approved courses can be listed"},
+                status=400
+            )
+
+        course.is_published = True
+        course.save(update_fields=['is_published', 'updated_at'])
+
+        return Response({"message": "Course listed successfully"})   
 
 class InstructorCourseViewSet(viewsets.ModelViewSet):
     serializer_class = InstructorCourseSerializer

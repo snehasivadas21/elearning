@@ -19,6 +19,7 @@ from .serializers import RegisterSerializer, LoginSerializer,CustomTokenObtainPa
 from .permissions import IsInstructorUser
 from .tasks import send_verification_email_task
 from django.core.mail import send_mail
+from django.db.models import Q
 
 from courses.models import Course,Lesson,LessonProgress,LessonResource,CourseCertificate
 from payment.models import CoursePurchase
@@ -251,13 +252,26 @@ class ApprovedCourseListView(generics.ListAPIView):
     ordering = ['-updated_at']
 
     def get_queryset(self):
-        return Course.objects.filter(
+
+        user = self.request.user
+
+        queryset = Course.objects.filter(
             is_active=True,
-            is_published=True,
             category__is_active=True
-        ).annotate(
-            avg_rating=Avg("reviews__rating",distinct=True),
-            review_count=Count("reviews",distinct=True),
+        )
+
+        if user.is_authenticated:
+            queryset = queryset.filter(
+                Q(is_published=True) |
+                Q(purchases__student=user)
+            ).distinct()
+
+        else:
+            queryset = queryset.filter(is_published=True)
+
+        return queryset.annotate(
+            avg_rating=Avg("reviews__rating", distinct=True),
+            review_count=Count("reviews", distinct=True),
             total_duration=Sum("modules__lessons__duration"),
         )
 

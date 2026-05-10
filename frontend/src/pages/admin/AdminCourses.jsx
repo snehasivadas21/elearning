@@ -30,6 +30,22 @@ const AdminCourses = () => {
     fetchCourses();
   }, [page]);
 
+  const handleToggleListing = async (course) => {
+    try {
+
+      const endpoint = course.is_published
+        ? `/admin/courses/${course.id}/unlist/`
+        : `/admin/courses/${course.id}/list/`;
+
+      await axiosInstance.patch(endpoint);
+
+      fetchCourses();
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const filteredCourses = courses.filter((course) => {
     const matchesSearch =
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -75,6 +91,7 @@ const AdminCourses = () => {
               <th className="px-6 py-3">Price</th>
               <th className="px-6 py-3">Status</th>
               <th className="px-6 py-3">Active</th>
+              <th className="px-6 py-3">Listed</th>
               <th className="px-6 py-3">Actions</th>
             </tr>
           </thead>
@@ -102,12 +119,31 @@ const AdminCourses = () => {
                 
                 <td className="px-6 py-4">{course.is_active ? "Yes" : "No"}</td>
 
-                <button
-                  onClick={() => navigate(`/admin/courses/${course.id}`)}
-                  className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                >
-                  View Details
-                </button>
+                <td className="px-6 py-4">{course.is_published ? "Yes" : "No"}</td>
+
+                <td className="px-6 py-4">
+                  <div className="flex gap-2">
+                    
+                    <button
+                      onClick={() => handleToggleListing(course)}
+                      className={`px-3 py-1 rounded text-white ${
+                        course.is_published
+                          ? "bg-red-600"
+                          : "bg-green-600"
+                      }`}
+                    >
+                      {course.is_published ? "Unlist" : "List"}
+                    </button>
+
+                    <button
+                      onClick={() => navigate(`/admin/courses/${course.id}`)}
+                      className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      View Details
+                    </button>
+
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
