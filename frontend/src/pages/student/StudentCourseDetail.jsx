@@ -87,7 +87,7 @@ const StudentCourseDetail = () => {
                     selectedLesson?.resources?.length > 0;
 
   return (
-     <div className="h-screen flex flex-col bg-gray-100">
+     <div className="min-h-screen flex flex-col bg-gray-100">
 
       <div className="bg-white shadow rounded-xl overflow-hidden mb-6">
 
@@ -160,9 +160,9 @@ const StudentCourseDetail = () => {
 
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
 
-        <div className="w-80 bg-white border-r overflow-y-auto p-4">
+        <div className="w-full md:w-80 bg-white border-r overflow-y-auto p-4">
           {course.modules.map((mod, index) => (
             <div key={mod.id} className="mb-6">
               <h2 className="font-semibold text-sm mb-2 text-gray-700">
@@ -240,7 +240,7 @@ const StudentCourseDetail = () => {
           )}  
         </div>
 
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
 
           {selectedLesson ? (
             <div className="bg-white rounded-xl shadow p-6">
@@ -337,7 +337,7 @@ const StudentCourseDetail = () => {
       
       <button
         onClick={() => navigate(`/student/chat/course/`)}
-        className="fixed bottom-50 right-20 bg-green-600 hover:bg-green-700 text-white p-6 text-2xl rounded-full shadow-lg z-40"
+        className="fixed bottom-20 right-20 bg-green-600 hover:bg-green-700 text-white p-6 text-2xl rounded-full shadow-lg z-40"
       >
         💬
       </button>
@@ -437,7 +437,7 @@ const YouTubePlayer = ({ lesson, sendWatchProgress, lastSentRef }) => {
 const CourseChatModal = ({ courseId, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 bg-black/40">
-      <div className="absolute right-0 top-0 h-full w-full sm:w-[600px] bg-white shadow-xl flex flex-col">
+      <div className="absolute right-0 top-0 h-full w-full md:w-[600px] bg-white shadow-xl flex flex-col">
         <div className="flex justify-between p-4 border-b">
           <h2 className="font-semibold">🤖 AI Tutor</h2>
           <button onClick={onClose}>✕</button>
