@@ -30,19 +30,25 @@ const AdminCourses = () => {
     fetchCourses();
   }, [page]);
 
-  const handleToggleListing = async (course) => {
+  const handleUnlist = async (courseId) => {
     try {
-
-      const endpoint = course.is_published
-        ? `/admin/courses/${course.id}/unlist/`
-        : `/admin/courses/${course.id}/list/`;
-
-      await axiosInstance.patch(endpoint);
-
-      fetchCourses();
-
+      await axiosInstance.patch(`/admin/courses/${courseId}/unlist/`);
+      setCourses((prev) =>
+        prev.map((c) => (c.id === courseId ? { ...c, is_published: false } : c))
+      );
     } catch (err) {
-      console.error(err);
+      console.error("Error unlisting course:", err);
+    }
+  };
+
+  const handleRelist = async (courseId) => {
+    try {
+      await axiosInstance.patch(`/admin/courses/${courseId}/relist/`);
+      setCourses((prev) =>
+        prev.map((c) => (c.id === courseId ? { ...c, is_published: true } : c))
+      );
+    } catch (err) {
+      console.error("Error relisting course:", err);
     }
   };
 
@@ -55,7 +61,7 @@ const AdminCourses = () => {
     const matchesStatus = searchStatus ? course.status === searchStatus : true;
 
     return matchesSearch && matchesStatus;
-});
+  });
 
   return (
     <div className="p-6">
@@ -91,7 +97,7 @@ const AdminCourses = () => {
               <th className="px-6 py-3">Price</th>
               <th className="px-6 py-3">Status</th>
               <th className="px-6 py-3">Active</th>
-              <th className="px-6 py-3">Listed</th>
+              <th className="px-6 py-3">Published</th>
               <th className="px-6 py-3">Actions</th>
             </tr>
           </thead>
@@ -119,30 +125,42 @@ const AdminCourses = () => {
                 
                 <td className="px-6 py-4">{course.is_active ? "Yes" : "No"}</td>
 
-                <td className="px-6 py-4">{course.is_published ? "Yes" : "No"}</td>
-
                 <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    
-                    <button
-                      onClick={() => handleToggleListing(course)}
-                      className={`px-3 py-1 rounded text-white ${
-                        course.is_published
-                          ? "bg-red-600"
-                          : "bg-green-600"
-                      }`}
-                    >
-                      {course.is_published ? "Unlist" : "List"}
-                    </button>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      course.is_published
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {course.is_published ? "Listed" : "Unlisted"}
+                  </span>
+                </td>
+                <td className="px-6 py-4 flex gap-2 items-center">
+                  <button
+                    onClick={() => navigate(`/admin/courses/${course.id}`)}
+                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                  >
+                    View
+                  </button>
 
-                    <button
-                      onClick={() => navigate(`/admin/courses/${course.id}`)}
-                      className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      View Details
-                    </button>
-
-                  </div>
+                  {course.status === "approved" && (
+                    course.is_published ? (
+                      <button
+                        onClick={() => handleUnlist(course.id)}
+                        className="px-3 py-1 bg-orange-500 text-white text-xs rounded hover:bg-orange-600"
+                      >
+                        Unlist
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleRelist(course.id)}
+                        className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                      >
+                        Relist
+                      </button>
+                    )
+                  )}
                 </td>
               </tr>
             ))}

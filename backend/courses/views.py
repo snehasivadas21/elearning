@@ -76,30 +76,33 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
         send_course_status_email.delay(course.id)
         return Response({'message':'Course rejected successfully'}) 
 
-    @action(detail=True, methods=['patch'])
-    def unlist(self, request, pk=None):
+    @action(detail=True,method=['patch'])
+    def unlist(self,request,pk=None):
         course = self.get_object()
 
-        course.is_published = False
-        course.save(update_fields=['is_published', 'updated_at'])
-
-        return Response({"message": "Course unlisted successfully"})
-
-
-    @action(detail=True, methods=['patch'])
-    def list(self, request, pk=None):
-        course = self.get_object()
-
-        if course.status != "approved":
+        if course.status != 'approved':
             return Response(
-                {"error": "Only approved courses can be listed"},
-                status=400
+                {"detail":"Only approved courses can be unlisted."},
+                status=status.HTTP_400_BAD_REQUEST
+            )   
+        
+        course.is_published = False
+        course.save(update_fields=['is_published','updated_at'])
+        return Response({'message': 'Course unlisted successfully'})
+    
+    @action(detail=True,method=['patch'])
+    def relist(self,request,pk=None):
+        course =self.get_object()
+
+        if course.status  != 'approved':
+            return Response(
+                {"detail":"Only approved courses can be relisted."},
+                status = status.HTTP_400_BAD_REQUEST
             )
-
+        
         course.is_published = True
-        course.save(update_fields=['is_published', 'updated_at'])
-
-        return Response({"message": "Course listed successfully"})   
+        course.save(update_fields=['is_published','updated_at'])
+        return Response({'message':'Course relisted successfully'})
 
 class InstructorCourseViewSet(viewsets.ModelViewSet):
     serializer_class = InstructorCourseSerializer
