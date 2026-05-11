@@ -76,7 +76,7 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
         send_course_status_email.delay(course.id)
         return Response({'message':'Course rejected successfully'}) 
 
-    @action(detail=True,method=['patch'])
+    @action(detail=True,methods=['patch'])
     def unlist(self,request,pk=None):
         course = self.get_object()
 
@@ -90,7 +90,7 @@ class AdminCourseViewSet(viewsets.ReadOnlyModelViewSet):
         course.save(update_fields=['is_published','updated_at'])
         return Response({'message': 'Course unlisted successfully'})
     
-    @action(detail=True,method=['patch'])
+    @action(detail=True,methods=['patch'])
     def relist(self,request,pk=None):
         course =self.get_object()
 
