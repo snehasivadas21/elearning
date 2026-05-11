@@ -183,6 +183,22 @@ const Navbar = () => {
 
           <hr />
 
+          {user?.role === "student" && (
+            <div className="py-2">
+              <NotificationBell
+                liveNotifications={liveNotifications}
+                chatNotifications={unreadChats}
+                onDismiss={dismissLiveNotification}
+                onDismissAll={dismissAllLive}
+                onChatOpen={(roomId) => {
+                  markChatRead(roomId);
+                  navigate(`/student/chat/${roomId}`);
+                  setMenuOpen(false);
+                }}
+              />
+            </div>
+          )}
+
           {user && user.username ? (
             <>
               <div className="text-gray-600 font-medium capitalize">
