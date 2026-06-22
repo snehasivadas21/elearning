@@ -66,20 +66,32 @@ const SessionModal = ({ open, onClose, onSuccess, session }) => {
       return;
     }
 
+    const payload = {
+      ...form,
+      scheduled_at: form.scheduled_at ? `${form.scheduled_at}:00` : "",
+    };
+
     try {
       setLoading(true);
       if (session) {
-        await axiosInstance.patch(`/live/tutor/session/${session.id}/`, form);
+        await axiosInstance.patch(`/live/tutor/session/${session.id}/`, payload);
         toast.success("Live session updated!");
       } else {
-        await axiosInstance.post("/live/tutor/session/", form);
+        await axiosInstance.post("/live/tutor/session/", payload);
         toast.success("Live session created!");
       }
       onSuccess();
       onClose();
     } catch (err) {
-      console.error("Session error:", err.response?.data);
-      toast.error(err.response?.data?.detail || "Failed to save session.");
+      const data = err.response?.data;
+      console.error("FULL ERROR:", JSON.stringify(data));
+      const msg =
+        data?.detail ||
+        Object.entries(data || {})
+          .map(([k, v]) => `${k}: ${[v].flat().join(", ")}`)
+          .join(" | ") ||
+        "Failed to save session.";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -129,7 +141,7 @@ const SessionModal = ({ open, onClose, onSuccess, session }) => {
             <select
               className={inputClass}
               value={form.course}
-              onChange={(e) => setForm({ ...form, course: Number( e.target.value )})}
+              onChange={(e) => setForm({ ...form, course: e.target.value })}
             >
               <option value="">Select a course</option>
               {courses.map((c) => (

@@ -4,9 +4,6 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
-    { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:stun3.l.google.com:19302" },
-    { urls: "stun:stun4.l.google.com:19302" },
   ],
 };
 
@@ -28,39 +25,29 @@ const useWebRTC = ({ sendRaw, addMessageListener, localStream, isInstructor }) =
 
     peer.ontrack = (event) => {
       if (!remoteVideoRef.current) return;
-
       const stream = event.streams?.[0];
       if (stream) {
         remoteVideoRef.current.srcObject = stream;
       } else {
-        const fallbackStream = new MediaStream();
-        fallbackStream.addTrack(event.track);
-        remoteVideoRef.current.srcObject = fallbackStream;
+        const fallback = new MediaStream();
+        fallback.addTrack(event.track);
+        remoteVideoRef.current.srcObject = fallback;
       }
     };
 
     peer.onicecandidate = (event) => {
       if (event.candidate) {
-        sendRaw(
-          JSON.stringify({
-            type: "ice-candidate",
-            candidate: event.candidate,
-          })
-        );
+        sendRaw(JSON.stringify({ type: "ice-candidate", candidate: event.candidate }));
       }
     };
 
-    const addCandidateSafe = async (candidate) => {
-      if (!peer.remoteDescription) {
-        pendingCandidatesRef.current.push(candidate);
-      } else {
-        await peer.addIceCandidate(new RTCIceCandidate(candidate));
-      }
+    peer.onconnectionstatechange = () => {
+      console.log("WebRTC state:", peer.connectionState);
     };
 
     const flushPendingCandidates = async () => {
-      for (const candidate of pendingCandidatesRef.current) {
-        await peer.addIceCandidate(new RTCIceCandidate(candidate));
+      for (const c of pendingCandidatesRef.current) {
+        await peer.addIceCandidate(new RTCIceCandidate(c));
       }
       pendingCandidatesRef.current = [];
     };
@@ -69,31 +56,24 @@ const useWebRTC = ({ sendRaw, addMessageListener, localStream, isInstructor }) =
       const data = JSON.parse(e.data);
 
       if (data.type === "offer" && !isInstructor) {
-        await peer.setRemoteDescription(
-          new RTCSessionDescription(data.offer)
-        );
+        await peer.setRemoteDescription(new RTCSessionDescription(data.offer));
         await flushPendingCandidates();
-
         const answer = await peer.createAnswer();
         await peer.setLocalDescription(answer);
-
-        sendRaw(
-          JSON.stringify({
-            type: "answer",
-            answer,
-          })
-        );
+        sendRaw(JSON.stringify({ type: "answer", answer }));
       }
 
       if (data.type === "answer" && isInstructor) {
-        await peer.setRemoteDescription(
-          new RTCSessionDescription(data.answer)
-        );
+        await peer.setRemoteDescription(new RTCSessionDescription(data.answer));
         await flushPendingCandidates();
       }
 
       if (data.type === "ice-candidate" && data.candidate) {
-        await addCandidateSafe(data.candidate);
+        if (!peer.remoteDescription) {
+          pendingCandidatesRef.current.push(data.candidate);
+        } else {
+          await peer.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
       }
     };
 
@@ -106,23 +86,18 @@ const useWebRTC = ({ sendRaw, addMessageListener, localStream, isInstructor }) =
   }, [sendRaw, addMessageListener, localStream, isInstructor]);
 
   const startCall = async () => {
-    if (!peerRef.current) return;
-
-    const offer = await peerRef.current.createOffer();
-    await peerRef.current.setLocalDescription(offer);
-
-    sendRaw(
-      JSON.stringify({
-        type: "offer",
-        offer,
-      })
-    );
+    const peer = peerRef.current;
+    if (!peer) return;
+    if (peer.signalingState !== "stable" && peer.signalingState !== "closed") {
+      console.warn("Peer not in stable state, skipping offer:", peer.signalingState);
+      return;
+    }
+    const offer = await peer.createOffer();
+    await peer.setLocalDescription(offer);
+    sendRaw(JSON.stringify({ type: "offer", offer }));
   };
 
-  return {
-    remoteVideoRef,
-    startCall,
-  };
+  return { remoteVideoRef, startCall };
 };
 
 export default useWebRTC;

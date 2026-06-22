@@ -67,28 +67,40 @@ const LiveSessionPage = () => {
   }, [sessionId, navigate, userRole]);
 
  
-  useEffect(() => {
-    if (userRole === "tutor" && localStream && studentJoined) {
-      console.log("Student joined — tutor sending offer");
-      hasCalledRef.current = false; 
-      startCall();
-    }
-  }, [studentJoined]); 
+  // useEffect(() => {
+  //   if (userRole === "tutor" && localStream && studentJoined) {
+  //     console.log("Student joined — tutor sending offer");
+  //     hasCalledRef.current = false; 
+  //     startCall();
+  //   }
+  // }, [studentJoined]); 
+
+  // useEffect(() => {
+  //   if (
+  //     connected &&
+  //     userRole === "tutor" &&
+  //     localStream &&
+  //     participants.some((p) => p.role === "student") &&
+  //     !hasCalledRef.current
+  //   ) {
+  //     console.log("Tutor connected, student already present — sending offer");
+  //     hasCalledRef.current = true;
+  //     startCall();
+  //   }
+  // }, [connected, userRole, localStream, participants]);
 
   useEffect(() => {
     if (
-      connected &&
       userRole === "tutor" &&
       localStream &&
-      participants.some((p) => p.role === "student") &&
-      !hasCalledRef.current
+      connected &&
+      participants.some((p) => p.role === "student")
     ) {
-      console.log("Tutor connected, student already present — sending offer");
-      hasCalledRef.current = true;
+      console.log("Starting WebRTC call...");
       startCall();
     }
-  }, [connected, userRole, localStream, participants]);
-  
+  }, [userRole, localStream, connected, participants]);
+    
   useEffect(() => {
     if (sessionEnded) {
       navigate("/");
