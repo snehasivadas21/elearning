@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 import axiosInstance from "../../api/axiosInstance";
 import { extractResults } from "../../api/api";
 import { useNavigate } from "react-router-dom";
@@ -183,7 +184,7 @@ const AdminCourses = () => {
                     {course.status}
                   </span>
                 </td>
-                <td className="px-6 py-4">{course.created_at}</td>
+                <td className="px-6 py-4">{format(new Date(course.updated_at), "dd/MM/yyyy")}</td>
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
