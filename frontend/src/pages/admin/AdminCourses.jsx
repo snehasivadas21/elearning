@@ -157,7 +157,7 @@ const AdminCourses = () => {
               <th className="px-6 py-3">Category</th>
               <th className="px-6 py-3">Price</th>
               <th className="px-6 py-3">Status</th>
-              <th className="px-6 py-3">Active</th>
+              <th className="px-6 py-3">Created_at</th>
               <th className="px-6 py-3">Published</th>
               <th className="px-6 py-3">Actions</th>
             </tr>
@@ -183,7 +183,7 @@ const AdminCourses = () => {
                     {course.status}
                   </span>
                 </td>
-                <td className="px-6 py-4">{course.is_active ? "Yes" : "No"}</td>
+                <td className="px-6 py-4">{course.created_at}</td>
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
