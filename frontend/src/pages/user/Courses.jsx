@@ -11,6 +11,7 @@ const CourseListPage = () => {
   const [params,setParams] = useSearchParams()
   const [page,setPage] = useState(1);
   const [count,setCount] = useState(0);
+  const [searchText, setSearchText] = useState(filters.search);
 
   const totalPages = Math.ceil(count / 10); 
 
@@ -28,6 +29,14 @@ const CourseListPage = () => {
   useEffect(() => {
     fetchCourses();
   }, [params,page]);
+
+  useEffect(() => {
+      const timer = setTimeout(() => {
+          updateFilter("search", searchText);
+      }, 500);
+
+      return () => clearTimeout(timer);
+  }, [searchText]);
 
   const fetchCategories = async () => {
     try {
@@ -55,6 +64,7 @@ const CourseListPage = () => {
     if (value) newParams[key] = value;
     else delete newParams[key];
     newParams.page = 1;
+    setPage(1)
     setParams(newParams);
   }
 
@@ -66,8 +76,8 @@ const CourseListPage = () => {
           <input
             type="text"
             placeholder="Search for courses..."
-            value={filters.search}
-            onChange={(e) => updateFilter("search", e.target.value)}
+            value={searchText}
+            onChange={(e) => setSearchText("search", e.target.value)}
             className="w-full pl-10 pr-4 py-2 border rounded-lg"
           />
         </div>
