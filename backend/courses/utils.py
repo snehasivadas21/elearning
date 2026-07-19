@@ -7,6 +7,8 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 from reportlab.pdfgen import canvas
 from django.db import models 
+from django.utils.formats import date_format
+from django.utils.timezone import localtime
 
 from .models import Lesson, LessonProgress,CourseCertificate
 from payment.models import CoursePurchase
@@ -32,7 +34,7 @@ def generate_certificate_file(certificate:CourseCertificate):
     p.drawCentredString(300, 625, certificate.course.title)
 
     p.setFont("Helvetica", 12)
-    p.drawCentredString(300, 580, f"Issued on: {certificate.issued_at.strftime('%d %B %Y')}")
+    p.drawCentredString(300, 580, f"Issued on: {date_format(localtime(certificate.issued_at), 'DATE_FORMAT')}")
     p.drawCentredString(300, 560, f"Certificate ID: {certificate.certificate_id}")
 
     p.showPage()

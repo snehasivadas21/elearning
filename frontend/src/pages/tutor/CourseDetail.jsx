@@ -146,7 +146,7 @@ const CourseDetail = ({ course, role="user", isEnrolled = false }) => {
           )}
           {course.updated_at && (
             <p className="bg-gray-300 text-sm px-3 py-1 rounded-full">
-            Updated on {format(new Date(course.updated_at), "dd/MM/yyyy")}
+            Updated on {new Date(course.updated_at).toLocaleDateString()}
             </p>
           )}
         </div>

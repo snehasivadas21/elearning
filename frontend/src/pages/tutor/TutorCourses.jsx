@@ -184,7 +184,7 @@ const InstructorCourses = () => {
 
               {course.updated_at && (
                 <p className="text-sm text-gray-600 mb-2">
-                  Updated on {format(new Date(course.updated_at), "dd/MM/yyyy")}
+                  Updated on {new Date(course.updated_at).toLocaleDateString()}
                 </p>
               )}
 

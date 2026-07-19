@@ -125,7 +125,7 @@ const StudentCourseDetail = () => {
 
                 {course.updated_at && (
                   <span className="bg-gray-100 px-3 py-1 rounded-full">
-                    Updated {format(new Date(course.updated_at), "dd/MM/yyyy")}
+                    Updated on {new Date(course.updated_at).toLocaleDateString()}
                   </span>
                 )}
               </div>

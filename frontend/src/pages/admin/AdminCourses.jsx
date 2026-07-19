@@ -184,7 +184,7 @@ const AdminCourses = () => {
                     {course.status}
                   </span>
                 </td>
-                <td className="px-6 py-4">{format(new Date(course.updated_at), "dd/MM/yyyy")}</td>
+                <td className="px-6 py-4">{new Date(course.updated_at).toLocaleDateString()}</td>
                 <td className="px-6 py-4">
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
