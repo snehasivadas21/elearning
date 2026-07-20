@@ -11,7 +11,6 @@ const CourseListPage = () => {
   const [params,setParams] = useSearchParams()
   const [page,setPage] = useState(1);
   const [count,setCount] = useState(0);
-  const [searchText, setSearchText] = useState(filters.search);
 
   const totalPages = Math.ceil(count / 10); 
 
@@ -21,6 +20,8 @@ const CourseListPage = () => {
     level: params.get("level") || "",
     ordering: params.get("ordering") || "-created_at",
   }
+
+  const [searchText, setSearchText] = useState(filters.search);
 
   useEffect(() => {
     fetchCategories();
