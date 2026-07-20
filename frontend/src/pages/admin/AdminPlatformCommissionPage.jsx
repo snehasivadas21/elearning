@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axiosInstance from "../../api/axiosInstance";
+import { extractResults } from "../../api/api";
 import Pagination from "../../components/ui/Pagination";
 
 const AdminPlatformCommissionPage = () => {
@@ -9,14 +10,10 @@ const AdminPlatformCommissionPage = () => {
   const [count,setCount] = useState(0);
 
   useEffect(() => {
-    setPage(1); 
-  }, [transactions]);
-
-  useEffect(() => {
     axiosInstance
       .get("/revenue/admin/revenue/transactions/",{params:{page}})
       .then(res => {
-        setTransactions(res.data);
+        setTransactions(extractResults(res));
         setLoading(false);
         setCount(res.data.count);
       })
