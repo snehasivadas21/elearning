@@ -5,8 +5,6 @@ from reportlab.pdfgen import canvas
 import io
 import cloudinary.uploader
 import logging
-from django.utils.formats import date_format
-from django.utils.timezone import localtime
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +37,7 @@ def create_invoice_pdf(invoice):
 
         p.setFont("Helvetica", 12)
         p.drawString(50, 700, f"Invoice Number: {invoice.invoice_number}")
-        p.drawString(50, 680, f"Date: {date_format(localtime(now), 'DATE_FORMAT')}")
+        p.drawString(50, 680, f"Date: {now.strftime('%Y-%m-%d')}")
         p.drawString(50, 660, f"Student: {invoice.student.username}")
         p.drawString(50, 640, f"Email: {invoice.student.email}")
 
